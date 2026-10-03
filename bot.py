@@ -1,415 +1,337 @@
 import os
-import json
 import time
+import json
 import urllib.request
 import urllib.parse
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
+
+# =========================
+# ALI KURYER BOT
+# =========================
 
 TOKEN = os.getenv("BOT_TOKEN")
 
 if not TOKEN:
     print("XATO: BOT_TOKEN topilmadi.")
-    print("Tokenni serverda BOT_TOKEN sifatida o'rnating.")
     exit()
 
 API = f"https://api.telegram.org/bot{TOKEN}"
 
-users = {}
-carts = {}
+
+# =========================
+# TELEGRAM API
+# =========================
+
+def telegram(method, data=None):
+    try:
+        if data is None:
+            data = {}
+
+        encoded = urllib.parse.urlencode(data).encode("utf-8")
+
+        request = urllib.request.Request(
+            f"{API}/{method}",
+            data=encoded,
+            method="POST"
+        )
+
+        with urllib.request.urlopen(request, timeout=40) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    except Exception as e:
+        print("Telegram API xatosi:", e)
+        return None
+
+
+def send_message(chat_id, text):
+    telegram(
+        "sendMessage",
+        {
+            "chat_id": chat_id,
+            "text": text
+        }
+    )
+
+
+# =========================
+# RESTORANLAR
+# =========================
 
 RESTAURANTS = {
     "1": {
         "name": "Ali Burger",
-        "foods": {
-            "1": {
-                "name": "Cheeseburger",
-                "price": 25000,
-                "description": "Go'sht, pishloq, salat va maxsus sous.",
-                "photo": ""
-            },
-            "2": {
-                "name": "Burger Combo",
-                "price": 35000,
-                "description": "Burger + kartoshka fri + ichimlik.",
-                "photo": ""
-            }
-        }
+        "foods": [
+            ("🍔 Burger", "25000 so'm"),
+            ("🍟 Kartoshka fri", "12000 so'm"),
+            ("🥤 Cola", "8000 so'm")
+        ]
     },
     "2": {
-        "name": "Ali Pizza",
-        "foods": {
-            "1": {
-                "name": "Margarita Pizza",
-                "price": 45000,
-                "description": "Pomidor, pishloq va maxsus sous.",
-                "photo": ""
-            },
-            "2": {
-                "name": "Go'shtli Pizza",
-                "price": 55000,
-                "description": "Go'sht, pishloq, pomidor va sous.",
-                "photo": ""
-            }
-        }
+        "name": "Osh Markazi",
+        "foods": [
+            ("🍚 Osh", "30000 so'm"),
+            ("🥗 Salat", "10000 so'm"),
+            ("🥤 Choy", "5000 so'm")
+        ]
+    },
+    "3": {
+        "name": "Pizza House",
+        "foods": [
+            ("🍕 Margarita pizza", "55000 so'm"),
+            ("🍕 Go'shtli pizza", "65000 so'm"),
+            ("🥤 Cola", "8000 so'm")
+        ]
     }
 }
 
 
-def telegram(method, data=None):
-    if data is None:
-        data = {}
+# =========================
+# FOYDALANUVCHILAR
+# =========================
 
-    encoded = urllib.parse.urlencode(data).encode()
-
-    try:
-        request = urllib.request.Request(
-            f"{API}/{method}",
-            data=encoded
-        )
-
-        response = urllib.request.urlopen(request, timeout=30)
-        return json.loads(response.read().decode())
-
-    except Exception as e:
-        print("Telegram xatosi:", e)
-        return None
+users = {}
+carts = {}
 
 
-def send_message(chat_id, text, keyboard=None):
-    data = {
-        "chat_id": chat_id,
-        "text": text
-    }
+# =========================
+# BUYRUQLAR
+# =========================
 
-    if keyboard:
-        data["reply_markup"] = json.dumps(keyboard)
+def show_start(chat_id):
+    text = (
+        "Assalomu alaykum! 👋\n\n"
+        "🛵 Ali Kuryer botiga xush kelibsiz!\n\n"
+        "Tez, xavfsiz va ishonchli yetkazib berish xizmati.\n\n"
+        "Buyruqlar:\n"
+        "/order - 🍔 Buyurtma berish\n"
+        "/restaurants - 🍽 Restoranlar\n"
+        "/orders - 📦 Buyurtmalarim\n"
+        "/track - 📍 Buyurtmani kuzatish\n"
+        "/profile - 👤 Profilim\n"
+        "/support - 💬 Yordam\n"
+        "/courier - 🛵 Kuryer bo‘lish\n"
+        "/partner - 🏪 Restoran hamkorligi"
+    )
 
-    return telegram("sendMessage", data)
-
-
-def main_menu():
-    return {
-        "keyboard": [
-            [{"text": "🍔 Buyurtma berish"}],
-            [{"text": "🍽 Restoranlar"}, {"text": "📦 Buyurtmalarim"}],
-            [{"text": "📍 Buyurtmani kuzatish"}],
-            [{"text": "👤 Profilim"}, {"text": "💬 Yordam"}],
-            [{"text": "🛵 Kuryer bo‘lish"}],
-            [{"text": "🏪 Restoran hamkorligi"}]
-        ],
-        "resize_keyboard": True
-    }
+    send_message(chat_id, text)
 
 
-def restaurants_menu():
-    buttons = []
+def show_restaurants(chat_id):
+    text = "🍽 RESTORANLAR\n\n"
 
-    for restaurant_id, restaurant in RESTAURANTS.items():
-        buttons.append([
-            {
-                "text": f"🍽 {restaurant['name']}",
-                "callback_data": f"restaurant_{restaurant_id}"
-            }
-        ])
+    for number, restaurant in RESTAURANTS.items():
+        text += f"{number}. {restaurant['name']}\n"
 
-    return {
-        "inline_keyboard": buttons
-    }
+    text += "\nRestoran raqamini yuboring."
+
+    send_message(chat_id, text)
 
 
-def foods_menu(restaurant_id):
-    restaurant = RESTAURANTS[restaurant_id]
+def show_restaurant(chat_id, number):
+    if number not in RESTAURANTS:
+        return
 
-    buttons = []
+    restaurant = RESTAURANTS[number]
 
-    for food_id, food in restaurant["foods"].items():
-        buttons.append([
-            {
-                "text": f"{food['name']} — {food['price']:,} so'm",
-                "callback_data": f"food_{restaurant_id}_{food_id}"
-            }
-        ])
+    text = f"🍽 {restaurant['name']}\n\n"
 
-    buttons.append([
-        {
-            "text": "⬅️ Restoranlar",
-            "callback_data": "restaurants"
+    for food, price in restaurant["foods"]:
+        text += f"{food} — {price}\n"
+
+    text += (
+        "\nBuyurtma berish uchun taom nomini yuboring.\n"
+        "Masalan: Burger"
+    )
+
+    send_message(chat_id, text)
+
+
+def handle_command(chat_id, text):
+
+    if text == "/start":
+        users[chat_id] = {
+            "chat_id": chat_id,
+            "name": ""
         }
-    ])
+        show_start(chat_id)
 
-    return {
-        "inline_keyboard": buttons
-    }
+    elif text == "/order":
+        show_restaurants(chat_id)
 
+    elif text == "/restaurants":
+        show_restaurants(chat_id)
 
-def get_cart(user_id):
-    return carts.get(str(user_id), [])
-
-
-def cart_text(user_id):
-    cart = get_cart(user_id)
-
-    if not cart:
-        return "🛒 Savatchangiz hozircha bo‘sh."
-
-    total = 0
-    text = "🛒 SAVATCHA\n\n"
-
-    for item in cart:
-        text += f"🍔 {item['name']} x {item['quantity']}\n"
-        text += f"💰 {item['price']:,} so'm\n\n"
-
-        total += item["price"] * item["quantity"]
-
-    text += f"💵 Jami: {total:,} so'm"
-
-    return text
-
-
-def handle_message(message):
-    chat = message.get("chat", {})
-    user = message.get("from", {})
-
-    chat_id = chat.get("id")
-    user_id = user.get("id")
-
-    text = message.get("text", "")
-
-    if not chat_id:
-        return
-
-    users[str(user_id)] = {
-        "id": user_id,
-        "first_name": user.get("first_name", ""),
-        "username": user.get("username", "")
-    }
-
-    if text.startswith("/start"):
+    elif text == "/orders":
         send_message(
             chat_id,
-            "🛵 Ali Kuryer botiga xush kelibsiz!\n\n"
-            "Tez, xavfsiz va ishonchli yetkazib berish xizmati.",
-            main_menu()
+            "📦 Sizda hozircha buyurtmalar mavjud emas."
         )
-        return
 
-    if text == "🍔 Buyurtma berish" or text == "🍽 Restoranlar":
+    elif text == "/track":
         send_message(
             chat_id,
-            "🍽 Restoranni tanlang:",
-            restaurants_menu()
+            "📍 Hozircha faol buyurtmangiz yo‘q."
         )
-        return
 
-    if text == "📦 Buyurtmalarim":
+    elif text == "/profile":
         send_message(
             chat_id,
-            "📦 Sizning buyurtmalaringiz hozircha yo‘q."
+            "👤 Profilingiz\n\n"
+            f"Telegram ID: {chat_id}"
         )
-        return
 
-    if text == "📍 Buyurtmani kuzatish":
+    elif text == "/support":
         send_message(
             chat_id,
-            "📍 Hozir faol buyurtmangiz yo‘q."
+            "💬 Ali Kuryer yordam xizmati\n\n"
+            "Savolingizni shu yerga yozing."
         )
-        return
 
-    if text == "👤 Profilim":
-        u = users.get(str(user_id), {})
-
-        send_message(
-            chat_id,
-            "👤 PROFIL\n\n"
-            f"Ism: {u.get('first_name', '-')}\n"
-            f"Username: @{u.get('username', '-')}\n\n"
-            "🛵 Ali Kuryer"
-        )
-        return
-
-    if text == "💬 Yordam":
-        send_message(
-            chat_id,
-            "💬 Yordam\n\n"
-            "Savollaringiz bo‘lsa administrator bilan bog‘laning."
-        )
-        return
-
-    if text == "🛵 Kuryer bo‘lish":
+    elif text == "/courier":
         send_message(
             chat_id,
             "🛵 KURYER BO‘LISH\n\n"
-            "Ali Kuryer jamoasiga kuryer sifatida qo‘shiling.\n\n"
-            "Ariza topshirish uchun administrator bilan bog‘laning."
+            "Ali Kuryer jamoasiga qo‘shilish uchun "
+            "telefon raqamingizni yuboring."
         )
-        return
 
-    if text == "🏪 Restoran hamkorligi":
+    elif text == "/partner":
         send_message(
             chat_id,
             "🏪 RESTORAN HAMKORLIGI\n\n"
-            "Restoraningizni Ali Kuryer platformasiga qo‘shish uchun "
-            "administrator bilan bog‘laning."
+            "Restoran nomi va telefon raqamingizni yuboring."
         )
-        return
 
+    elif text in RESTAURANTS:
+        show_restaurant(chat_id, text)
 
-def handle_callback(callback):
-    callback_id = callback.get("id")
-    data = callback.get("data", "")
-    message = callback.get("message", {})
-    chat = message.get("chat", {})
-    chat_id = chat.get("id")
-
-    telegram("answerCallbackQuery", {
-        "callback_query_id": callback_id
-    })
-
-    if data == "restaurants":
-        telegram("editMessageText", {
-            "chat_id": chat_id,
-            "message_id": message.get("message_id"),
-            "text": "🍽 Restoranni tanlang:",
-            "reply_markup": json.dumps(restaurants_menu())
-        })
-        return
-
-    if data.startswith("restaurant_"):
-        restaurant_id = data.split("_")[1]
-
-        restaurant = RESTAURANTS.get(restaurant_id)
-
-        if not restaurant:
-            return
-
-        telegram("editMessageText", {
-            "chat_id": chat_id,
-            "message_id": message.get("message_id"),
-            "text": f"🍽 {restaurant['name']}\n\nTaomni tanlang:",
-            "reply_markup": json.dumps(
-                foods_menu(restaurant_id)
-            )
-        })
-        return
-
-    if data.startswith("food_"):
-        parts = data.split("_")
-
-        restaurant_id = parts[1]
-        food_id = parts[2]
-
-        restaurant = RESTAURANTS.get(restaurant_id)
-
-        if not restaurant:
-            return
-
-        food = restaurant["foods"].get(food_id)
-
-        if not food:
-            return
-
-        user_id = message.get("from", {}).get("id", chat_id)
-
-        if str(user_id) not in carts:
-            carts[str(user_id)] = []
-
-        found = False
-
-        for item in carts[str(user_id)]:
-            if item["name"] == food["name"]:
-                item["quantity"] += 1
-                found = True
-                break
-
-        if not found:
-            carts[str(user_id)].append({
-                "name": food["name"],
-                "price": food["price"],
-                "quantity": 1
-            })
-
+    else:
         send_message(
             chat_id,
-            f"✅ {food['name']} savatchaga qo‘shildi!\n\n"
-            f"{cart_text(user_id)}",
-            {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "🍔 Yana taom tanlash",
-                            "callback_data": f"restaurant_{restaurant_id}"
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🛒 Savatchani ko‘rish",
-                            "callback_data": "cart"
-                        }
-                    ]
-                ]
-            }
+            "Tushundim. 😊\n\n"
+            "Menyu uchun /order buyrug‘ini yuboring."
         )
-        return
-
-    if data == "cart":
-        user_id = chat_id
-
-        send_message(
-            chat_id,
-            cart_text(user_id),
-            {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "🚚 Buyurtma berish",
-                            "callback_data": "checkout"
-                        }
-                    ]
-                ]
-            }
-        )
-        return
-
-    if data == "checkout":
-        send_message(
-            chat_id,
-            "🚚 Buyurtmani rasmiylashtirish\n\n"
-            "📍 Yetkazib berish manzilingizni yuboring.\n\n"
-            "Keyingi bosqichda xarita orqali manzil olishni "
-            "qo‘shamiz."
-        )
-        return
 
 
-def main():
+# =========================
+# UPDATE QABUL QILISH
+# =========================
+
+def process_update(update):
+
+    if "message" in update:
+
+        message = update["message"]
+        chat = message.get("chat", {})
+        chat_id = chat.get("id")
+
+        if not chat_id:
+            return
+
+        text = message.get("text", "").strip()
+
+        if text:
+            handle_command(chat_id, text)
+
+
+# =========================
+# TELEGRAM POLLING
+# =========================
+
+def bot_loop():
+
     print("Ali Kuryer bot ishga tushdi...")
 
     offset = 0
 
     while True:
-        result = telegram("getUpdates", {
-            "offset": offset,
-            "timeout": 30
-        })
 
-        if not result or not result.get("ok"):
-            time.sleep(3)
-            continue
+        try:
 
-        updates = result.get("result", [])
+            result = telegram(
+                "getUpdates",
+                {
+                    "offset": offset,
+                    "timeout": 30
+                }
+            )
 
-        for update in updates:
-            offset = update["update_id"] + 1
+            if not result or not result.get("ok"):
+                time.sleep(3)
+                continue
 
-            try:
-                if "message" in update:
-                    handle_message(update["message"])
+            updates = result.get("result", [])
 
-                elif "callback_query" in update:
-                    handle_callback(update["callback_query"])
+            for update in updates:
 
-            except Exception as e:
-                print("Xato:", e)
+                offset = update["update_id"] + 1
 
+                try:
+                    process_update(update)
+
+                except Exception as e:
+                    print("Update xatosi:", e)
+
+        except Exception as e:
+
+            print("Bot xatosi:", e)
+
+            time.sleep(5)
+
+
+# =========================
+# RENDER HEALTH SERVER
+# =========================
+
+class HealthHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+
+        self.send_response(200)
+
+        self.send_header(
+            "Content-Type",
+            "text/plain; charset=utf-8"
+        )
+
+        self.end_headers()
+
+        self.wfile.write(
+            b"Ali Kuryer Bot OK"
+        )
+
+    def log_message(self, format, *args):
+        pass
+
+
+def health_server():
+
+    port = int(
+        os.getenv("PORT", "10000")
+    )
+
+    server = HTTPServer(
+        ("0.0.0.0", port),
+        HealthHandler
+    )
+
+    print(
+        f"Health server ishga tushdi: {port}"
+    )
+
+    server.serve_forever()
+
+
+# =========================
+# START
+# =========================
 
 if __name__ == "__main__":
-    main()
+
+    Thread(
+        target=health_server,
+        daemon=True
+    ).start()
+
+    bot_loop()
