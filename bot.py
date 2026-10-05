@@ -1,12 +1,24 @@
+# ALI KURYER — ishga tushirish:
+# Python 3.9+; tashqi kutubxona talab qilinmaydi.
+# BOT_TOKEN: Telegram bot tokeni (yo‘q bo‘lsa faqat web ishlaydi).
+# ADMIN_USER: admin login; ADMIN_PASSWORD: yangi kuchli parol (majburiy).
+# DB_PATH: mavjud ali_kuryer.db yo‘li; PORT: 10000 (standart).
+# HTTPS serverda COOKIE_SECURE=1 o‘rnating.
+# Panellar: /admin, /restaurant, /courier. Kuryerni admin yaratadi.
+# Menyu rasmi: ochiq https rasm havolasi; tarkib majburiy.
+# Yangi va tahrirlangan mahsulot admin tasdig‘idan keyin botda ko‘rinadi.
+# Vaqt: Asia/Tashkent; boshlanish=tugash bo‘lsa 24 soat.
+# Bazani yangilashdan avval zaxira nusxasini saqlang.
+# Eski loginlar saqlanadi; demo oshxona parollarini haqiqiy ishda almashtiring.
+# Kuryer kuzatuvi buyurtma va qabul qilish vaqtiga asoslangan; GPS yo‘q.
+
 import os, time, json, html, base64, hashlib, secrets, sqlite3
 import urllib.request, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 
 TOKEN = os.getenv('BOT_TOKEN')
-if not TOKEN:
-    raise SystemExit('BOT_TOKEN topilmadi')
-API = 'https://api.telegram.org/bot' + TOKEN
+API = 'https://api.telegram.org/bot' + (TOKEN or '')
 DB = os.getenv('DB_PATH','ali_kuryer.db')
 ADMIN_USER = os.getenv('ADMIN_USER','admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD','ChangeMe_123!')
@@ -19,7 +31,7 @@ def conn():
 
 def ph(s): return hashlib.sha256(s.encode()).hexdigest()
 
-def init_db():
+def original_init_db():
     c=conn()
     c.executescript('''
     CREATE TABLE IF NOT EXISTS customers(id INTEGER PRIMARY KEY,telegram_id INTEGER UNIQUE,first_name TEXT,username TEXT,phone TEXT DEFAULT '',created_at TEXT DEFAULT CURRENT_TIMESTAMP);
@@ -66,8 +78,8 @@ def customer(msg):
 def main_kb(): return {'keyboard':[[{'text':'🍔 Buyurtma berish'},{'text':'🍽 Restoranlar'}],[{'text':'📦 Buyurtmalarim'},{'text':'📍 Buyurtmani kuzatish'}],[{'text':'👤 Profilim'},{'text':'💬 Yordam'}],[{'text':"🛵 Kuryer bo'lish"},{'text':'🏪 Restoran hamkorligi'}]],'resize_keyboard':True}
 
 def restaurants_kb():
-    c=conn(); rs=c.execute("SELECT id,name FROM restaurants WHERE status='active' ORDER BY name").fetchall(); c.close()
-    return {'inline_keyboard':[[{'text':r['name'],'callback_data':f"r:{r['id']}"}] for r in rs]}
+    c=conn(); rs=c.execute("SELECT * FROM restaurants WHERE status='active' ORDER BY name").fetchall(); c.close()
+    return {'inline_keyboard':[[{'text':r['name']+' • '+r['opens_at']+'–'+r['closes_at']+(' • Ochiq' if is_open(r) else ' • Yopiq'),'callback_data':f"r:{r['id']}"}] for r in rs]}
 
 def menu_kb(rid):
     c=conn(); ms=c.execute("SELECT id,name,price FROM menu_items WHERE restaurant_id=? AND status='approved' ORDER BY id",(rid,)).fetchall(); c.close()
@@ -84,20 +96,48 @@ def cart_text(uid):
 
 def cart_kb(): return {'inline_keyboard':[[{'text':'✅ Buyurtmani tasdiqlash','callback_data':'checkout'}],[{'text':'🗑 Savatni tozalash','callback_data':'clear'}],[{'text':'🍽 Restoranlar','callback_data':'restaurants'}]]}
 
+checkout_states={}
+
 def make_order(uid):
     a=carts.get(uid,[])
     if not a:return None
-    c=conn(); cu=c.execute('SELECT id,phone FROM customers WHERE telegram_id=?',(uid,)).fetchone()
-    if not cu:return None
-    total=sum(x['price']*x['qty'] for x in a); rid=a[0]['rid']
-    oid=c.execute('INSERT INTO orders(customer_id,restaurant_id,total,phone) VALUES(?,?,?,?)',(cu['id'],rid,total,cu['phone'])).lastrowid
-    for x in a:c.execute('INSERT INTO order_items(order_id,item_id,name,price,qty) VALUES(?,?,?,?,?)',(oid,x['item_id'],x['name'],x['price'],x['qty']))
-    c.commit();c.close();carts[uid]=[];return oid,total
+    with conn() as c:
+        c.execute('BEGIN IMMEDIATE')
+        cu=c.execute('SELECT id,phone FROM customers WHERE telegram_id=?',(uid,)).fetchone()
+        r=c.execute('SELECT * FROM restaurants WHERE id=?',(a[0]['rid'],)).fetchone()
+        if not cu or not cu['phone'] or not r or not is_open(r):raise ValueError('Oshxona yopiq yoki telefon kiritilmagan.')
+        fresh=[]
+        for x in a:
+            m=c.execute("SELECT * FROM menu_items WHERE id=? AND restaurant_id=? AND status='approved'",(x['item_id'],r['id'])).fetchone()
+            if not m:raise ValueError('Savatdagi taom o‘zgargan. Savatni tozalab, qayta tanlang.')
+            if m['price']!=x['price']:raise ValueError('Taom narxi o‘zgargan. Savatni tozalab, yangi narxda tanlang.')
+            fresh.append((m,x['qty']))
+        total=sum(m['price']*qty for m,qty in fresh)
+        address=checkout_states.get(uid,{}).get('address','')
+        if not address:raise ValueError('Yetkazish manzilini kiriting.')
+        oid=c.execute('INSERT INTO orders(customer_id,restaurant_id,total,phone,address) VALUES(?,?,?,?,?)',(cu['id'],r['id'],total,cu['phone'],address)).lastrowid
+        for m,qty in fresh:c.execute('INSERT INTO order_items(order_id,item_id,name,price,qty) VALUES(?,?,?,?,?)',(oid,m['id'],m['name'],m['price'],qty))
+    carts[uid]=[];checkout_states.pop(uid,None);return oid,total
 
 def message(msg):
     cid=msg.get('chat',{}).get('id'); uid=msg.get('from',{}).get('id');
     if not cid or not uid:return
     customer(msg); t=msg.get('text','').strip()
+    state=checkout_states.get(uid)
+    if t=='/cancel':
+        checkout_states.pop(uid,None);send(cid,'Buyurtma rasmiylashtirish bekor qilindi.',main_kb());return
+    if state:
+        if state['step']=='phone':
+            contact=msg.get('contact',{})
+            if contact and contact.get('user_id')!=uid:send(cid,'O‘zingizning telefon raqamingizni yuboring.');return
+            phone=contact.get('phone_number',t)
+            if not re.fullmatch(r'\+?[0-9 ()-]{7,20}',phone):send(cid,'Telefon raqamingizni to‘g‘ri kiriting.');return
+            with conn() as c:c.execute('UPDATE customers SET phone=? WHERE telegram_id=?',(phone,uid))
+            state['step']='address';send(cid,'Yetkazish manzilini yozing (shahar, ko‘cha, uy). Bekor qilish: /cancel');return
+        if state['step']=='address':
+            if len(t)<5:send(cid,'To‘liq manzilni yozing.');return
+            state['address']=t;state['step']='confirm'
+            send(cid,cart_text(uid)+'\nManzil: '+t,cart_kb());return
     if t=='/start': send(cid,'👋 Assalomu alaykum!\n\n🛵 Ali Kuryer botiga xush kelibsiz.',main_kb());return
     if t in ('/order','🍔 Buyurtma berish','/restaurants','🍽 Restoranlar'):send(cid,'🍽 Restoranni tanlang:',restaurants_kb());return
     if t in ('/orders','📦 Buyurtmalarim'):
@@ -126,6 +166,8 @@ def callback(q):
         _,rid,iid=d.split(':');c=conn();m=c.execute("SELECT * FROM menu_items WHERE id=? AND restaurant_id=? AND status='approved'",(iid,rid)).fetchone();c.close()
         if not m:return
         extra=f"\n🥗 Tarkibi: {m['ingredients']}" if m['ingredients'] else ''
+        if m['image_url']:
+            tg('sendPhoto',{'chat_id':cid,'photo':m['image_url'],'caption':m['name']})
         send(cid,f"🍽 {m['name']}\n💰 {m['price']:,} so'm\n📝 {m['description']}{extra}",{'inline_keyboard':[[{'text':"➕ Savatga qo'shish",'callback_data':f'a:{rid}:{iid}'}],[{'text':'🛒 Savat','callback_data':'cart'}]]});return
     if d.startswith('a:'):
         _,rid,iid=d.split(':');c=conn();m=c.execute("SELECT * FROM menu_items WHERE id=? AND restaurant_id=? AND status='approved'",(iid,rid)).fetchone();c.close()
@@ -137,9 +179,14 @@ def callback(q):
         else:a.append({'rid':int(rid),'item_id':int(iid),'name':m['name'],'price':m['price'],'qty':1})
         send(cid,'✅ Savatga qo\'shildi!\n\n'+cart_text(uid),cart_kb());return
     if d=='cart':send(cid,cart_text(uid),cart_kb());return
-    if d=='clear':carts[uid]=[];send(cid,'🗑 Savat tozalandi.',main_kb());return
+    if d=='clear':checkout_states.pop(uid,None);carts[uid]=[];send(cid,'🗑 Savat tozalandi.',main_kb());return
     if d=='checkout':
-        r=make_order(uid)
+        if not carts.get(uid):send(cid,'Savat bo‘sh.',main_kb());return
+        if checkout_states.get(uid,{}).get('step')!='confirm':
+            checkout_states[uid]={'step':'phone'}
+            send(cid,'Telefon raqamingizni yuboring yoki yozing. Bekor qilish: /cancel',{'keyboard':[[{'text':'Telefonni yuborish','request_contact':True}]],'resize_keyboard':True});return
+        try:r=make_order(uid)
+        except ValueError as e:send(cid,str(e),cart_kb());return
         if not r:send(cid,'🛒 Savat bo\'sh.',main_kb());return
         oid,total=r;send(cid,f"✅ BUYURTMA QABUL QILINDI!\n\n📦 №{oid}\n💰 {total:,} so'm\n📌 Qabul qilindi",main_kb())
 
@@ -166,85 +213,78 @@ def auth(h):
     try:u,p=base64.b64decode(a[6:]).decode().split(':',1);return u==ADMIN_USER and p==ADMIN_PASSWORD
     except:return False
 
-def rest_auth(h):
-    ck=h.headers.get('Cookie','')
-    for p in ck.split(';'):
-        if p.strip().startswith('rk='):return sessions.get(p.strip()[3:])
-    return None
+# Alohida rollar, menyu tarixi va kuryer boshqaruvi.
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from http.cookies import SimpleCookie
+import re
 
-def page(title,body):return '<!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ali Kuryer</title><style>body{font-family:Arial;background:#f3f3f3;margin:0}header{background:#111;color:#fff;padding:18px;font-size:22px}nav{background:#fff;padding:12px}nav a{margin:5px;text-decoration:none;color:#111}.wrap{max-width:1100px;margin:20px auto;padding:10px}.card{background:#fff;padding:18px;margin:12px 0;border-radius:10px}input,textarea,select{width:100%;padding:10px;margin:5px 0 12px;box-sizing:border-box}button,.btn{background:#e60000;color:white;border:0;padding:10px 14px;border-radius:7px;text-decoration:none}table{width:100%;border-collapse:collapse;background:#fff}td,th{padding:9px;border-bottom:1px solid #ddd;text-align:left}</style></head><body><header>🛵 Ali Kuryer</header>'+body+'</body></html>'
+SESSION_TTL = 12 * 3600
 
-def nav(admin=False):return '<nav>'+('<a href="/admin">📊 Dashboard</a><a href="/admin/restaurants">🏪 Restoranlar</a><a href="/admin/menu">🍽 Menyu</a><a href="/admin/orders">📦 Buyurtmalar</a>' if admin else '<a href="/restaurant">📊 Dashboard</a><a href="/restaurant/menu">🍽 Menyu</a><a href="/restaurant/orders">📦 Buyurtmalar</a>')+'</nav>'
+def init_db():
+    original_init_db()
+    with conn() as c:
+        for table, columns in {
+            'restaurants': [('opens_at', "TEXT DEFAULT '09:00'"), ('closes_at', "TEXT DEFAULT '23:00'"), ('accepting_orders', 'INTEGER DEFAULT 1')],
+            'menu_items': [('kind', "TEXT DEFAULT 'Taom'")],
+            'orders': [('courier_id', 'INTEGER'), ('claimed_at', 'TEXT')],
+        }.items():
+            existing = {r['name'] for r in c.execute('PRAGMA table_info(' + table + ')')}
+            for name, declaration in columns:
+                if name not in existing:
+                    c.execute('ALTER TABLE ' + table + ' ADD COLUMN ' + name + ' ' + declaration)
+        c.executescript("""
+        CREATE TABLE IF NOT EXISTS couriers(id INTEGER PRIMARY KEY, name TEXT NOT NULL, phone TEXT DEFAULT '', login TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, status TEXT DEFAULT 'active');
+        CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, actor_role TEXT, actor_id INTEGER, action TEXT, entity TEXT, entity_id INTEGER, before_json TEXT, after_json TEXT, created_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT NOT NULL DEFAULT '');
+        """)
+        defaults={'operator_phone':'','complaints_phone':'','telegram_bot':'https://t.me/AliKuryerBot','ai_enabled':'0'}
+        for k,v in defaults.items(): c.execute('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)',(k,v))
 
-def admin_page(path):
-    c=conn()
-    if path=='/admin':
-        a=[c.execute('SELECT COUNT(*) n FROM customers').fetchone()['n'],c.execute('SELECT COUNT(*) n FROM restaurants').fetchone()['n'],c.execute('SELECT COUNT(*) n FROM menu_items').fetchone()['n'],c.execute('SELECT COUNT(*) n FROM orders').fetchone()['n']]
-        body=nav(True)+f'<div class="wrap"><div class="card"><h1>Admin Dashboard</h1><h2>👤 Mijozlar: {a[0]}</h2><h2>🏪 Restoranlar: {a[1]}</h2><h2>🍽 Taomlar: {a[2]}</h2><h2>📦 Buyurtmalar: {a[3]}</h2></div></div>'
-    elif path=='/admin/restaurants':
-        rs=c.execute('SELECT * FROM restaurants ORDER BY id DESC').fetchall(); rows=''.join(f"<tr><td>{r['id']}</td><td>{esc(r['name'])}</td><td>{esc(r['phone'])}</td><td>{esc(r['address'])}</td><td>{esc(r['login'])}</td><td>{r['status']}</td></tr>" for r in rs)
-        body=nav(True)+'''<div class="wrap"><div class="card"><h1>🏪 Restoran qo'shish</h1><form method="post" action="/admin/restaurants/new"><input name="name" placeholder="Restoran nomi" required><input name="phone" placeholder="Telefon"><input name="address" placeholder="Manzil"><input name="login" placeholder="Login" required><input name="password" placeholder="Parol" required><button>Yaratish</button></form></div><div class="card"><table><tr><th>ID</th><th>Nomi</th><th>Telefon</th><th>Manzil</th><th>Login</th><th>Holat</th></tr>ROWS</table></div></div>'''.replace('ROWS',rows)
-    elif path=='/admin/menu':
-        ms=c.execute('SELECT m.*,r.name rn FROM menu_items m JOIN restaurants r ON r.id=m.restaurant_id ORDER BY m.id DESC').fetchall(); rows=''
-        for m in ms:
-            act=(f'<a class="btn" href="/admin/menu/ok?id={m["id"]}">Tasdiqlash</a>' if m['status']=='pending' else esc(m['status']))
-            rows+=f"<tr><td>{m['id']}</td><td>{esc(m['rn'])}</td><td>{esc(m['name'])}</td><td>{m['price']:,}</td><td>{esc(m['category'])}</td><td>{act}</td></tr>"
-        body=nav(True)+f'<div class="wrap"><div class="card"><h1>🍽 Menyu nazorati</h1><p>Restoran qo\'shgan yangi taomlar avval pending bo\'ladi. Admin tasdiqlagach mijozlarga chiqadi.</p><table><tr><th>ID</th><th>Restoran</th><th>Taom</th><th>Narx</th><th>Kategoriya</th><th>Amal</th></tr>{rows}</table></div></div>'
-    else:
-        os_=c.execute('SELECT o.*,r.name rn,cu.first_name cn,cu.phone cp FROM orders o LEFT JOIN restaurants r ON r.id=o.restaurant_id LEFT JOIN customers cu ON cu.id=o.customer_id ORDER BY o.id DESC LIMIT 100').fetchall(); rows=''.join(f"<tr><td>#{o['id']}</td><td>{esc(o['cn'])}</td><td>{esc(o['rn'])}</td><td>{esc(o['cp'])}</td><td>{o['total']:,}</td><td>{esc(o['status'])}</td></tr>" for o in os_)
-        body=nav(True)+f'<div class="wrap"><div class="card"><h1>📦 Buyurtmalar</h1><table><tr><th>ID</th><th>Mijoz</th><th>Restoran</th><th>Telefon</th><th>Summa</th><th>Holat</th></tr>{rows}</table></div></div>'
-    c.close();return page('Admin',body)
+def now():
+    return datetime.now(ZoneInfo('Asia/Tashkent')).isoformat(timespec='seconds')
 
-def rest_page(r,path):
-    c=conn()
-    if path=='/restaurant':
-        n=c.execute('SELECT COUNT(*) n FROM menu_items WHERE restaurant_id=?',(r['id'],)).fetchone()['n'];p=c.execute("SELECT COUNT(*) n FROM menu_items WHERE restaurant_id=? AND status='pending'",(r['id'],)).fetchone()['n'];o=c.execute('SELECT COUNT(*) n FROM orders WHERE restaurant_id=?',(r['id'],)).fetchone()['n']
-        body=nav()+f'<div class="wrap"><div class="card"><h1>🏪 {esc(r["name"])}</h1><h2>🍽 Taomlar: {n}</h2><h2>⏳ Tasdiq kutmoqda: {p}</h2><h2>📦 Buyurtmalar: {o}</h2></div></div>'
-    elif path=='/restaurant/menu':
-        ms=c.execute('SELECT * FROM menu_items WHERE restaurant_id=? ORDER BY id DESC',(r['id'],)).fetchall(); rows=''.join(f"<tr><td>{m['id']}</td><td>{esc(m['name'])}</td><td>{m['price']:,}</td><td>{esc(m['category'])}</td><td>{m['status']}</td></tr>" for m in ms)
-        body=nav()+'''<div class="wrap"><div class="card"><h1>🍽 Taom qo'shish</h1><form method="post" action="/restaurant/menu/new"><input name="name" placeholder="Taom nomi" required><input name="price" type="number" placeholder="Narxi" required><input name="category" placeholder="Kategoriya"><textarea name="ingredients" placeholder="Tarkibi"></textarea><textarea name="description" placeholder="Tavsifi"></textarea><input name="weight" placeholder="Og'irligi, masalan 450 g"><input name="image_url" placeholder="Rasm URL"><button>Admin tasdig'iga yuborish</button></form></div><div class="card"><table><tr><th>ID</th><th>Taom</th><th>Narx</th><th>Kategoriya</th><th>Holat</th></tr>ROWS</table></div></div>'''.replace('ROWS',rows)
-    else:
-        os_=c.execute('SELECT o.*,cu.first_name,cu.phone FROM orders o LEFT JOIN customers cu ON cu.id=o.customer_id WHERE o.restaurant_id=? ORDER BY o.id DESC',(r['id'],)).fetchall(); rows=''.join(f"<tr><td>#{o['id']}</td><td>{esc(o['first_name'])}</td><td>{esc(o['phone'])}</td><td>{o['total']:,}</td><td>{esc(o['status'])}</td></tr>" for o in os_);body=nav()+f'<div class="wrap"><div class="card"><h1>📦 Buyurtmalar</h1><table><tr><th>ID</th><th>Mijoz</th><th>Telefon</th><th>Summa</th><th>Holat</th></tr>{rows}</table></div></div>'
-    c.close();return page('Restoran',body)
+def audit(c, role, actor, action, entity, eid, before=None, after=None):
+    c.execute('INSERT INTO audit(actor_role,actor_id,action,entity,entity_id,before_json,after_json,created_at) VALUES(?,?,?,?,?,?,?,?)',
+              (role,actor,action,entity,eid,json.dumps(before,ensure_ascii=False),json.dumps(after,ensure_ascii=False),now()))
 
-def login_page():return page('Restoran login','<div class="wrap"><div class="card"><h1>🏪 Restoran paneli</h1><form method="post" action="/restaurant/login"><input name="login" placeholder="Login" required><input name="password" type="password" placeholder="Parol" required><button>Kirish</button></form></div></div>')
+def password_hash(p):
+    salt=secrets.token_hex(16)
+    return 'pbkdf2$'+salt+'$'+hashlib.pbkdf2_hmac('sha256',p.encode(),salt.encode(),260000).hex()
 
-class H(BaseHTTPRequestHandler):
-    def get(self,path,q):
-        if path.startswith('/admin'):
-            if not auth(self): self.send_response(401);self.send_header('WWW-Authenticate','Basic realm="Ali Kuryer Admin"');self.end_headers();return
-            if path=='/admin/menu/ok':
-                iid=int(q.get('id',['0'])[0]);c=conn();c.execute("UPDATE menu_items SET status='approved' WHERE id=?",(iid,));c.commit();c.close();self.red('/admin/menu');return
-            self.out(admin_page(path if path in ['/admin','/admin/restaurants','/admin/menu','/admin/orders'] else '/admin'));return
-        if path.startswith('/restaurant'):
-            r=rest_auth(self)
-            if path=='/restaurant/login':self.out(login_page());return
-            if not r:self.out(login_page());return
-            self.out(rest_page(r,path if path in ['/restaurant','/restaurant/menu','/restaurant/orders'] else '/restaurant'));return
-        self.out(page('Ali Kuryer','<div class="wrap"><div class="card"><h1>🛵 Ali Kuryer</h1><p>Server ishlayapti.</p><p><a class="btn" href="/restaurant">Restoran paneli</a></p></div></div>'))
-    def do_GET(self):
-        p,_,qs=self.path.partition('?');self.get(p,urllib.parse.parse_qs(qs))
-    def do_POST(self):
-        p,_,_=self.path.partition('?');f=form(self)
-        if p=='/admin/restaurants/new' and auth(self):
-            c=conn();c.execute('INSERT INTO restaurants(name,phone,address,login,password_hash) VALUES(?,?,?,?,?)',(f.get('name',[''])[0],f.get('phone',[''])[0],f.get('address',[''])[0],f.get('login',[''])[0],ph(f.get('password',[''])[0])));c.commit();c.close();self.red('/admin/restaurants');return
-        if p=='/restaurant/login':
-            c=conn();r=c.execute("SELECT * FROM restaurants WHERE login=? AND password_hash=? AND status='active'",(f.get('login',[''])[0],ph(f.get('password',[''])[0]))).fetchone();c.close()
-            if not r:self.out(login_page());return
-            s=secrets.token_urlsafe(24);sessions[s]=dict(r);self.send_response(303);self.send_header('Location','/restaurant');self.send_header('Set-Cookie','rk='+s+'; Path=/; HttpOnly');self.end_headers();return
-        if p=='/restaurant/menu/new':
-            r=rest_auth(self)
-            if not r:self.out(login_page());return
-            c=conn();c.execute("INSERT INTO menu_items(restaurant_id,name,price,ingredients,description,weight,category,image_url,status) VALUES(?,?,?,?,?,?,?,?,'pending')",(r['id'],f.get('name',[''])[0],int(f.get('price',['0'])[0]),f.get('ingredients',[''])[0],f.get('description',[''])[0],f.get('weight',[''])[0],f.get('category',[''])[0],f.get('image_url',[''])[0]));c.commit();c.close();self.red('/restaurant/menu');return
-        self.send_response(404);self.end_headers()
-    def out(self,s,status=200):
-        b=s.encode();self.send_response(status);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(b)));self.end_headers();self.wfile.write(b)
-    def red(self,u):self.send_response(303);self.send_header('Location',u);self.end_headers()
-    def log_message(self,*a):pass
+def password_ok(p, stored):
+    if stored.startswith('pbkdf2$'):
+        _,salt,digest=stored.split('$')
+        return secrets.compare_digest(digest,hashlib.pbkdf2_hmac('sha256',p.encode(),salt.encode(),260000).hex())
+    return secrets.compare_digest(ph(p),stored)
 
-def web():
-    port=int(os.getenv('PORT','10000'));ThreadingHTTPServer(('0.0.0.0',port),H).serve_forever()
+def is_open(r):
+    t=datetime.now(ZoneInfo('Asia/Tashkent')).strftime('%H:%M')
+    a,b=r['opens_at'],r['closes_at']
+    return r['status']=='active' and r['accepting_orders'] and (a==b or (a<=t<b if a<b else t>=a or t<b))
 
-if __name__=='__main__':
-    init_db();print('ALI KURYER READY')
-    Thread(target=web,daemon=True).start();bot_loop()
+def session(h,role):
+    ck=SimpleCookie()
+    try: ck.load(h.headers.get('Cookie',''))
+    except Exception: return None
+    token=ck.get('ak')
+    se=sessions.get(token.value) if token else None
+    if not se or se['role']!=role or se['expires']<time.time():return None
+    if role!='admin':
+        with conn() as c:
+            r=c.execute('SELECT * FROM '+('restaurants' if role=='restaurant' else 'couriers')+' WHERE id=? AND status=\'active\'',(se['id'],)).fetchone()
+        if not r:return None
+        se['record']=dict(r)
+    return se
+
+def page(title,body):
+    return '<!doctype html><html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+' — Ali Kuryer</title><style>body{font-family:Arial;background:#f2f5f8;color:#172033;margin:0}header{background:#172033;color:white;padding:20px}nav{display:flex;gap:16px;flex-wrap:wrap;padding:16px;background:white}a{color:#b52320}.wrap{max-width:1200px;margin:auto;padding:16px}.card{background:white;border-radius:14px;padding:20px;margin:16px 0;overflow:auto}input,textarea,select{box-sizing:border-box;width:100%;padding:12px;margin:6px 0 14px;border:1px solid #cbd5e1;border-radius:8px}button,.btn{background:#c52b27;color:white;padding:10px 16px;border:0;border-radius:8px;cursor:pointer}table{width:100%;border-collapse:collapse}td,th{padding:12px;text-align:left;border-bottom:1px solid #ddd}img{width:100px;height:80px;object-fit:cover;border-radius:8px}label{display:block}pre{white-space:pre-wrap;word-break:break-word}small{color:#526174}</style></head><body><header>🛵 Ali Kuryer</header>'+body+'</body></html>'
+
+def field(name,label,value='',typ='text',required=False):
+    return '<label>'+esc(label)+'<input name="'+name+'" type="'+typ+'" value="'+esc(value)+'" '+('required' if required else '')+'></label>'
+
+def post_form(path,csrf,body,button='Saqlash'):
+    return '<form method="post" action="'+path+'"><input type="hidden" name="csrf" value="'+csrf+'">'+body+'<button>'+esc(button)+'</button></form>'
+
+def navigation(role,se):
+    links={'admin':[('', 'Umumiy nazorat'),('/restaurants','Oshxonalar'),('/menu','Menyu'),('/orders','Buyurtmalar'),('/couriers','Kuryerlar'),('/history','O‘zgarishlar tarixi'),('/settin
