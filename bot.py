@@ -287,4 +287,5 @@ def post_form(path,csrf,body,button='Saqlash'):
     return '<form method="post" action="'+path+'"><input type="hidden" name="csrf" value="'+csrf+'">'+body+'<button>'+esc(button)+'</button></form>'
 
 def navigation(role,se):
-    links={'admin':[('', 'Umumiy nazorat'),('/restaurants','Oshxonalar'),('/menu','Menyu'),('/orders','Buyurtmalar'),('/couriers','Kuryerlar'),('/history','O‘zgarishlar tarixi'),('/settin
+    links={
+        'admin':[('/admin','Umumiy nazorat'),('/admin/restaurants','Oshxonalar'),('/admin/menu','Menyu'),('/admin/orders','Buyurtmalar'),('/admin/couriers','Kuryerlar'),('/adm
