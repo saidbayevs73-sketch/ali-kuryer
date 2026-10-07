@@ -1,1087 +1,1938 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#e50914">
-<title>Ali Kuryer — tezkor yetkazib berish</title>
+
+<title>Ali Kuryer</title>
 
 <style>
-:root{
-  --r:#e50914;
-  --r2:#ff2535;
-  --b:#090909;
-  --w:#fff;
-  --bg:#f5f5f5;
-  --muted:#6f6f6f;
-  --line:#e8e8e8;
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
 }
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:var(--bg);
-  color:#151515;
-}
-button,input,select{font:inherit}
-button{cursor:pointer}
 
-.top{
-  position:sticky;
-  top:0;
-  z-index:40;
-  background:#090909ee;
-  color:#fff;
-  backdrop-filter:blur(14px);
-  padding:13px 5%;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
+body{
+    font-family:Arial,sans-serif;
+    background:#f5f5f5;
+    color:#111;
 }
-.logo{font-weight:950;font-size:26px}
-.logo span{color:var(--r)}
-.place{font-size:12px;color:#ccc}
-.actions{display:flex;gap:8px}
-.icon{
-  border:1px solid #333;
-  background:#181818;
-  color:#fff;
-  border-radius:12px;
-  padding:10px 12px;
+
+header{
+    background:#050505;
+    color:white;
+    padding:15px 5%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:50;
 }
-.cartBtn{background:var(--r);border:0}
+
+.logo{
+    font-size:25px;
+    font-weight:900;
+}
+
+.logo span{
+    color:#e50914;
+}
+
+.header-buttons{
+    display:flex;
+    gap:8px;
+}
+
+.btn{
+    border:0;
+    border-radius:12px;
+    padding:12px 15px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.btn-red{
+    background:#e50914;
+    color:white;
+}
+
+.btn-black{
+    background:#181818;
+    color:white;
+    border:1px solid #333;
+}
 
 .hero{
-  min-height:520px;
-  color:#fff;
-  padding:60px 6%;
-  display:flex;
-  align-items:center;
-  background:
-    linear-gradient(90deg,#000 5%,#000c 48%,#0004),
-    url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1800&q=86")
+    min-height:500px;
+    display:flex;
+    align-items:center;
+    padding:60px 6%;
+    color:white;
+
+    background:
+    linear-gradient(
+        90deg,
+        rgba(0,0,0,.95),
+        rgba(0,0,0,.65),
+        rgba(0,0,0,.20)
+    ),
+    url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=85")
     center/cover;
 }
-.heroBox{max-width:650px}
-.pill{
-  display:inline-block;
-  background:#e5091424;
-  border:1px solid #e5091477;
-  color:#ff6975;
-  padding:8px 12px;
-  border-radius:999px;
-  font-weight:800;
-}
-h1{
-  font-size:clamp(44px,7vw,78px);
-  line-height:.98;
-  margin:18px 0;
-  letter-spacing:-3px;
-}
-.red{color:var(--r2)}
-.hero p{
-  font-size:19px;
-  color:#e5e5e5;
-  line-height:1.55;
-  max-width:550px;
-}
-.primary,.white{
-  border:0;
-  border-radius:14px;
-  padding:14px 19px;
-  font-weight:900;
-}
-.primary{background:var(--r);color:#fff}
-.white{background:#fff;color:#111}
-.heroActions{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:25px;
+
+.hero-content{
+    max-width:650px;
 }
 
-.stats{
-  background:#0c0c0c;
-  color:#fff;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
+.hero h1{
+    font-size:clamp(45px,7vw,75px);
+    line-height:1;
+    margin-bottom:20px;
 }
-.stat{
-  text-align:center;
-  padding:22px;
-  border-right:1px solid #292929;
+
+.red{
+    color:#ff2535;
 }
-.stat b{
-  display:block;
-  color:#ff3443;
-  margin-bottom:5px;
+
+.hero p{
+    font-size:19px;
+    line-height:1.6;
+    color:#eee;
+    margin-bottom:25px;
+}
+
+.hero-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+}
+
+.features{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    background:#080808;
+    color:white;
+}
+
+.feature{
+    padding:22px;
+    text-align:center;
+    border-right:1px solid #292929;
+}
+
+.feature b{
+    color:#ff3443;
+    display:block;
+    margin-bottom:6px;
 }
 
 main{
-  max-width:1250px;
-  margin:auto;
-  padding:0 5% 70px;
+    max-width:1250px;
+    margin:auto;
+    padding:40px 5% 80px;
 }
-.section{padding-top:42px}
-.sectionHead{
-  display:flex;
-  align-items:end;
-  justify-content:space-between;
-  gap:15px;
-  margin-bottom:18px;
-}
-.section h2{font-size:30px;margin:0}
-.muted{color:var(--muted)}
 
-.search{
-  display:flex;
-  gap:9px;
-  background:#fff;
-  border-radius:18px;
-  padding:10px;
-  box-shadow:0 8px 30px #0000000d;
+.search-box{
+    background:white;
+    border-radius:18px;
+    padding:10px;
+    display:flex;
+    gap:8px;
+    margin-bottom:40px;
 }
-.search input{
-  flex:1;
-  border:0;
-  outline:0;
-  padding:9px;
-  font-size:16px;
+
+.search-box input{
+    flex:1;
+    border:0;
+    outline:0;
+    padding:12px;
+    font-size:16px;
+}
+
+h2{
+    font-size:30px;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#777;
+    margin-bottom:20px;
 }
 
 .grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:16px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:17px;
+    margin-bottom:45px;
 }
+
 .card{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 12px 30px #0000000a;
+    background:white;
+    border-radius:20px;
+    overflow:hidden;
+    border:1px solid #e8e8e8;
+    box-shadow:0 10px 30px rgba(0,0,0,.06);
 }
-.cover{
-  height:175px;
-  background:#111 center/cover;
+
+.card-image{
+    height:180px;
+    background-position:center;
+    background-size:cover;
 }
-.body{padding:17px}
-.body h3{margin:0 0 8px}
-.meta{font-size:13px;color:#777}
+
+.card-content{
+    padding:17px;
+}
+
+.card h3{
+    margin-bottom:8px;
+}
+
+.muted{
+    color:#777;
+    font-size:13px;
+}
+
 .price{
-  font-weight:950;
-  font-size:19px;
-  margin:12px 0;
+    font-size:20px;
+    font-weight:900;
+    margin:15px 0;
 }
-.row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
+
+.card-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
 }
-.small{
-  padding:10px 12px;
-  border-radius:11px;
-  border:0;
-  background:#111;
-  color:#fff;
-  font-weight:800;
-}
+
 .empty{
-  background:#fff;
-  border:1px dashed #ccc;
-  border-radius:18px;
-  padding:26px;
-  text-align:center;
-  color:#777;
+    background:white;
+    padding:25px;
+    border:1px dashed #ccc;
+    border-radius:17px;
+    text-align:center;
+    color:#777;
 }
 
-/* SAVAT */
-.drawer{
-  position:fixed;
-  top:0;
-  right:-430px;
-  width:min(410px,100%);
-  height:100%;
-  z-index:80;
-  background:#fff;
-  box-shadow:-20px 0 50px #0003;
-  transition:.25s;
-  padding:20px;
-  overflow:auto;
+/* CART */
+
+.cart{
+    position:fixed;
+    top:0;
+    right:-440px;
+    width:min(420px,100%);
+    height:100%;
+    background:white;
+    z-index:100;
+    padding:20px;
+    overflow:auto;
+    transition:.25s;
+    box-shadow:-20px 0 50px rgba(0,0,0,.3);
 }
-.drawer.open{right:0}
-.drawerHead{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+
+.cart.open{
+    right:0;
 }
-.cartItem{
-  padding:13px 0;
-  border-bottom:1px solid #eee;
+
+.cart-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
 }
+
+.cart-item{
+    padding:13px 0;
+    border-bottom:1px solid #eee;
+}
+
+.cart-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:8px;
+}
+
 .total{
-  font-size:23px;
-  font-weight:950;
-  margin:20px 0;
+    font-size:23px;
+    font-weight:900;
+    margin:20px 0;
 }
+
 .field{
-  width:100%;
-  padding:13px;
-  border:1px solid #ddd;
-  border-radius:12px;
-  margin:7px 0;
+    width:100%;
+    padding:13px;
+    border:1px solid #ddd;
+    border-radius:12px;
+    margin-bottom:9px;
 }
 
-/* MUXAMMAD ALI */
+/* ASSISTANT */
+
 .assistant{
-  position:fixed;
-  right:20px;
-  bottom:20px;
-  z-index:50;
-}
-.aliBtn{
-  width:68px;
-  height:68px;
-  border-radius:50%;
-  border:4px solid #fff;
-  background:var(--r);
-  color:#fff;
-  font-size:31px;
-  box-shadow:0 12px 35px #0005;
-}
-.chat{
-  display:none;
-  position:absolute;
-  right:0;
-  bottom:80px;
-  width:min(370px,calc(100vw - 30px));
-  background:#fff;
-  border-radius:22px;
-  box-shadow:0 18px 60px #0004;
-  overflow:hidden;
-}
-.chatHead{
-  background:#090909;
-  color:#fff;
-  padding:16px;
-  font-weight:900;
-  border-bottom:4px solid var(--r);
-}
-.chatBody{
-  padding:16px;
-  max-height:350px;
-  overflow:auto;
-}
-.bubble{
-  background:#f3f3f3;
-  border-radius:14px;
-  padding:11px;
-  margin:8px 0;
-  line-height:1.4;
-}
-.quick{
-  display:flex;
-  gap:7px;
-  flex-wrap:wrap;
-}
-.quick button{
-  border:1px solid #ddd;
-  background:#fff;
-  border-radius:999px;
-  padding:8px 10px;
-}
-.chatInput{
-  display:flex;
-  padding:10px;
-  border-top:1px solid #eee;
-}
-.chatInput input{
-  flex:1;
-  border:1px solid #ddd;
-  border-radius:12px;
-  padding:10px;
-}
-.chatInput button{
-  margin-left:7px;
-  border:0;
-  border-radius:12px;
-  background:var(--r);
-  color:#fff;
-  padding:0 14px;
+    position:fixed;
+    right:20px;
+    bottom:20px;
+    z-index:90;
 }
 
-.footer{
-  background:#090909;
-  color:#bbb;
-  padding:35px 6%;
-  display:flex;
-  justify-content:space-between;
-  gap:20px;
-  flex-wrap:wrap;
+.assistant-button{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    border:4px solid white;
+    background:#e50914;
+    color:white;
+    font-size:31px;
+    box-shadow:0 10px 35px rgba(0,0,0,.35);
 }
-.footer b{color:#fff}
-.panelLinks a{
-  color:#fff;
-  margin-right:12px;
+
+.chat{
+    display:none;
+    position:absolute;
+    right:0;
+    bottom:82px;
+    width:min(370px,calc(100vw - 30px));
+    background:white;
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+}
+
+.chat-header{
+    background:#080808;
+    color:white;
+    padding:17px;
+    border-bottom:4px solid #e50914;
+}
+
+.chat-body{
+    padding:15px;
+    max-height:350px;
+    overflow:auto;
+}
+
+.message{
+    background:#f2f2f2;
+    border-radius:14px;
+    padding:11px;
+    margin-bottom:9px;
+    line-height:1.45;
+}
+
+.quick{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+}
+
+.quick button{
+    border:1px solid #ddd;
+    background:white;
+    padding:8px;
+    border-radius:20px;
+}
+
+.chat-input{
+    padding:10px;
+    border-top:1px solid #eee;
+    display:flex;
+    gap:7px;
+}
+
+.chat-input input{
+    flex:1;
+    border:1px solid #ddd;
+    border-radius:11px;
+    padding:10px;
+}
+
+/* PARTNER PANELS */
+
+.partner-section{
+    background:#0a0a0a;
+    color:white;
+    padding:45px 5%;
+}
+
+.partner-wrap{
+    max-width:1250px;
+    margin:auto;
+}
+
+.partner-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+    margin-top:25px;
+}
+
+.partner-card{
+    background:#151515;
+    border:1px solid #292929;
+    border-radius:22px;
+    padding:25px;
+}
+
+.partner-icon{
+    font-size:45px;
+    margin-bottom:15px;
+}
+
+.partner-card h3{
+    font-size:25px;
+    margin-bottom:10px;
+}
+
+.partner-card p{
+    color:#bbb;
+    line-height:1.6;
+    margin-bottom:20px;
+}
+
+.partner-link{
+    display:inline-block;
+    background:#e50914;
+    color:white;
+    text-decoration:none;
+    padding:14px 18px;
+    border-radius:13px;
+    font-weight:900;
+}
+
+footer{
+    background:#050505;
+    color:#aaa;
+    padding:30px 6%;
+}
+
+footer strong{
+    color:white;
 }
 
 @media(max-width:850px){
-  .grid{grid-template-columns:repeat(2,1fr)}
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .hero{min-height:470px}
-  .top .place{display:none}
+
+    .features{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
 }
-@media(max-width:560px){
-  .grid{grid-template-columns:1fr}
-  .hero{padding:45px 5%}
-  .hero h1{font-size:48px}
-  .section h2{font-size:25px}
-  .logo{font-size:22px}
-  .icon span{display:none}
+
+@media(max-width:600px){
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .partner-grid{
+        grid-template-columns:1fr;
+    }
+
+    .hero{
+        min-height:470px;
+    }
+
+    .hero h1{
+        font-size:47px;
+    }
+
+    .logo{
+        font-size:21px;
+    }
+
 }
 </style>
 </head>
 
 <body>
 
-<header class="top">
-  <div>
-    <div class="logo"><span>Ali</span>Kuryer.UZ</div>
-    <div class="place" id="place">📍 Manzilni tanlang</div>
-  </div>
+<header>
 
-  <div class="actions">
-    <button class="icon" onclick="chooseLocation()">
-      📍 <span>Manzil</span>
-    </button>
+<div class="logo">
+    <span>Ali</span>Kuryer.UZ
+</div>
 
-    <button class="icon cartBtn" onclick="toggleCart()">
-      🛒 <span>Savat</span> <b id="cartCount">0</b>
-    </button>
-  </div>
+<div class="header-buttons">
+
+<button
+class="btn btn-black"
+onclick="getLocation()">
+📍 Manzil
+</button>
+
+<button
+class="btn btn-red"
+onclick="openCart()">
+🛒 <span id="cartCount">0</span>
+</button>
+
+</div>
+
 </header>
 
+
 <section class="hero">
-  <div class="heroBox">
-    <span class="pill">⚡ Tez • qulay • ishonchli</span>
 
-    <h1>
-      Sevimli taomingiz
-      <span class="red">eshigingizgacha.</span>
-    </h1>
+<div class="hero-content">
 
-    <p>
-      Ali Kuryer orqali yaqin oshxonalardan taom tanlang,
-      savatga qo‘shing va buyurtmangizni tez rasmiylashtiring.
-    </p>
+<h1>
+Sevimli taomingiz
+<span class="red">eshigingizgacha.</span>
+</h1>
 
-    <div class="heroActions">
-      <button
-        class="primary"
-        onclick="document.querySelector('#restaurants').scrollIntoView()">
-        🍽 Oshxonalarni ko‘rish
-      </button>
+<p>
+Oshxonani tanlang, taom buyurtma qiling,
+GPS orqali aniq manzilingizni belgilang
+va buyurtmangizni kuzating.
+</p>
 
-      <button class="white" onclick="chooseLocation()">
-        📍 Joylashuvni belgilash
-      </button>
-    </div>
-  </div>
+<div class="hero-buttons">
+
+<button
+class="btn btn-red"
+onclick="document.getElementById('restaurants').scrollIntoView()">
+🍽 Oshxonalarni ko‘rish
+</button>
+
+<button
+class="btn"
+onclick="getLocation()">
+📍 Joylashuvni belgilash
+</button>
+
+</div>
+
+</div>
+
 </section>
 
-<div class="stats">
-  <div class="stat">
-    <b>⚡ Tez yetkazish</b>
-    Buyurtma holatini kuzating
-  </div>
 
-  <div class="stat">
-    <b>🔒 Xavfsiz</b>
-    Ma’lumotlar server orqali
-  </div>
+<section class="features">
 
-  <div class="stat">
-    <b>🍽 Haqiqiy menyu</b>
-    Bazadagi tasdiqlangan taomlar
-  </div>
-
-  <div class="stat">
-    <b>👦 Muxammad Ali</b>
-    To‘g‘ri ovqatlanish yordamchisi
-  </div>
+<div class="feature">
+<b>⚡ Tez yetkazish</b>
+Buyurtma jarayonini kuzating
 </div>
+
+<div class="feature">
+<b>📍 GPS manzil</b>
+Aniq joylashuv
+</div>
+
+<div class="feature">
+<b>🍽 Haqiqiy menyu</b>
+Oshxona kiritgan taomlar
+</div>
+
+<div class="feature">
+<b>👦 Muxammad Ali</b>
+Ovqatlanish yordamchisi
+</div>
+
+</section>
+
 
 <main>
 
-<section class="section">
-  <div class="search">
-    <input
-      id="search"
-      placeholder="Taom yoki oshxona qidiring..."
-      oninput="renderAll()">
+<div class="search-box">
 
-    <button class="primary" onclick="renderAll()">
-      Qidirish
-    </button>
-  </div>
+<input
+id="search"
+placeholder="Taom yoki oshxona qidiring..."
+oninput="render()">
+
+<button
+class="btn btn-red"
+onclick="render()">
+Qidirish
+</button>
+
+</div>
+
+
+<section id="restaurants">
+
+<h2>Oshxonalar</h2>
+
+<div class="subtitle">
+Faol oshxonalar
+</div>
+
+<div id="restaurantGrid" class="grid">
+
+<div class="empty">
+Oshxonalar yuklanmoqda...
+</div>
+
+</div>
+
 </section>
 
-<section class="section" id="restaurants">
-  <div class="sectionHead">
-    <div>
-      <h2>Oshxonalar</h2>
-      <div class="muted">Bazadagi faol hamkorlar</div>
-    </div>
-  </div>
 
-  <div id="restaurantGrid" class="grid">
-    <div class="empty">Oshxonalar yuklanmoqda...</div>
-  </div>
-</section>
+<section>
 
-<section class="section" id="foods">
-  <div class="sectionHead">
-    <div>
-      <h2>Taomlar</h2>
-      <div class="muted" id="foodHint">
-        Tasdiqlangan menyu
-      </div>
-    </div>
+<h2>Taomlar</h2>
 
-    <button
-      class="small"
-      onclick="selectedRestaurant=0;loadMenu()">
-      Barchasi
-    </button>
-  </div>
+<div class="subtitle">
+Tasdiqlangan menyu
+</div>
 
-  <div id="foodGrid" class="grid">
-    <div class="empty">Menyu yuklanmoqda...</div>
-  </div>
+<div id="foodGrid" class="grid">
+
+<div class="empty">
+Menyu yuklanmoqda...
+</div>
+
+</div>
+
 </section>
 
 </main>
 
-<!-- SAVAT -->
-<aside class="drawer" id="cart">
 
-  <div class="drawerHead">
-    <h2>🛒 Savat</h2>
-    <button class="small" onclick="toggleCart()">✕</button>
-  </div>
+<!-- HAMKOR KABINETLARI -->
 
-  <div id="cartItems"></div>
+<section class="partner-section">
 
-  <div class="total" id="cartTotal">0 so‘m</div>
+<div class="partner-wrap">
 
-  <h3>Yetkazish ma’lumotlari</h3>
+<h2>Hamkorlar kabineti</h2>
 
-  <input
-    class="field"
-    id="name"
-    placeholder="Ism va familiya">
+<p style="color:#aaa;margin-top:8px">
+Oshxona va kuryerlar uchun alohida xavfsiz kirish.
+</p>
 
-  <input
-    class="field"
-    id="phone"
-    inputmode="tel"
-    placeholder="Telefon raqami">
+<div class="partner-grid">
 
-  <button
-    class="small"
-    style="width:100%;margin:4px 0 8px"
-    onclick="chooseLocation()">
-    📍 GPS joylashuvni tasdiqlash
-  </button>
 
-  <input
-    class="field"
-    id="street"
-    placeholder="Ko‘cha / mahalla">
+<div class="partner-card">
 
-  <input
-    class="field"
-    id="house"
-    placeholder="Uy raqami">
+<div class="partner-icon">🏪</div>
 
-  <input
-    class="field"
-    id="apartment"
-    placeholder="Xonadon / kvartira (bo‘lsa)">
+<h3>Oshxona kabineti</h3>
 
-  <input
-    class="field"
-    id="entrance"
-    placeholder="Pod’yezd / kirish (bo‘lsa)">
+<p>
+Buyurtmalarni qabul qilish,
+taom qo‘shish, rasm, tarkib,
+narx va menyuni boshqarish.
+</p>
 
-  <input
-    class="field"
-    id="floor"
-    placeholder="Qavat (bo‘lsa)">
-
-  <input
-    class="field"
-    id="address"
-    placeholder="Mo‘ljal / qo‘shimcha izoh">
-
-  <select class="field" id="payment">
-    <option>Naqd</option>
-    <option disabled>HUMO — ulanish kerak</option>
-    <option disabled>UZCARD — ulanish kerak</option>
-    <option disabled>Click — ulanish kerak</option>
-    <option disabled>Payme — ulanish kerak</option>
-  </select>
-
-  <button
-    class="primary"
-    style="width:100%"
-    onclick="checkout(event)">
-    Buyurtmani rasmiylashtirish
-  </button>
-
-  <p class="muted" style="font-size:12px">
-    Onlayn to‘lovlar uchun rasmiy provayder integratsiyasi
-    va server kalitlari kerak.
-  </p>
-
-</aside>
-
-<!-- MUXAMMAD ALI -->
-<div class="assistant">
-
-  <div class="chat" id="chat">
-
-    <div class="chatHead">
-      👦 Muxammad Ali
-      <div style="font-size:12px;color:#bbb;margin-top:4px">
-        To‘g‘ri ovqatlanish va taom tanlash yordamchisi
-      </div>
-    </div>
-
-    <div class="chatBody" id="chatBody">
-
-      <div class="bubble">
-        Assalomu alaykum! 😊
-        Men Muxammad Ali. Bugun nima yemoqchisiz?
-        Mavjud menyudan mos taom topishga va muvozanatli
-        ovqatlanishga yordam beraman.
-      </div>
-
-      <div class="quick">
-        <button onclick="askAli('Bugun nima yesam bo‘ladi?')">
-          🍽 Bugun nima yesam?
-        </button>
-
-        <button onclick="askAli('Yengil ovqat')">
-          🥗 Yengil
-        </button>
-
-        <button onclick="askAli('Oqsili ko‘proq ovqat')">
-          🥩 Oqsilli
-        </button>
-
-        <button onclick="askAli('Sabzavotli ovqat')">
-          🥬 Sabzavotli
-        </button>
-
-        <button onclick="askAli('Arzon taom')">
-          💰 Arzon
-        </button>
-      </div>
-
-    </div>
-
-    <div class="chatInput">
-      <input
-        id="aliInput"
-        placeholder="Muxammad Alidan so‘rang...">
-
-      <button onclick="askAli()">➤</button>
-    </div>
-
-  </div>
-
-  <button class="aliBtn" onclick="toggleAli()">👦</button>
+<a
+class="partner-link"
+href="https://ali-kuryer-1.onrender.com/restaurant">
+Oshxona kabinetiga kirish
+</a>
 
 </div>
 
-<footer class="footer">
 
-  <div>
-    <b>AliKuryer.UZ</b>
-    <p>Tezkor va qulay yetkazib berish xizmati.</p>
-  </div>
+<div class="partner-card">
 
-  <div id="contact">
-    <b>Aloqa</b>
-    <p>Ma’lumot yuklanmoqda...</p>
-  </div>
+<div class="partner-icon">🛵</div>
 
-  <div class="panelLinks">
-    <b>Hamkorlar</b>
-    <p>
-      <a href="/restaurant">Oshxona kirishi</a>
-      <a href="/courier">Kuryer kirishi</a>
-    </p>
-  </div>
+<h3>Kuryer kabineti</h3>
+
+<p>
+Tayyor buyurtmalarni olish,
+yetkazish holatini boshqarish
+va kuryer kabinetidan foydalanish.
+</p>
+
+<a
+class="partner-link"
+href="https://ali-kuryer-1.onrender.com/courier">
+Kuryer kabinetiga kirish
+</a>
+
+</div>
+
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- CART -->
+
+<aside id="cart" class="cart">
+
+<div class="cart-header">
+
+<h2>Savat</h2>
+
+<button
+class="btn btn-black"
+onclick="closeCart()">
+✕
+</button>
+
+</div>
+
+<div id="cartItems"></div>
+
+<div id="cartTotal" class="total">
+0 so‘m
+</div>
+
+
+<h3 style="margin-bottom:12px">
+Yetkazish ma’lumotlari
+</h3>
+
+
+<input
+id="customerName"
+class="field"
+placeholder="Ism va familiya">
+
+
+<input
+id="phone"
+class="field"
+inputmode="tel"
+placeholder="Telefon raqami">
+
+
+<button
+class="btn btn-black"
+style="width:100%;margin-bottom:10px"
+onclick="getLocation()">
+📍 GPS joylashuvni tasdiqlash
+</button>
+
+
+<input
+id="street"
+class="field"
+placeholder="Ko‘cha / mahalla">
+
+
+<input
+id="house"
+class="field"
+placeholder="Uy raqami">
+
+
+<input
+id="entrance"
+class="field"
+placeholder="Pod’yezd / kirish">
+
+
+<input
+id="floor"
+class="field"
+placeholder="Qavat">
+
+
+<input
+id="apartment"
+class="field"
+placeholder="Xonadon / kvartira">
+
+
+<input
+id="note"
+class="field"
+placeholder="Mo‘ljal yoki izoh">
+
+
+<select id="payment" class="field">
+
+<option value="Naqd">
+Naqd
+</option>
+
+<option disabled>
+HUMO — ulanish jarayonida
+</option>
+
+<option disabled>
+UZCARD — ulanish jarayonida
+</option>
+
+<option disabled>
+Click — ulanish jarayonida
+</option>
+
+<option disabled>
+Payme — ulanish jarayonida
+</option>
+
+</select>
+
+
+<button
+class="btn btn-red"
+style="width:100%"
+onclick="checkout(this)">
+Buyurtma berish
+</button>
+
+</aside>
+
+
+<!-- MUXAMMAD ALI -->
+
+<div class="assistant">
+
+<div id="chat" class="chat">
+
+<div class="chat-header">
+
+<strong>👦 Muxammad Ali</strong>
+
+<div style="font-size:12px;color:#bbb;margin-top:4px">
+To‘g‘ri ovqatlanish va taom tanlash yordamchisi
+</div>
+
+</div>
+
+
+<div id="chatBody" class="chat-body">
+
+<div class="message">
+
+Assalomu alaykum! 😊
+Men Muxammad Ali.
+
+Mavjud menyudan taom tanlashga
+va muvozanatli ovqatlanishga
+yordam beraman.
+
+</div>
+
+
+<div class="quick">
+
+<button onclick="askAli('Bugun nima yesam?')">
+🍽 Bugun nima yesam?
+</button>
+
+<button onclick="askAli('Yengil ovqat')">
+🥗 Yengil
+</button>
+
+<button onclick="askAli('Oqsilli ovqat')">
+🥩 Oqsilli
+</button>
+
+<button onclick="askAli('Sabzavotli ovqat')">
+🥬 Sabzavotli
+</button>
+
+<button onclick="askAli('To‘g‘ri ovqatlanish')">
+❤️ Sog‘lom tanlov
+</button>
+
+</div>
+
+</div>
+
+
+<div class="chat-input">
+
+<input
+id="aliInput"
+placeholder="Savolingizni yozing...">
+
+<button
+class="btn btn-red"
+onclick="askAli()">
+➤
+</button>
+
+</div>
+
+</div>
+
+
+<button
+class="assistant-button"
+onclick="toggleAli()">
+👦
+</button>
+
+</div>
+
+
+<footer>
+
+<strong>AliKuryer.UZ</strong>
+
+<p style="margin-top:8px">
+Tezkor va qulay yetkazib berish xizmati.
+</p>
+
+<div id="contacts" style="margin-top:12px"></div>
 
 </footer>
 
+
 <script>
+
+const API="https://ali-kuryer-1.onrender.com";
+
 let restaurants=[];
 let foods=[];
-let selectedRestaurant=0;
 
 let cart=
-  JSON.parse(localStorage.getItem("ak_cart") || "[]");
+JSON.parse(
+localStorage.getItem("ali_cart") || "[]"
+);
 
-const money=n=>
-  new Intl.NumberFormat("uz-UZ").format(Number(n)||0)+" so‘m";
 
-const safe=s=>
-  String(s ?? "").replace(
-    /[&<>"']/g,
-    m=>({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
-    }[m])
-  );
+function money(value){
 
-async function getJSON(url){
-  const response=await fetch(url);
+return new Intl.NumberFormat(
+"uz-UZ"
+).format(Number(value)||0)+" so‘m";
 
-  if(!response.ok){
-    throw new Error("Server javob bermadi");
-  }
-
-  return response.json();
 }
 
-async function boot(){
 
-  try{
+function safe(value){
 
-    restaurants=await getJSON("/api/restaurants");
+return String(value ?? "")
+.replace(
+/[&<>"']/g,
+char=>({
+"&":"&amp;",
+"<":"&lt;",
+">":"&gt;",
+'"':"&quot;",
+"'":"&#039;"
+}[char])
+);
 
-    await loadMenu();
-
-    try{
-      const settings=await getJSON("/api/settings");
-
-      let contacts=[];
-
-      if(settings.operator_phone){
-        contacts.push(
-          "Operator: "+safe(settings.operator_phone)
-        );
-      }
-
-      if(settings.complaints_phone){
-        contacts.push(
-          "Murojaat: "+safe(settings.complaints_phone)
-        );
-      }
-
-      document.querySelector("#contact p").innerHTML=
-        contacts.join("<br>") ||
-        "Aloqa ma’lumoti admin paneldan kiritiladi.";
-
-    }catch(e){}
-
-  }catch(e){
-
-    document.querySelector("#restaurantGrid").innerHTML=
-      '<div class="empty">'+
-      'Backendga ulanib bo‘lmadi. '+
-      'Python server ishlayotganini tekshiring.'+
-      '</div>';
-
-  }
-
-  renderCart();
 }
 
-async function loadMenu(rid=selectedRestaurant){
 
-  selectedRestaurant=rid || 0;
+async function requestJSON(url,options={}){
 
-  try{
+const response=
+await fetch(url,options);
 
-    foods=await getJSON(
-      "/api/menu"+
-      (selectedRestaurant
-        ? "?restaurant_id="+selectedRestaurant
-        : "")
-    );
+let data={};
 
-    renderAll();
+try{
+data=await response.json();
+}catch(e){}
 
-  }catch(e){
+if(!response.ok){
 
-    document.querySelector("#foodGrid").innerHTML=
-      '<div class="empty">Menyu yuklanmadi.</div>';
+throw new Error(
+data.error ||
+"Server xatosi"
+);
 
-  }
 }
 
-function renderAll(){
+return data;
 
-  const q=
-    document.querySelector("#search")
-      .value
-      .trim()
-      .toLowerCase();
-
-  let filteredRestaurants=
-    restaurants.filter(r=>
-      !q ||
-      (
-        (r.name || "")+" "+
-        (r.address || "")
-      ).toLowerCase().includes(q)
-    );
-
-  const restaurantGrid=
-    document.querySelector("#restaurantGrid");
-
-  if(!filteredRestaurants.length){
-
-    restaurantGrid.innerHTML=
-      '<div class="empty">Oshxona topilmadi.</div>';
-
-  }else{
-
-    const photos=[
-      "1517248135467-4c7edcad34c4",
-      "1555396273-367ea4eb4db5",
-      "1552566626-52f8b828add9"
-    ];
-
-    restaurantGrid.innerHTML=
-      filteredRestaurants.map((r,i)=>`
-
-      <article class="card">
-
-        <div
-          class="cover"
-          style="
-            background-image:
-            linear-gradient(#0002,#0008),
-            url('https://images.unsplash.com/photo-${photos[i%photos.length]}?auto=format&fit=crop&w=800&q=80')
-          ">
-        </div>
-
-        <div class="body">
-
-          <h3>${safe(r.name)}</h3>
-
-          <div class="meta">
-            📍 ${safe(r.address || "Manzil kiritilmagan")}
-          </div>
-
-          <br>
-
-          <div class="row">
-
-            <span>
-              ${Number(r.accepting_orders)
-                ? "🟢 Buyurtma olmoqda"
-                : "⚪ Hozir yopiq"}
-            </span>
-
-            <button
-              class="small"
-              onclick="
-                loadMenu(${Number(r.id)});
-                document.querySelector('#foods').scrollIntoView()
-              ">
-              Menyu
-            </button>
-
-          </div>
-
-        </div>
-
-      </article>
-
-      `).join("");
-  }
-
-  let filteredFoods=
-    foods.filter(f=>
-      !q ||
-      (
-        (f.name || "")+" "+
-        (f.description || "")+" "+
-        (f.ingredients || "")+" "+
-        (f.category || "")
-      ).toLowerCase().includes(q)
-    );
-
-  const foodGrid=document.querySelector("#foodGrid");
-
-  if(!filteredFoods.length){
-
-    foodGrid.innerHTML=
-      '<div class="empty">'+
-      'Hozircha tasdiqlangan taom topilmadi.'+
-      '</div>';
-
-  }else{
-
-    foodGrid.innerHTML=
-      filteredFoods.map(f=>{
-
-        const image=
-          f.image_url ||
-          "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80";
-
-        return `
-
-        <article class="card">
-
-          <div
-            class="cover"
-            style="background-image:url('${safe(image)}')">
-          </div>
-
-          <div class="body">
-
-            <h3>${safe(f.name)}</h3>
-
-            <div class="meta">
-              ${safe(
-                f.description ||
-                f.ingredients ||
-                ""
-              )}
-            </div>
-
-            <div class="price">
-              ${money(f.price)}
-            </div>
-
-            <div class="row">
-
-              <span class="meta">
-                ${safe(
-                  f.weight ||
-                  f.category ||
-                  ""
-                )}
-              </span>
-
-              <button
-                class="primary"
-                onclick='addCart(
-                  ${JSON.stringify(f.id)},
-                  ${JSON.stringify(f.name)},
-                  ${Number(f.price)},
-                  ${JSON.stringify(f.restaurant_id)}
-                )'>
-                + Savatga
-              </button>
-
-            </div>
-
-          </div>
-
-        </article>
-
-        `;
-      }).join("");
-  }
 }
 
-function addCart(id,name,price,rid){
 
-  if(cart.length && cart[0].rid != rid){
+async function start(){
 
-    const ok=confirm(
-      "Bir buyurtmada bitta oshxona taomlari bo‘lishi mumkin. Savatni tozalaymizmi?"
-    );
+try{
 
-    if(!ok)return;
+restaurants=
+await requestJSON(
+API+"/api/restaurants"
+);
 
-    cart=[];
-  }
+foods=
+await requestJSON(
+API+"/api/menu"
+);
 
-  let item=cart.find(x=>x.id==id);
+render();
 
-  if(item){
-    item.qty++;
-  }else{
-    cart.push({
-      id:id,
-      name:name,
-      price:Number(price),
-      rid:rid,
-      qty:1
-    });
-  }
+try{
 
-  saveCart();
-  toggleCart(true);
+const settings=
+await requestJSON(
+API+"/api/settings"
+);
+
+let lines=[];
+
+if(settings.operator_phone){
+
+lines.push(
+"Operator: "+
+safe(settings.operator_phone)
+);
+
 }
+
+if(settings.complaints_phone){
+
+lines.push(
+"Murojaat: "+
+safe(settings.complaints_phone)
+);
+
+}
+
+document.getElementById(
+"contacts"
+).innerHTML=
+lines.join("<br>");
+
+}catch(e){}
+
+}catch(error){
+
+document.getElementById(
+"restaurantGrid"
+).innerHTML=
+
+'<div class="empty">'+
+'Serverga ulanib bo‘lmadi. '+
+'Render backend holatini tekshiring.'+
+'</div>';
+
+}
+
+renderCart();
+
+}
+
+
+function render(){
+
+const q=
+document.getElementById(
+"search"
+).value
+.trim()
+.toLowerCase();
+
+
+const filteredRestaurants=
+restaurants.filter(r=>
+
+!q ||
+
+(
+(r.name||"")+" "+
+(r.address||"")
+)
+.toLowerCase()
+.includes(q)
+
+);
+
+
+const restaurantGrid=
+document.getElementById(
+"restaurantGrid"
+);
+
+
+if(!filteredRestaurants.length){
+
+restaurantGrid.innerHTML=
+'<div class="empty">'+
+'Oshxona topilmadi.'+
+'</div>';
+
+}else{
+
+restaurantGrid.innerHTML=
+
+filteredRestaurants
+.map((restaurant,index)=>{
+
+const photos=[
+
+"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
+
+"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
+
+"https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=80"
+
+];
+
+return `
+
+<article class="card">
+
+<div
+class="card-image"
+style="
+background-image:url('${photos[index%photos.length]}')
+">
+</div>
+
+<div class="card-content">
+
+<h3>
+${safe(restaurant.name)}
+</h3>
+
+<div class="muted">
+
+📍
+${safe(
+restaurant.address ||
+"Manzil kiritilmagan"
+)}
+
+</div>
+
+<div
+class="card-bottom"
+style="margin-top:15px">
+
+<span>
+
+${Number(
+restaurant.accepting_orders
+)
+?"🟢 Ochiq"
+:"⚪ Yopiq"}
+
+</span>
+
+<button
+class="btn btn-black"
+onclick="showRestaurant(${Number(restaurant.id)})">
+
+Menyu
+
+</button>
+
+</div>
+
+</div>
+
+</article>
+
+`;
+
+})
+.join("");
+
+}
+
+
+let filteredFoods=
+foods.filter(food=>
+
+!q ||
+
+(
+(food.name||"")+" "+
+(food.ingredients||"")+" "+
+(food.description||"")+" "+
+(food.category||"")
+)
+.toLowerCase()
+.includes(q)
+
+);
+
+
+const foodGrid=
+document.getElementById(
+"foodGrid"
+);
+
+
+if(!filteredFoods.length){
+
+foodGrid.innerHTML=
+
+'<div class="empty">'+
+'Hozircha tasdiqlangan taom yo‘q.'+
+'</div>';
+
+}else{
+
+foodGrid.innerHTML=
+
+filteredFoods
+.map(food=>{
+
+const image=
+
+food.image_url ||
+
+"https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80";
+
+
+return `
+
+<article class="card">
+
+<div
+class="card-image"
+style="
+background-image:url('${safe(image)}')
+">
+</div>
+
+<div class="card-content">
+
+<h3>
+${safe(food.name)}
+</h3>
+
+<div class="muted">
+
+${safe(
+food.description ||
+food.ingredients ||
+""
+)}
+
+</div>
+
+<div class="price">
+${money(food.price)}
+</div>
+
+<div class="card-bottom">
+
+<span class="muted">
+
+${safe(
+food.category ||
+food.weight ||
+""
+)}
+
+</span>
+
+<button
+class="btn btn-red"
+onclick='addCart(
+${JSON.stringify(food.id)},
+${JSON.stringify(food.name)},
+${Number(food.price)},
+${JSON.stringify(food.restaurant_id)}
+)'>
+
++ Savatga
+
+</button>
+
+</div>
+
+</div>
+
+</article>
+
+`;
+
+})
+.join("");
+
+}
+
+}
+
+
+async function showRestaurant(id){
+
+try{
+
+foods=
+await requestJSON(
+API+
+"/api/menu?restaurant_id="+
+id
+);
+
+render();
+
+document
+.getElementById("foodGrid")
+.scrollIntoView({
+behavior:"smooth"
+});
+
+}catch(error){
+
+alert(
+"Menyu yuklanmadi: "+
+error.message
+);
+
+}
+
+}
+
+
+function addCart(
+id,
+name,
+price,
+restaurantId
+){
+
+if(
+cart.length &&
+cart[0].restaurantId !=
+restaurantId
+){
+
+const answer=
+confirm(
+"Bir buyurtmada bitta oshxonaning taomlari bo‘ladi. Savatni tozalaymizmi?"
+);
+
+if(!answer)return;
+
+cart=[];
+
+}
+
+
+let existing=
+cart.find(
+item=>item.id==id
+);
+
+
+if(existing){
+
+existing.qty++;
+
+}else{
+
+cart.push({
+
+id:id,
+name:name,
+price:Number(price),
+restaurantId:restaurantId,
+qty:1
+
+});
+
+}
+
+
+saveCart();
+
+openCart();
+
+}
+
 
 function saveCart(){
 
-  localStorage.setItem(
-    "ak_cart",
-    JSON.stringify(cart)
-  );
+localStorage.setItem(
+"ali_cart",
+JSON.stringify(cart)
+);
 
-  renderCart();
+renderCart();
+
 }
+
 
 function renderCart(){
 
-  document.querySelector("#cartCount").textContent=
-    cart.reduce(
-      (sum,item)=>sum+item.qty,
-      0
-    );
+document.getElementById(
+"cartCount"
+).textContent=
 
-  const cartItems=
-    document.querySelector("#cartItems");
+cart.reduce(
+(sum,item)=>
+sum+item.qty,
+0
+);
 
-  if(!cart.length){
 
-    cartItems.innerHTML=
-      '<div class="empty">Savat bo‘sh</div>';
+const area=
+document.getElementById(
+"cartItems"
+);
 
-  }else{
 
-    cartItems.innerHTML=
-      cart.map((item,index)=>`
+if(!cart.length){
 
-      <div class="cartItem">
+area.innerHTML=
 
-        <b>${safe(item.name)}</b>
+'<div class="empty">'+
+'Savat hozircha bo‘sh.'+
+'</div>';
 
-        <div class="row">
+}else{
 
-          <span>
-            ${money(item.price)} × ${item.qty}
-          </span>
+area.innerHTML=
 
-          <span>
+cart.map(
+(item,index)=>`
 
-            <button
-              class="small"
-              onclick="changeQty(${index},-1)">
-              −
-            </button>
+<div class="cart-item">
 
-            <button
-              class="small"
-              onclick="changeQty(${index},1)">
-              +
-            </button>
+<strong>
+${safe(item.name)}
+</strong>
 
-          </span>
+<div class="cart-row">
 
-        </div>
+<span>
 
-      </div>
+${money(item.price)}
+×
+${item.qty}
 
-      `).join("");
-  }
+</span>
 
-  document.querySelector("#cartTotal").textContent=
-    money(
-      cart.reduce(
-        (sum,item)=>
-          sum+(item.price*item.qty),
-        0
-      )
-    );
+<div>
+
+<button
+class="btn btn-black"
+onclick="changeQty(${index},-1)">
+−
+</button>
+
+<button
+class="btn btn-black"
+onclick="changeQty(${index},1)">
++
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+`
+).join("");
+
 }
+
+
+const total=
+cart.reduce(
+(sum,item)=>
+sum+
+(item.price*item.qty),
+0
+);
+
+
+document.getElementById(
+"cartTotal"
+).textContent=
+money(total);
+
+}
+
 
 function changeQty(index,amount){
 
-  cart[index].qty+=amount;
+cart[index].qty+=amount;
 
-  if(cart[index].qty<=0){
-    cart.splice(index,1);
-  }
+if(cart[index].qty<=0){
 
-  saveCart();
+cart.splice(index,1);
+
 }
 
-function toggleCart(force){
+saveCart();
 
-  const drawer=document.querySelector("#cart");
-
-  if(force===true){
-    drawer.classList.add("open");
-  }else if(force===false){
-    drawer.classList.remove("open");
-  }else{
-    drawer.classList.toggle("open");
-  }
 }
 
-function chooseLocation(){
 
-  if(!navigator.geolocation){
+function openCart(){
 
-    alert(
-      "Brauzer joylashuvni qo‘llab-quvvatlamaydi."
-    );
+document
+.getElementById("cart")
+.classList.add("open");
 
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-
-    position=>{
-
-      const location={
-        lat:position.coords.latitude,
-        lng:position.coords.longitude,
-        accuracy:position.coords.accuracy
-      };
-
-      localStorage.setItem(
-        "ak_geo",
-        JSON.stringify(location)
-      );
-
-      document.querySelector("#place").textContent=
-        "📍 GPS joylashuv tasdiqlandi";
-
-      document.querySelector("#address").placeholder=
-        "GPS olindi — mo‘ljal yoki qo‘shimcha izoh";
-
-      alert(
-        "✅ Joylashuvingiz tasdiqlandi."
-      );
-    },
-
-    ()=>{
-
-      alert(
-        "Joylashuvga ruxsat berilmadi. Telefon sozlamasidan brauzer uchun Location/GPS ruxsatini yoqing."
-      );
-
-    },
-
-    {
-      enableHighAccuracy:true,
-      timeout:15000,
-      maximumAge:0
-    }
-  );
 }
 
-async function checkout(event){
 
-  if(!cart.length){
-    alert("Savat b
+function closeCart(){
+
+document
+.getElementById("cart")
+.classList.remove("open");
+
+}
+
+
+function getLocation(){
+
+if(!navigator.geolocation){
+
+alert(
+"Bu qurilmada GPS aniqlanmadi."
+);
+
+return;
+
+}
+
+
+navigator.geolocation
+.getCurrentPosition(
+
+position=>{
+
+const geo={
+
+lat:
+position.coords.latitude,
+
+lng:
+position.coords.longitude,
+
+accuracy:
+position.coords.accuracy
+
+};
+
+
+localStorage.setItem(
+"ali_geo",
+JSON.stringify(geo)
+);
+
+
+alert(
+"✅ GPS joylashuvingiz tasdiqlandi."
+);
+
+},
+
+error=>{
+
+alert(
+"GPS joylashuvga ruxsat bering."
+);
+
+},
+
+{
+enableHighAccuracy:true,
+timeout:15000,
+maximumAge:0
+}
+
+);
+
+}
+
+
+async function checkout(button){
+
+if(!cart.length){
+
+alert("Savat bo‘sh.");
+
+return;
+
+}
+
+
+const value=id=>
+document
+.getElementById(id)
+.value
+.trim();
+
+
+if(!value("customerName")){
+
+alert(
+"Ism va familiyangizni kiriting."
+);
+
+return;
+
+}
+
+
+if(!value("phone")){
+
+alert(
+"Telefon raqamingizni kiriting."
+);
+
+return;
+
+}
+
+
+if(!value("street")){
+
+alert(
+"Ko‘cha yoki mahallani kiriting."
+);
+
+return;
+
+}
+
+
+if(!value("house")){
+
+alert(
+"Uy raqamini kiriting."
+);
+
+return;
+
+}
+
+
+const geo=
+JSON.parse(
+localStorage.getItem(
+"ali_geo"
+) || "null"
+);
+
+
+if(!geo){
+
+alert(
+"Avval GPS joylashuvni tasdiqlang."
+);
+
+return;
+
+}
+
+
+button.disabled=true;
+button.textContent=
+"Buyurtma yuborilmoqda...";
+
+
+try{
+
+const data=
+await requestJSON(
+
+API+"/api/orders",
+
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":
+"application/json"
+},
+
+body:JSON.stringify({
+
+name:
+value("customerName"),
+
+phone:
+value("phone"),
+
+street:
+value("street"),
+
+house:
+value("house"),
+
+entrance:
+value("entrance"),
+
+floor:
+value("floor"),
+
+apartment:
+value("apartment"),
+
+address:
+value("note"),
+
+payment:
+document.getElementById(
+"payment"
+).value,
+
+lat:geo.lat,
+lng:geo.lng,
+
+items:
+cart.map(item=>({
+
+id:item.id,
+qty:item.qty
+
+}))
+
+})
+
+}
+
+);
+
+
+alert(
+
+"✅ Buyurtma qabul qilindi!\n"+
+"Buyurtma №"+
+data.order_id+
+"\nJami: "+
+money(data.total)
+
+);
+
+
+cart=[];
+
+saveCart();
+
+closeCart();
+
+
+}catch(error){
+
+alert(
+"Buyurtma yuborilmadi: "+
+error.message
+);
+
+}finally{
+
+button.disabled=false;
+
+button.textContent=
+"Buyurtma berish";
+
+}
+
+}
+
+
+function toggleAli(){
+
+const chat=
+document.getElementById(
+"chat"
+);
+
+chat.style.display=
+
+chat.style.display==="block"
+?"none"
+:"block";
+
+}
+
+
+function healthyAdvice(question){
+
+const q=
+question.toLowerCase();
+
+
+if(
+q.includes("to‘g‘ri") ||
+q.includes("togri") ||
+q.includes("sog") ||
+q.includes("foydali")
+){
+
+return "Muvozanatli ovqatlanishda sabzavotlar, oqsil manbalari va me’yoriy porsiyaga e’tibor berish yaxshi odat. Shirin ichimlik o‘rniga suvni tez-tez tanlash mumkin.";
+
+}
+
+
+if(
+q.includes("kech") ||
+q.includes("yengil")
+){
+
+return "Kechki ovqatda juda katta porsiya o‘rniga yengilroq taom, sabzavot va oqsil manbasini tanlash mumkin.";
+
+}
+
+
+if(
+q.includes("nonushta")
+){
+
+return "Nonushtada oqsil manbasi, don mahsuloti va meva yoki sabzavotni uyg‘unlashtirish yaxshi tanlov bo‘lishi mumkin.";
+
+}
+
+
+if(q.includes("suv")){
+
+return "Kun davomida suv ichishni unutmang 😊 Shirin ichimliklarni tez-tez iste’mol qilish o‘rniga oddiy suv yaxshi kundalik tanlov.";
+
+}
+
+
+return "";
+
+}
+
+
+function askAli(question){
+
+const input=
+document.getElementById(
+"aliInput"
+);
+
+
+const q=
+question ||
+input.value.trim();
+
+
+if(!q)return;
+
+
+input.value="";
+
+
+const body=
+document.getElementById(
+"chatBody"
+);
+
+
+body.innerHTML+=`
+
+<div class="message">
+
+<strong>Siz:</strong>
+
+${safe(q)}
+
+</div>
+
+`;
+
+
+const advice=
+healthyAdvice(q);
+
+
+const words=
+q.toLowerCase()
+.split(/\s+/)
+.filter(word=>word.length>2);
+
+
+let matches=
+foods.filter(food=>{
+
+const text=(
+
+(food.name||"")+" "+
+(food.ingredients||"")+" "+
+(food.description||"")+" "+
+(food.category||"")
+
+).toLowerCase();
+
+
+return words.some(
+word=>text.includes(word)
+);
+
+})
+.slice(0,3);
+
+
+if(!matches.length){
+
+matches=
+foods.slice(0,3);
+
+}
+
+
+let answer=
+
+advice ||
+
+"Albatta 😊 Mavjud menyudan sizga mos taomlarni ko‘rib chiqamiz.";
+
+
+if(matches.length){
+
+answer+=
+
+" Hozirgi menyudan: "+
+
+matches.map(
+food=>
+safe(food.name)+
+" — "+
+money(food.price)
+).join(", ")+
+".";
+
+}else{
+
+answer+=
+" Hozircha tasdiqlangan menyu topilmadi.";
+
+}
+
+
+body.innerHTML+=`
+
+<div class="message">
+
+<strong>Muxammad Ali:</strong>
+
+${answer}
+
+</div>
+
+`;
+
+
+body.scrollTop=
+body.scrollHeight;
+
+}
+
+
+document
+.getElementById("aliInput")
+.addEventListener(
+"keydown",
+event=>{
+
+if(event.key==="Enter"){
+
+askAli();
+
+}
+
+}
+);
+
+
+start();
+
+</script>
+
+</body>
+</html>
