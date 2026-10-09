@@ -4,6 +4,8 @@ Do not require optional template/static directories on startup. The public
 landing page lives at the repository root in index.html.
 """
 from pathlib import Path
+import asyncio
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
@@ -23,10 +25,17 @@ ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
 TEMPLATE_DIR = ROOT_DIR / "app" / "templates"
 
+@asynccontextmanager
+async def support_lifespan(app: FastAPI):
+    await asyncio.to_thread(support_bot.register_support_webhook)
+    yield
+
+
 app = FastAPI(
     title="Ali Kuryer",
     docs_url=None if settings.ENVIRONMENT == "production" else "/api/docs",
     redoc_url=None,
+    lifespan=support_lifespan,
 )
 
 Base.metadata.create_all(bind=engine)
@@ -46,7 +55,6 @@ app.include_router(orders.router)
 app.include_router(admin.router)
 app.include_router(courier.router)
 app.include_router(support_bot.router)
-app.add_event_handler("startup", support_bot.register_support_webhook)
 
 
 @app.get("/", include_in_schema=False)
