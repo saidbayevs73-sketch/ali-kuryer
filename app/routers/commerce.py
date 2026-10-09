@@ -18,9 +18,21 @@ from sqlalchemy.orm import Session
 
 from app import models
 from app.dependencies import get_current_user, get_db
+from app.database import DATABASE_URL
 
 router = APIRouter(prefix="/api/v1", tags=["Commerce"])
 _PHONE = re.compile(r"^\+998[0-9]{9}$")
+
+def require_durable_storage():
+    """Refuse real orders on ephemeral Render SQLite storage."""
+    is_deployed = os.getenv("ENVIRONMENT", "").lower() == "production" or (
+        os.getenv("RENDER", "").lower() in {"1", "true", "yes"}
+    )
+    if is_deployed and DATABASE_URL.startswith("sqlite"):
+        raise HTTPException(
+            503, "Doimiy PostgreSQL bazasi ulanmagan. Buyurtmalar va chatlar vaqtincha to‘xtatilgan."
+        )
+
 
 
 def me(user=Depends(get_current_user)):
@@ -143,6 +155,7 @@ def serialize_order(db, order):
 @router.post("/orders", status_code=201)
 def create_order(data: NewOrderIn, db: Session = Depends(get_db), user=Depends(me)):
     role(user, "customer")
+    require_durable_storage()
     if not data.privacy_accepted:
         raise HTTPException(400, "Buyurtma va suhbatlar qayta ishlanishiga rozilik kerak")
     if not _PHONE.fullmatch(data.phone):
@@ -343,6 +356,7 @@ def order_messages(order_id: int, db: Session = Depends(get_db), user=Depends(me
 @router.post("/orders/{order_id}/messages", status_code=201)
 def send_order_message(order_id: int, data: MessageIn,
                        db: Session = Depends(get_db), user=Depends(me)):
+    require_durable_storage()
     order = get_allowed_order(db, order_id, user)
     if order.status in {"cancelled", "delivered"}:
         raise HTTPException(409, "Yopilgan buyurtmada yangi xabar yuborib bo‘lmaydi")
@@ -377,6 +391,7 @@ def send_support_message(data: MessageIn, customer_id: int | None = None,
         customer_id = user.id
     elif customer_id is None:
         raise HTTPException(422, "Mijoz ID ni kiriting")
+    require_durable_storage()
     if not data.body.strip():
         raise HTTPException(422, "Xabar bo‘sh")
     customer = db.get(models.User, customer_id)
@@ -458,6 +473,7 @@ def upload_menu_photo(restaurant_id: int, item_id: int, file: UploadFile = File(
                       db: Session = Depends(get_db), user=Depends(me)):
     """Accept restaurant photos and strip EXIF/GPS metadata before storing."""
     role(user, "restaurant", "admin")
+    require_durable_storage()
     rest = db.get(models.Restaurant, restaurant_id)
     item = db.get(models.MenuItem, item_id)
     if not rest or not item or item.restaurant_id != restaurant_id:
