@@ -22,11 +22,21 @@ data class Food(
 )
 data class FoodHit(val restaurant: Restaurant, val food: Food)
 data class Session(val token: String, val role: String)
+data class AliOrder(
+    val id: Int, val status: String, val total: Long,
+    val restaurantId: Int, val address: String,
+    val courierName: String?, val courierPhone: String?,
+    val courierLat: Double?, val courierLng: Double?
+)
+data class AliChatMessage(
+    val id: Int, val senderId: Int, val senderName: String, val body: String
+)
+
 
 object AliApi {
     private const val BASE = BuildConfig.API_BASE_URL
 
-    private suspend fun request(method: String, path: String, body: JSONObject? = null): String =
+    private suspend fun request(method: String, path: String, body: JSONObject? = null, token: String? = null): String =
         withContext(Dispatchers.IO) {
             val conn = URL(BASE.trimEnd('/') + path).openConnection() as HttpURLConnection
             try {
@@ -34,6 +44,9 @@ object AliApi {
                 conn.connectTimeout = 15000
                 conn.readTimeout = 20000
                 conn.setRequestProperty("Accept", "application/json")
+                if (!token.isNullOrBlank()) {
+                    conn.setRequestProperty("Authorization", "Bearer $token")
+                }
                 if (body != null) {
                     conn.doOutput = true
                     conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
@@ -102,6 +115,77 @@ object AliApi {
         val token = json.optString("access_token", "")
         if (token.isBlank()) throw IllegalStateException("Kirish tokeni olinmadi")
         return Session(token, "customer")
+    }
+
+
+    private fun parseOrder(json: JSONObject): AliOrder {
+        val courier = json.optJSONObject("courier")
+        val location = json.optJSONObject("courier_location")
+        return AliOrder(
+            id = json.optInt("id", 0),
+            status = json.optString("status", "pending"),
+            total = json.optDouble("total", 0.0).toLong(),
+            restaurantId = json.optInt("restaurant_id"),
+            address = json.optString("address", ""),
+            courierName = courier?.optString("name")?.takeIf { it.isNotBlank() },
+            courierPhone = courier?.optString("phone")?.takeIf { it.startsWith("+998") },
+            courierLat = location?.optDouble("latitude"),
+            courierLng = location?.optDouble("longitude")
+        )
+    }
+
+    private fun parseMessages(data: String): List<AliChatMessage> {
+        val arr = JSONArray(data)
+        return (0 until arr.length()).map { idx ->
+            val item = arr.getJSONObject(idx)
+            AliChatMessage(
+                id = item.optInt("id"), senderId = item.optInt("sender_id"),
+                senderName = item.optString("sender_name", ""),
+                body = item.optString("body", "")
+            )
+        }
+    }
+
+    suspend fun createOrder(
+        token: String, restaurantId: Int, address: String, phone: String,
+        items: Map<Int, Int>, privacyAccepted: Boolean
+    ): AliOrder {
+        val lines = JSONArray()
+        items.filterValues { it > 0 }.forEach { (id, qty) ->
+            lines.put(JSONObject().put("menu_item_id", id).put("quantity", qty))
+        }
+        val data = JSONObject()
+            .put("restaurant_id", restaurantId)
+            .put("address", address.trim())
+            .put("phone", phone.trim())
+            .put("payment_method", "cash")
+            .put("privacy_accepted", privacyAccepted)
+            .put("items", lines)
+        return parseOrder(JSONObject(request("POST", "/api/v1/orders", data, token)))
+    }
+
+    suspend fun myOrders(token: String): List<AliOrder> {
+        val arr = JSONArray(request("GET", "/api/v1/orders/my", token = token))
+        return (0 until arr.length()).map { parseOrder(arr.getJSONObject(it)) }
+    }
+
+    suspend fun orderDetails(token: String, orderId: Int): AliOrder =
+        parseOrder(JSONObject(request("GET", "/api/v1/orders/$orderId", token = token)))
+
+    suspend fun orderMessages(token: String, orderId: Int): List<AliChatMessage> =
+        parseMessages(request("GET", "/api/v1/orders/$orderId/messages", token = token))
+
+    suspend fun sendOrderMessage(token: String, orderId: Int, body: String) {
+        request("POST", "/api/v1/orders/$orderId/messages",
+            JSONObject().put("body", body), token)
+    }
+
+    suspend fun supportMessages(token: String): List<AliChatMessage> =
+        parseMessages(request("GET", "/api/v1/support/messages", token = token))
+
+    suspend fun sendSupportMessage(token: String, body: String) {
+        request("POST", "/api/v1/support/messages",
+            JSONObject().put("body", body), token)
     }
 
     suspend fun chat(message: String): String {
