@@ -121,14 +121,22 @@ internal fun AliPromoHero(onExplore: () -> Unit) {
     }
 }
 
-internal data class QuickCategory(val icon: String, val name: String, val query: String)
+internal data class QuickCategory(
+    val icon: String, val name: String, val query: String, val photo: String
+)
 internal val quickCategories = listOf(
-    QuickCategory("🍔", "Burger", "burger"),
-    QuickCategory("🌯", "Lavash", "lavash"),
-    QuickCategory("🍕", "Pizza", "pizza"),
-    QuickCategory("🍚", "Milliy", "osh"),
-    QuickCategory("🥗", "Salat", "salat"),
-    QuickCategory("🥤", "Ichimlik", "ichimlik")
+    QuickCategory("🍔", "Burger", "burger",
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=250&q=78"),
+    QuickCategory("🌯", "Lavash", "lavash",
+        "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&w=250&q=78"),
+    QuickCategory("🍕", "Pizza", "pizza",
+        "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=250&q=78"),
+    QuickCategory("🍚", "Milliy", "osh",
+        "https://images.unsplash.com/photo-1604908176997-4311bb7e970a?auto=format&fit=crop&w=250&q=78"),
+    QuickCategory("🥗", "Salat", "salat",
+        "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=250&q=78"),
+    QuickCategory("🥤", "Ichimlik", "ichimlik",
+        "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=250&q=78")
 )
 
 @Composable
@@ -138,7 +146,13 @@ internal fun AliCategoryTile(item: QuickCategory, onClick: () -> Unit) {
         Surface(color = Color.White, border = BorderStroke(1.dp, AliBorder),
             shape = RoundedCornerShape(20.dp)) {
             Box(Modifier.size(70.dp), contentAlignment = Alignment.Center) {
-                Text(item.icon, fontSize = 34.sp)
+                Text(item.icon, fontSize = 31.sp)
+                AsyncImage(
+                    model = item.photo,
+                    contentDescription = item.name,
+                    modifier = Modifier.size(70.dp),
+                    contentScale = ContentScale.Crop
+                )
             }
         }
         Spacer(Modifier.height(7.dp))
