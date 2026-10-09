@@ -48,3 +48,5 @@
 @keyframes ali-glow { 0%,100%{box-shadow:0 8px 20px #a11a3355} 50%{box-shadow:0 8px 35px #e5091490} }
 @media(max-width:680px) { .partner-actions{grid-template-columns:1fr} header .header-buttons {flex-wrap:wrap; justify-content:flex-end} #customerLoginBtn {padding:10px;font-size:13px} .assistant{right:12px;bottom:12px} .partner-callouts{padding:36px 5%} }
 @media(prefers-reduced-motion:reduce) { .ali-orb,.assistant-button,.ali-orb:before,.ali-orb:after{animation:none} }
+
+.customer-dialog [hidden], .partner-callouts [hidden] {display:none!important}
