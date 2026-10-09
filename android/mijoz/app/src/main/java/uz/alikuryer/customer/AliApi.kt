@@ -188,9 +188,13 @@ object AliApi {
             JSONObject().put("body", body), token)
     }
 
-    suspend fun chat(message: String): String {
+    suspend fun chat(
+        message: String, token: String? = null, retainHistory: Boolean = false
+    ): String {
         val body = JSONObject().put("message", message)
-        val reply = JSONObject(request("POST", "/api/assistant/chat", body))
+        val endpoint = if (token == null) "/api/assistant/chat" else "/api/v1/assistant/chat"
+        if (token != null) body.put("retain_history", retainHistory)
+        val reply = JSONObject(request("POST", endpoint, body, token))
             .optString("reply", "")
         if (reply.isBlank()) throw IllegalStateException("Yordamchi javob bermadi")
         return reply
