@@ -83,6 +83,13 @@ internal fun AliPromoHero(onExplore: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(174.dp)
         .clip(RoundedCornerShape(25.dp))
         .background(Brush.linearGradient(listOf(AliBlack, Color(0xFF3A1C24), AliRed)))) {
+        AsyncImage(
+            model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1100&q=85",
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            alpha = 0.25f
+        )
         Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("BIR BOSISHDA", color = Color(0xFFFFB9BF), fontSize = 11.sp,
@@ -152,6 +159,18 @@ internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
             Box(Modifier.fillMaxWidth().height(125.dp)
                 .background(Brush.horizontalGradient(listOf(Color(0xFF221F25),
                     Color(0xFF5B2931), Color(0xFFA9333B))))) {
+                val coverUrl = when (restaurant.id % 3) {
+                    0 -> "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=960&q=70"
+                    1 -> "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=960&q=70"
+                    else -> "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=960&q=70"
+                }
+                AsyncImage(
+                    model = coverUrl,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alpha = 0.22f
+                )
                 Row(Modifier.fillMaxSize().padding(17.dp),
                     verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(71.dp).clip(RoundedCornerShape(20.dp))
