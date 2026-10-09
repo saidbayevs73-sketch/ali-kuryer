@@ -8,7 +8,7 @@ Admin, kuryer va restoran hisoblari mijoz hisobidan alohida. Ommaviy HTML panell
 - site-assets/customer.js hisob, ariza va yordam konfiguratsiyasi: https://ali-kuryer.onrender.com — FastAPI.
 - Har ikkala URL Render xizmatlari bilan solishtirilib tasdiqlanishi kerak.
 - FastAPI main branch orders router faqat status endpointiga ega; uni eski checkout serveri o‘rniga qo‘ymang.
-- PR #4 alohida sinov integratsiyasi; SQLite sxema migratsiyasi talab qiladi. Bu PR bazani o‘zgartirmaydi.
+- PR #4 alohida sinov integratsiyasi; SQLite sxema migratsiyasi talab qiladi. Bu PR mavjud jadvallarni almashtirmaydi, lekin GPS/manzil uchun web_order_details nomli yangi jadval qo‘shadi; backup va restore sinovi kerak.
 
 ## Muhit
 FastAPI uchun .env.customer.example dagi nomlardan foydalaning. .env fayli avtomatik yuklanishiga tayanmang: qiymatlarni Render Environment orqali kiriting.
@@ -54,3 +54,7 @@ Staging dalillari va backup/rollback tayyor bo‘lgandan keyin PRni main bilan b
 - 2026-10-09 10:08:10Z–12:04:00Z oralig‘ida error/Traceback/failed filtrida xatolar qaytmadi. Bu endpointlar va buyurtmalar to‘liq tekshirilganini bildirmaydi.
 - FastAPI/support SQLite saqlanishi doimiy disksiz kafolatlanmaydi. Disk yoki managed DBga ko‘chirishdan oldin mavjud fayllar va zaxiralarni olib, tiklashni tekshirish kerak; SUPPORT_DB_PATH ni mavjud bo‘lmagan mountga shunchaki o‘zgartirmang.
 - Izolyatsiyalangan JavaScript tekshiruvi: xarita oldidan tasdiq yo‘q, xarita preview tasdiq bermaydi, alohida tasdiq koordinatani saqlaydi, bo‘sh yoki noto‘g‘ri koordinata rad etiladi.
+
+## Buyurtma API tuzatishi
+Jonli /api/restaurants tekshiruvida 200 text/html qaytdi. legacy_customer_api.py endi ali_kuryer.py ga ulanib /api/restaurants, /api/menu, /api/settings, /api/health va POST /api/orders JSON endpointlarini beradi. To‘lov faqat Naqd, narx serverdagi tasdiqlangan menyudan hisoblanadi. GPS va yetkazish tafsilotlari web_order_details jadvalida saqlanadi.
+Legacy xodim panellari ham standart holatda yopiladi. Alohida domen tayyor bo‘lgach STAFF_WEB_HOST=haqiqiy-xodim-domenini belgilang; o‘sha domenni Render xizmatiga ulang va HTTPSni tekshiring. Domen nomi faqat namuna: uni mavjud deb qabul qilmang. Xodimlar kirishi tayyorlanmasdan ishlab turgan admin ish jarayonini uzadigan deploy qilmang.
