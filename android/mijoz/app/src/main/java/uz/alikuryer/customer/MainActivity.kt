@@ -1,5 +1,14 @@
 package uz.alikuryer.customer
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import java.util.Locale
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -99,6 +108,9 @@ private fun AliCustomerApp() {
     var menuFilter by remember { mutableStateOf("Barchasi") }
     var address by remember { mutableStateOf("") }
     var addressTemp by remember { mutableStateOf("") }
+    var customerLatitude by remember { mutableStateOf<Double?>(null) }
+    var customerLongitude by remember { mutableStateOf<Double?>(null) }
+
     var editAddress by remember { mutableStateOf(false) }
     var session by remember { mutableStateOf<Session?>(null) }
     var fullName by remember { mutableStateOf("") }
@@ -160,6 +172,66 @@ private fun AliCustomerApp() {
         }
     }
 
+
+    fun readGpsLocation() {
+        val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val hasFine = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val hasCoarse = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!hasFine && !hasCoarse) {
+            message = "GPS uchun telefondan ruxsat bering."
+            return
+        }
+        try {
+            val provider = when {
+                hasFine && manager.isProviderEnabled(LocationManager.GPS_PROVIDER) ->
+                    LocationManager.GPS_PROVIDER
+                manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ->
+                    LocationManager.NETWORK_PROVIDER
+                else -> {
+                    message = "Telefon sozlamalaridan joylashuvni yoqing."
+                    return
+                }
+            }
+            if (Build.VERSION.SDK_INT >= 30) {
+                manager.getCurrentLocation(provider, null, context.mainExecutor) { location ->
+                    if (location == null) {
+                        message = "GPS nuqtasi olinmadi. Manzilni qo‘lda kiriting."
+                    } else {
+                        customerLatitude = location.latitude
+                        customerLongitude = location.longitude
+                        message = "GPS nuqtasi belgilandi. Endi to‘liq ko‘cha va uy raqamini kiriting."
+                    }
+                }
+            } else {
+                val location = manager.getLastKnownLocation(provider)
+                if (location == null) {
+                    message = "GPS nuqtasi topilmadi. Manzilni qo‘lda kiriting."
+                } else {
+                    customerLatitude = location.latitude
+                    customerLongitude = location.longitude
+                    message = "GPS nuqtasi belgilandi."
+                }
+            }
+        } catch (_: SecurityException) {
+            message = "GPS ruxsatini tekshiring."
+        } catch (_: IllegalArgumentException) {
+            message = "GPS xizmati hozircha ishlamadi."
+        }
+    }
+
+    val gpsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        if (granted.values.any { it }) {
+            readGpsLocation()
+        } else {
+            message = "Joylashuv ruxsati berilmadi. Manzilni qo‘lda kiriting."
+        }
+    }
 
     fun loadRestaurants() {
         scope.launch {
@@ -265,6 +337,32 @@ private fun AliCustomerApp() {
                     OutlinedTextField(addressTemp, { addressTemp = it },
                         label = { Text("Shahar, ko‘cha, uy raqami") },
                         modifier = Modifier.fillMaxWidth(), minLines = 2)
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = {
+                            gpsPermissionLauncher.launch(arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            ))
+                        },
+                        shape = RoundedCornerShape(13.dp)
+                    ) {
+                        Icon(Icons.Default.MyLocation, null, tint = AliRed)
+                        Spacer(Modifier.width(7.dp))
+                        Text("GPS nuqtamni aniqlash")
+                    }
+                    if (customerLatitude != null && customerLongitude != null) {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "📍 GPS: " + String.format(
+                                Locale.US, "%.5f, %.5f",
+                                customerLatitude!!, customerLongitude!!
+                            ),
+                            fontSize = 12.sp, color = AliMuted
+                        )
+                    }
+                    Text("GPS faqat ruxsatingiz bilan olinadi va buyurtma manziliga " +
+                        "biriktiriladi.", fontSize = 10.sp, color = AliMuted)
                 }
             },
             confirmButton = {
@@ -742,7 +840,8 @@ private fun AliCustomerApp() {
                                             try {
                                                 val result = AliApi.createOrder(
                                                     session!!.token, selected!!.id,
-                                                    address, phone, cart, privacyAccepted
+                                                    address, phone, cart, privacyAccepted,
+                                                    customerLatitude, customerLongitude
                                                 )
                                                 activeOrder = result
                                                 activeOrderId = result.id
