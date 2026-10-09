@@ -1,0 +1,28 @@
+name: Ali Kuryer isolated tests
+
+on:
+  push:
+    branches:
+      - 'feature/customer-ui-and-complaints-20261009'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Python syntax checks
+        run: python -m compileall -q app main.py tests
+      - name: FastAPI API and role tests
+        env:
+          DATABASE_URL: sqlite:///./isolated_ci_db.sqlite
+          SECRET_KEY: test-ci-key-only-should-never-be-used-in-prod
+          ENVIRONMENT: development
+        run: pytest -q tests/test_startup.py tests/test_customer_workflow.py tests/test_staff_workflow.py
+      - name: JavaScript syntax check
+        run: node --check app/static/app.js
