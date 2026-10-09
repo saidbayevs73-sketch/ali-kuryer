@@ -4,6 +4,8 @@ import math
 import os
 import re
 import secrets
+import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -22,6 +24,19 @@ def install(legacy):
     old_end_headers = Handler.end_headers
 
     def initialize():
+        # Take a consistent SQLite snapshot before the first customer API migration.
+        database_path = Path(legacy['DB']).resolve()
+        marker = database_path.parent / (database_path.name + '.customer-api-backup-complete')
+        if database_path.is_file() and not marker.exists():
+            stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+            backup_path = database_path.parent / (database_path.name + '.before-customer-' + stamp + '.sqlite')
+            with sqlite3.connect(str(database_path)) as source, sqlite3.connect(str(backup_path)) as target:
+                source.backup(target)
+                if target.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
+                    raise RuntimeError('Database backup integrity check failed')
+            os.chmod(backup_path, 0o600)
+            marker.write_text(backup_path.name, encoding='utf-8')
+            print('Customer API: pre-migration SQLite backup verified', flush=True)
         old_init()
         with legacy['conn']() as db:
             db.execute('''CREATE TABLE IF NOT EXISTS web_order_details (
