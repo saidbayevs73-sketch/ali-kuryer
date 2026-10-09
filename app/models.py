@@ -113,3 +113,14 @@ class CourierLocation(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class VideoRoom(Base):
+    __tablename__ = "video_rooms"
+
+    id = Column(Integer, primary_key=True)
+    room_code = Column(String(100), unique=True, nullable=False, index=True)
+    title = Column(String(120), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
