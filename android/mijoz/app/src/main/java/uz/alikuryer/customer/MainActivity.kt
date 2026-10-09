@@ -107,6 +107,58 @@ private fun AliCustomerApp() {
     var registerMode by remember { mutableStateOf(false) }
     var chatText by remember { mutableStateOf("") }
     val chat = remember { mutableStateListOf<Pair<Boolean, String>>() }
+    var privacyAccepted by remember { mutableStateOf(false) }
+    var myOrders by remember { mutableStateOf<List<AliOrder>>(emptyList()) }
+    var activeOrderId by remember { mutableIntStateOf(0) }
+    var activeOrder by remember { mutableStateOf<AliOrder?>(null) }
+    var supportMessages by remember { mutableStateOf<List<AliChatMessage>>(emptyList()) }
+    var orderMessages by remember { mutableStateOf<List<AliChatMessage>>(emptyList()) }
+    var conversationText by remember { mutableStateOf("") }
+
+    fun openSupport() {
+        if (session == null) {
+            message = "Operator chatidan foydalanish uchun Profil orqali kiring."
+            page = "profile"
+        } else {
+            conversationText = ""
+            page = "support"
+        }
+    }
+
+    fun loadOrder() {
+        if (activeOrderId == 0 || session == null) return
+        scope.launch {
+            try {
+                activeOrder = AliApi.orderDetails(session!!.token, activeOrderId)
+            } catch (e: Exception) {
+                message = e.message ?: "Buyurtma ma’lumotlari olinmadi"
+            }
+        }
+    }
+
+    LaunchedEffect(page, session?.token, activeOrderId) {
+        val token = session?.token ?: return@LaunchedEffect
+        while (true) {
+            try {
+                when (page) {
+                    "orders" -> myOrders = AliApi.myOrders(token)
+                    "order_status" -> if (activeOrderId > 0) {
+                        activeOrder = AliApi.orderDetails(token, activeOrderId)
+                    }
+                    "support" -> supportMessages = AliApi.supportMessages(token)
+                    "order_chat" -> if (activeOrderId > 0) {
+                        orderMessages = AliApi.orderMessages(token, activeOrderId)
+                    }
+                }
+            } catch (e: Exception) {
+                if (page in listOf("orders", "order_status", "support", "order_chat")) {
+                    message = "Server bilan bog‘lanishda xato: " + (e.message ?: "")
+                }
+            }
+            delay(7000)
+        }
+    }
+
 
     fun loadRestaurants() {
         scope.launch {
@@ -238,11 +290,14 @@ private fun AliCustomerApp() {
                     Row(Modifier.fillMaxWidth().height(74.dp)
                         .padding(horizontal = 16.dp),
                         verticalAlignment = Alignment.CenterVertically) {
-                        if (page == "menu" || page == "checkout" || page == "chat") {
+                        if (page in listOf("menu", "checkout", "chat", "support", "order_status", "order_chat")) {
                             IconButton(onClick = {
                                 page = when (page) {
                                     "checkout" -> "cart"
                                     "chat" -> "home"
+                                    "support" -> "profile"
+                                    "order_chat" -> "order_status"
+                                    "order_status" -> "orders"
                                     else -> "home"
                                 }
                             }) { Icon(Icons.Default.ArrowBack, "Orqaga", tint = AliBlack) }
@@ -278,7 +333,7 @@ private fun AliCustomerApp() {
             }
         },
         bottomBar = {
-            if (page != "chat") NavigationBar(
+            if (page !in listOf("chat", "support", "order_chat")) NavigationBar(
                 containerColor = Color.White, tonalElevation = 7.dp) {
                 data class Nav(val key: String, val title: String, val icon: @Composable () -> Unit)
                 val tabs = listOf(
@@ -382,6 +437,27 @@ private fun AliCustomerApp() {
                                 }
                                 Icon(Icons.Default.ArrowForwardIos, null,
                                     tint = AliRed, modifier = Modifier.size(17.dp))
+                            }
+                        }
+                    }
+                    item {
+                        Surface(
+                            onClick = { openSupport() },
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color.White,
+                            border = BorderStroke(1.dp, AliBorder)
+                        ) {
+                            Row(Modifier.fillMaxWidth().padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.HeadsetMic, null, tint = AliRed)
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("Operator bilan onlayn chat",
+                                        fontWeight = FontWeight.Bold, color = AliBlack)
+                                    Text("Buyurtma yoki xizmat haqida savol bering",
+                                        fontSize = 12.sp, color = AliMuted)
+                                }
+                                Icon(Icons.Default.ChevronRight, null, tint = AliRed)
                             }
                         }
                     }
@@ -597,60 +673,187 @@ private fun AliCustomerApp() {
                     }
                 }
 
-                "checkout" -> Column(Modifier.fillMaxSize().padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                    AliSectionTitle("Rasmiylashtirish", "Ma’lumotlaringizni tekshiring")
+                "checkout" -> LazyColumn(
+                    contentPadding = PaddingValues(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item { AliSectionTitle("Buyurtmani rasmiylashtirish",
+                        "Taomlar, manzil va telefonni tekshiring") }
                     if (session == null) {
-                        AliEmptyState("🔐", "Hisobga kiring",
-                            "Buyurtma berishdan oldin mijoz sifatida kiring.",
-                            "Kirish") { page = "profile" }
+                        item {
+                            AliEmptyState("🔐", "Tizimga kiring",
+                                "Buyurtma berish uchun mijoz hisobi kerak.",
+                                "Kirish") { page = "profile" }
+                        }
                     } else {
-                        OutlinedTextField(address, { address = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Yetkazish manzili") },
-                            leadingIcon = { Icon(Icons.Default.LocationOn, null) },
-                            minLines = 2, shape = RoundedCornerShape(16.dp))
-                        OutlinedTextField(phone, { phone = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Telefon raqamingiz") },
-                            singleLine = true, shape = RoundedCornerShape(16.dp))
-                        Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
-                            Column(Modifier.padding(17.dp)) {
-                                Text("To‘lov usuli: naqd", fontWeight = FontWeight.Bold)
-                                Spacer(Modifier.height(8.dp))
-                                Text("Taomlar jami: ${priceText(subtotal)}",
-                                    fontWeight = FontWeight.ExtraBold, fontSize = 19.sp)
+                        item {
+                            OutlinedTextField(address, { address = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Yetkazish manzili") },
+                                leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                                minLines = 2, shape = RoundedCornerShape(16.dp))
+                        }
+                        item {
+                            OutlinedTextField(phone, { phone = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Telefon raqami") }, singleLine = true,
+                                shape = RoundedCornerShape(16.dp))
+                        }
+                        item {
+                            Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(17.dp)) {
+                                    Text("To‘lov: naqd", fontWeight = FontWeight.Bold)
+                                    Spacer(Modifier.height(9.dp))
+                                    Text("Taomlar jami: ${priceText(subtotal)}",
+                                        fontSize = 19.sp, fontWeight = FontWeight.ExtraBold)
+                                    Spacer(Modifier.height(6.dp))
+                                    Text("Yetkazish narxi serverda hozircha hisoblanmaydi.",
+                                        fontSize = 11.sp, color = AliMuted)
+                                }
                             }
                         }
-                        Surface(color = Color(0xFFFFF3DF),
-                            shape = RoundedCornerShape(15.dp)) {
-                            Text("Buyurtma qabul qilish serveri hali ishga tushirilmagan. " +
-                                "Bu test versiyada buyurtma jo‘natilmaydi va pul yechilmaydi.",
-                                modifier = Modifier.padding(14.dp), color = AliBlack,
-                                fontSize = 12.sp, lineHeight = 18.sp)
+                        item {
+                            Row(verticalAlignment = Alignment.Top) {
+                                Checkbox(checked = privacyAccepted,
+                                    onCheckedChange = { privacyAccepted = it })
+                                Spacer(Modifier.width(6.dp))
+                                Text("Manzilim va telefonimni buyurtmani yetkazish uchun " +
+                                    "qayta ishlashga roziman. Buyurtma va operator yozishmalari " +
+                                    "xizmat sifatini nazorat qilish maqsadida vakolatli " +
+                                    "administrator tomonidan ko‘rilishi mumkin.",
+                                    modifier = Modifier.padding(top = 11.dp),
+                                    fontSize = 12.sp, lineHeight = 18.sp)
+                            }
                         }
-                        Button(onClick = {
-                            message = if (address.trim().length < 5 ||
-                                !Regex("^\\+998[0-9]{9}$").matches(phone))
-                                "Manzil va telefon raqamini to‘liq kiriting"
-                            else "Buyurtma serveri hali ulanmagan; buyurtma yuborilmadi."
-                        }, modifier = Modifier.fillMaxWidth().height(54.dp),
-                            shape = RoundedCornerShape(14.dp)) {
-                            Text("Ma’lumotlarni tekshirish")
+                        item {
+                            Button(
+                                onClick = {
+                                    when {
+                                        cartCount < 1 || selected == null ->
+                                            message = "Savat bo‘sh."
+                                        address.trim().length < 5 ||
+                                        !Regex("^\\+998[0-9]{9}$").matches(phone) ->
+                                            message = "Manzil va telefon raqamini kiriting."
+                                        !privacyAccepted ->
+                                            message = "Buyurtma uchun ma’lumotlarga rozilik kerak."
+                                        else -> scope.launch {
+                                            busy = true
+                                            try {
+                                                val result = AliApi.createOrder(
+                                                    session!!.token, selected!!.id,
+                                                    address, phone, cart, privacyAccepted
+                                                )
+                                                activeOrder = result
+                                                activeOrderId = result.id
+                                                cart = emptyMap()
+                                                page = "order_status"
+                                                message = "Buyurtma №${result.id} qabul qilindi."
+                                            } catch (e: Exception) {
+                                                message = "Buyurtma yuborilmadi: " +
+                                                    (e.message ?: "Server xatosi")
+                                            } finally { busy = false }
+                                        }
+                                    }
+                                },
+                                enabled = !busy,
+                                modifier = Modifier.fillMaxWidth().height(55.dp),
+                                shape = RoundedCornerShape(15.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, null)
+                                Spacer(Modifier.width(9.dp))
+                                Text("Buyurtma berish", fontWeight = FontWeight.ExtraBold)
+                            }
                         }
                     }
                 }
 
-                "orders" -> LazyColumn(contentPadding = PaddingValues(16.dp)) {
-                    item {
-                        AliSectionTitle("Buyurtmalarim", "Buyurtmalaringiz tarixi")
-                        Spacer(Modifier.height(16.dp))
-                        AliEmptyState("📦", "Buyurtma tarixi",
-                            "Buyurtmalar API ulanmagani uchun hozircha haqiqiy " +
-                                "buyurtma holatlarini ko‘rsata olmaymiz.",
-                            "Oshxonalarni ko‘rish") { page = "home" }
+                "orders" -> AliOrdersScreen(
+                    orders = myOrders,
+                    loggedIn = session != null,
+                    onLogin = { page = "profile" },
+                    onOpen = {
+                        activeOrderId = it.id
+                        activeOrder = it
+                        page = "order_status"
+                    },
+                    onRefresh = {
+                        if (session != null) scope.launch {
+                            try { myOrders = AliApi.myOrders(session!!.token) }
+                            catch (e: Exception) {
+                                message = e.message ?: "Buyurtmalar yangilanmadi"
+                            }
+                        }
                     }
-                }
+                )
+
+                "order_status" -> AliOrderTracker(
+                    order = activeOrder,
+                    onRefresh = { loadOrder() },
+                    onSupport = { openSupport() },
+                    onOrderChat = {
+                        conversationText = ""
+                        page = "order_chat"
+                    }
+                )
+
+                "support" -> AliConversationScreen(
+                    title = "Operator bilan onlayn chat",
+                    note = "Xabarlar server orqali yetkaziladi • 7 soniyada yangilanadi",
+                    messages = supportMessages,
+                    text = conversationText,
+                    onText = { conversationText = it.take(1000) },
+                    onRefresh = {
+                        if (session != null) scope.launch {
+                            try { supportMessages = AliApi.supportMessages(session!!.token) }
+                            catch (e: Exception) { message = e.message ?: "Chat ishlamadi" }
+                        }
+                    },
+                    onSend = {
+                        val body = conversationText.trim()
+                        if (body.isNotEmpty() && session != null) {
+                            conversationText = ""
+                            scope.launch {
+                                try {
+                                    AliApi.sendSupportMessage(session!!.token, body)
+                                    supportMessages = AliApi.supportMessages(session!!.token)
+                                } catch (e: Exception) {
+                                    conversationText = body
+                                    message = e.message ?: "Xabar yetkazilmadi"
+                                }
+                            }
+                        }
+                    }
+                )
+
+                "order_chat" -> AliConversationScreen(
+                    title = "Buyurtma №${activeOrderId} chati",
+                    note = "Kuryer, oshxona va operator bilan yozishmalar",
+                    messages = orderMessages,
+                    text = conversationText,
+                    onText = { conversationText = it.take(1000) },
+                    onRefresh = {
+                        if (session != null && activeOrderId > 0) scope.launch {
+                            try {
+                                orderMessages = AliApi.orderMessages(session!!.token, activeOrderId)
+                            } catch (e: Exception) { message = e.message ?: "Chat ishlamadi" }
+                        }
+                    },
+                    onSend = {
+                        val body = conversationText.trim()
+                        if (body.isNotEmpty() && session != null && activeOrderId > 0) {
+                            conversationText = ""
+                            scope.launch {
+                                try {
+                                    AliApi.sendOrderMessage(session!!.token, activeOrderId, body)
+                                    orderMessages = AliApi.orderMessages(session!!.token, activeOrderId)
+                                } catch (e: Exception) {
+                                    conversationText = body
+                                    message = e.message ?: "Xabar yetkazilmadi"
+                                }
+                            }
+                        }
+                    }
+                )
 
                 "profile" -> LazyColumn(contentPadding = PaddingValues(18.dp),
                     verticalArrangement = Arrangement.spacedBy(13.dp)) {
@@ -752,10 +955,8 @@ private fun AliCustomerApp() {
                             }
                         }
                         Spacer(Modifier.height(7.dp))
-                        Surface(onClick = {
-                            context.startActivity(Intent(Intent.ACTION_VIEW,
-                                Uri.parse("https://t.me/AliKuryerYordamBot")))
-                        }, color = Color.White, shape = RoundedCornerShape(16.dp)) {
+                        Surface(onClick = { openSupport() },
+                            color = Color.White, shape = RoundedCornerShape(16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.SupportAgent, null, tint = AliRed)
@@ -766,7 +967,7 @@ private fun AliCustomerApp() {
                             }
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text("Ali Kuryer • mijoz ilovasi 1.1.0",
+                        Text("Ali Kuryer • mijoz ilovasi 1.3.0",
                             color = AliMuted, fontSize = 11.sp)
                     }
                 }
