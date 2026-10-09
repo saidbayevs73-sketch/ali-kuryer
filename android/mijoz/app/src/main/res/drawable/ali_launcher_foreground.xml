@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Original Ali Kuryer speed-A mark in white, designed for a red badge -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M50,26 L64,26 L81,73 L68,73 L64,60 L48,60 L44,73 L31,73 Z M56,39 L51,51 L61,51 Z"/>
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M20,41 L37,41 L35,46 L20,46 Z M15,52 L34,52 L32,57 L15,57 Z M21,63 L31,63 L29,68 L21,68 Z"/>
+</vector>
