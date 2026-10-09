@@ -53,9 +53,9 @@ class AssistantChatIn(BaseModel):
 @router.get("/api/customer-experience/config")
 def public_config():
     # OAuth client IDs are public. Never put an API secret in this response.
-    bot_url = os.getenv("ALI_HELP_BOT_URL", "https://t.me/AliKuryerBot")
+    bot_url = os.getenv("ALI_HELP_BOT_URL", "https://t.me/AliKuryerYordamBot")
     if not bot_url.startswith("https://t.me/"):
-        bot_url = "https://t.me/AliKuryerBot"
+        bot_url = "https://t.me/AliKuryerYordamBot"
     return {
         "google_client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
         "ai_available": bool(os.getenv("AI_API_KEY") and os.getenv("AI_API_URL")),
@@ -142,7 +142,7 @@ async def assistant_chat(data: AssistantChatIn):
         "Maxfiy ma’lumot va karta raqamlarini so‘ramang. "
         "Mijozga ovqat tanlash, buyurtma tartibi, hamkorlik va kuryer "
         "bo‘lish bo‘yicha yordam bering. Operatorga murojaatni "
-        "https://t.me/AliKuryerBot manziliga yo‘naltiring. "
+        "https://t.me/AliKuryerYordamBot manziliga yo‘naltiring. "
         "Tibbiy maslahat yoki kafolatlangan yetkazish va’dasini bermang."
     )
     try:
