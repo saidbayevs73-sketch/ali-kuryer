@@ -253,23 +253,60 @@
     if(header){
       const headline=$("strong",header);
       if(headline)headline.textContent="✨ Muhammadali — yordamchi";
-      header.appendChild(el("div","ali-chip","Savolingizga javob va taom tanlashda ko‘mak"));
+      header.appendChild(el("div","ali-chip","Faqat taom va ovqatlanish. Kaloriya — taxminiy baho."));
     }
     const chat=$("#chat");
     if(chat){const status=el("div","ali-ai-status","Muhammadali yuklanmoqda...");status.id="aliAiStatus";chat.appendChild(status);}
+    let selectedImage = null;
+    const controls = el("div", "", "");
+    controls.style.padding = "10px";
+    controls.innerHTML = '<label>📷 Ovqat rasmi (JPEG/PNG/WebP, 2 MB gacha)<input id="aliFoodPhoto" type="file" accept="image/jpeg,image/png,image/webp"></label><label style="display:block"><input id="aliPhotoConsent" type="checkbox"> Rasmni AI xizmatiga tahlil uchun yuborishga roziman.</label><button id="aliPhotoRemove" type="button">Rasmni olib tashlash</button><p id="aliPhotoStatus" role="status"></p>';
+    $(".chat-input")?.before(controls);
+    $("#aliFoodPhoto").addEventListener("change", async event => {
+      selectedImage = null;
+      const file = event.target.files[0];
+      $("#aliPhotoConsent").checked = false;
+      if (!file) return;
+      if (!["image/jpeg","image/png","image/webp"].includes(file.type) || file.size > 2000000) {
+        $("#aliPhotoStatus").textContent = "JPEG/PNG/WebP rasm tanlang, hajmi 2 MB gacha.";
+        event.target.value = ""; return;
+      }
+      try {
+        selectedImage = await new Promise((resolve,reject) => {
+          const reader = new FileReader(); reader.onload=()=>resolve(reader.result);
+          reader.onerror=reject; reader.readAsDataURL(file);
+        });
+        $("#aliPhotoStatus").textContent = "Rasm tanlandi. Porsiya va tarkibni yozing. Kaloriya taxminiy bo‘ladi.";
+      } catch (_) { $("#aliPhotoStatus").textContent="Rasm o‘qilmadi."; }
+    });
+    $("#aliPhotoRemove").addEventListener("click", () => {
+      selectedImage=null; $("#aliFoodPhoto").value=""; $("#aliPhotoConsent").checked=false;
+      $("#aliPhotoStatus").textContent="";
+    });
     const original=window.askAli;
     window.askAli=async function(question) {
       const input=$("#aliInput");
-      const q=String(question||input?.value||"").trim();
+      const q=String(question||input?.value||(selectedImage ? "Rasmdagi taomni baholang: porsiya va taxminiy kaloriya haqida ayting." : "")).trim();
       if (!q) return;
-      if (!config.ai_available) {if(typeof original==="function")return original(q);return;}
+      const blocked = /(sayt|website|site|kod|code|yaratuv|yaratgan|kim yarat|kirish|login|parol|password|token|api|server|admin|prompt|system|ignore|сайт|парол)/i;
+      if (blocked.test(q)) {
+        $("#chatBody").appendChild(el("div","message","Muhammadali: Men faqat taom va ovqatlanish haqida yordam beraman."));
+        return;
+      }
+      if (selectedImage && !$("#aliPhotoConsent").checked) {
+        $("#aliPhotoStatus").textContent="Rasmni yuborishdan oldin rozilikni belgilang."; return;
+      }
+      if (!config.ai_available) {
+        if (selectedImage) {$("#aliPhotoStatus").textContent="AI hali ulanmagan. Rasm hozir yuborilmadi.";return;}
+        if(typeof original==="function")return original(q);return;
+      }
       if(input)input.value="";
       const body=$("#chatBody");
       if(!body)return;
       const userBox=el("div","message");userBox.appendChild(el("strong","","Siz: "));userBox.appendChild(document.createTextNode(q));body.appendChild(userBox);
       const answerBox=el("div","message","Muhammadali javob yozmoqda…");body.appendChild(answerBox);body.scrollTop=body.scrollHeight;
       try {
-        const answer=await api("/api/assistant/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q})});
+        const answer=await api("/api/assistant/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,image_data:selectedImage,image_consent:!!selectedImage && $("#aliPhotoConsent").checked})});
         answerBox.textContent="Muhammadali: "+answer.reply;
       } catch(_) {answerBox.textContent="AI vaqtincha javob bermadi. Telegram yordamchi botimizga yozishingiz mumkin: "+config.bot_url;}
       body.scrollTop=body.scrollHeight;
