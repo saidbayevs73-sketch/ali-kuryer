@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ali Kuryer — operator (maxfiy)</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#17171b;background:#f6f7f9}
+*{box-sizing:border-box}body{margin:0}.top{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:#17171b;color:#fff}
+.top b{font-size:21px}.top b span{color:#ff3347}.layout{display:grid;grid-template-columns:300px minmax(0,1fr);min-height:calc(100vh - 70px)}
+aside{background:#fff;border-right:1px solid #ededed;padding:18px;overflow-y:auto}
+main{padding:18px;display:flex;flex-direction:column;max-height:calc(100vh - 70px)}
+button{border:0;border-radius:12px;padding:12px 17px;cursor:pointer;font-weight:700}
+button.red{background:#e02032;color:#fff}button.dark{background:#17171b;color:#fff}
+button.ghost{background:#f2f3f6;color:#17171b}input{width:100%;border-radius:12px;border:1px solid #dfe0e5;padding:13px;margin:5px 0 12px;font-size:15px}
+.card{background:white;padding:24px;margin:10vh auto;max-width:410px;border-radius:24px}
+#app{display:none}.thread{width:100%;text-align:left;margin:5px 0;background:#f8f8fa;color:#17171b;border:1px solid #e6e6e8}
+.thread.active{border-color:#e02032;background:#fff0f2}
+.messages{background:#fff;border-radius:18px;flex:1;min-height:160px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;border:1px solid #ededed}
+.msg{border-radius:14px;padding:12px;background:#f3f4f7;max-width:90%}.msg strong{display:block;color:#e02032;font-size:12px;margin-bottom:5px}
+.bottom{display:flex;gap:8px;margin-top:12px}.bottom input{margin:0;flex:1}
+header small{display:block;color:#999}#warning{color:#a52a31;margin:10px}
+@media(max-width:640px){.layout{grid-template-columns:1fr}.layout aside{max-height:31vh;border:0;border-bottom:1px solid #eee}main{max-height:64vh}.top{padding:13px}}
+</style>
+</head>
+<body>
+<header class="top"><div><b><span>Ali</span>Kuryer.UZ</b><small>Operator — faqat vakolatli administrator</small></div><button class="ghost" id="exit" hidden>Chiqish</button></header>
+<section class="card" id="login">
+<h2>Operator hisobiga kirish</h2>
+<p>Admin telefon va parolingizni kiriting.</p>
+<label>Telefon<input id="phone" inputmode="tel" autocomplete="username" placeholder="+998XXXXXXXXX"></label>
+<label>Parol<input id="password" type="password" autocomplete="current-password"></label>
+<button class="red" id="signIn">Kirish</button>
+<p id="loginError" role="alert"></p>
+</section>
+<div id="app" class="layout">
+<aside>
+<h2>Mijoz xabarlari</h2>
+<button class="ghost" id="refreshThreads">Yangilash</button>
+<div id="threads"></div>
+<hr>
+<h3>Buyurtma chatlari</h3>
+<div id="orders"></div>
+</aside>
+<main>
+<h2 id="conversationTitle">Suhbatni tanlang</h2>
+<p style="font-size:12px;color:#6e7178">Buyurtma va operator yozishmalari xizmat sifati uchun ko‘rilishi mumkin. Administrator kirishlari nazorat qilinishi shart.</p>
+<div class="messages" id="messages" aria-live="polite"></div>
+<div class="bottom"><input id="message" placeholder="Mijozga xabar yozish..." maxlength="1000"><button class="red" id="send">Yuborish</button></div>
+<div id="warning" role="status"></div>
+</main>
+</div>
+<script>
+"use strict";
+let token="", selected=null, poll=null;
+const $=id=>document.getElementById(id);
+async function api(path,method="GET",body){
+ const r=await fetch(path,{method,cache:"no-store",headers:{
+  "Authorization":"Bearer "+token,"Content-Type":"application/json"
+ },body:body?JSON.stringify(body):undefined});
+ const d=await r.json().catch(()=>({}));
+ if(!r.ok) throw new Error(typeof d.detail==="string"?d.detail:("Server javobi: "+r.status));
+ return d;
+}
+function node(tag, text, cls){let n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n}
+async function signIn(){
+ $("loginError").textContent="";
+ try {
+  let result=await api("/api/auth/login","POST",{
+    phone:$("phone").value.trim(),password:$("password").value
+  });
+  if(result.role!=="admin")throw new Error("Faqat administrator kirishi mumkin");
+  token=result.access_token;
+  $("password").value="";
+  $("login").style.display="none";$("app").style.display="grid";
+  $("exit").hidden=false;
+  await refreshThreads();
+  poll=setInterval(refreshActive,6500);
+ }catch(e){$("loginError").textContent=e.message}
+}
+function logout(){
+ token="";selected=null;clearInterval(poll);
+ $("app").style.display="none";$("login").style.display="block";$("exit").hidden=true;
+ $("messages").replaceChildren();$("threads").replaceChildren();$("orders").replaceChildren();
+}
+async function refreshThreads(){
+ if(!token)return;
+ try{
+  let threads=await api("/api/v1/admin/support/threads");
+  $("threads").replaceChildren();
+  if(!threads.length)$("threads").append(node("p","Hali mijoz xabari yo‘q."));
+  for(let x of threads){
+   let btn=node("button","Mijoz №"+x.customer_id+" · xabar "+x.last_message_id,"thread");
+   if(selected?.type==="support"&&selected.id===x.customer_id)btn.classList.add("active");
+   btn.onclick=()=>selectThread("support",x.customer_id);
+   $("threads").append(btn);
+  }
+  const orders=await api("/api/v1/staff/orders");
+  $("orders").replaceChildren();
+  for(let x of orders.slice(0,35)){
+   let btn=node("button","Buyurtma №"+x.id+" · "+x.status,"thread");
+   if(selected?.type==="order"&&selected.id===x.id)btn.classList.add("active");
+   btn.onclick=()=>selectThread("order",x.id);
+   $("orders").append(btn);
+  }
+ }catch(e){$("warning").textContent=e.message}
+}
+function selectThread(type,id){
+ selected={type,id};
+ $("conversationTitle").textContent=type==="support"?"Mijoz №"+id:"Buyurtma №"+id;
+ refreshActive();refreshThreads();
+}
+async function refreshActive(){
+ if(!selected||!token)return;
+ try{
+  let path=selected.type==="support"?
+   "/api/v1/support/messages?customer_id="+selected.id:
+   "/api/v1/orders/"+selected.id+"/messages";
+  let msgs=await api(path);
+  let box=$("messages"),wasAtBottom=box.scrollTop+box.clientHeight>=box.scrollHeight-40;
+  box.replaceChildren();
+  for(let m of msgs){
+   let n=node("div",undefined,"msg");
+   n.append(node("strong",m.sender_name||"Foydalanuvchi"),node("div",m.body));
+   box.append(n);
+  }
+  if(wasAtBottom)box.scrollTop=box.scrollHeight;
+  $("warning").textContent="";
+ }catch(e){$("warning").textContent=e.message}
+}
+async function send(){
+ if(!selected||!token)return;
+ let body=$("message").value.trim();if(!body)return;
+ let path=selected.type==="support"?
+  "/api/v1/support/messages?customer_id="+selected.id:
+  "/api/v1/orders/"+selected.id+"/messages";
+ try{
+  await api(path,"POST",{body});$("message").value="";await refreshActive();
+ }catch(e){$("warning").textContent=e.message}
+}
+$("signIn").onclick=signIn;$("exit").onclick=logout;
+$("refreshThreads").onclick=refreshThreads;$("send").onclick=send;
+$("message").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();send()}});
+</script>
+</body></html>
