@@ -2,7 +2,7 @@
 import os
 
 # Use an isolated database; no production services or secrets are required.
-os.environ["DATABASE_URL"] = "sqlite://"
+os.environ["DATABASE_URL"] = "sqlite:////tmp/ali_kuryer_ci_customer.db"
 os.environ["ENVIRONMENT"] = "test"
 os.environ["SECRET_KEY"] = "only-for-regression-tests"
 

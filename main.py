@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 import app.models  # Register SQLAlchemy tables before create_all
@@ -19,7 +20,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth
 from app.routers import support_bot
-from app.routers import customer, panels, restaurant, orders, admin, courier
+from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience
 
 ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
@@ -45,9 +46,27 @@ ensure_admin()
 if STATIC_DIR.is_dir():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+ASSET_DIR = ROOT_DIR / "site-assets"
+if ASSET_DIR.is_dir():
+    app.mount("/site-assets", StaticFiles(directory=str(ASSET_DIR)), name="site-assets")
+LEGAL_DIR = ROOT_DIR / "legal"
+if LEGAL_DIR.is_dir():
+    app.mount("/legal", StaticFiles(directory=str(LEGAL_DIR)), name="legal")
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR)) if TEMPLATE_DIR.is_dir() else None
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://ali-kuryer.uz",
+        "https://www.ali-kuryer.uz",
+        "https://saidbayevs73-sketch.github.io",
+        "https://ali-kuryer.onrender.com",
+    ],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 app.include_router(auth.router)
+app.include_router(customer_experience.router)
 app.include_router(customer.router)
 app.include_router(panels.router)
 app.include_router(restaurant.router)

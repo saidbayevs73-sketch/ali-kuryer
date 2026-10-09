@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - fix/**
+      - feature/**
   pull_request:
 
 jobs:
@@ -20,4 +21,6 @@ jobs:
       - name: Verify Python syntax
         run: python -m compileall -q main.py app
       - name: Test application boot and health
-        run: python -m pytest -q tests/test_render_startup.py
+        run: python -m pytest -q tests/test_render_startup.py tests/test_customer_experience.py
+      - name: Verify customer JavaScript syntax
+        run: node --check site-assets/customer.js
