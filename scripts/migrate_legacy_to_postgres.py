@@ -145,7 +145,8 @@ def inspect(conn):
 def data_rows(conn, table):
     if table not in tables(conn):
         return []
-    return [rowdict(r) for r in conn.execute("SELECT * FROM " + table + " ORDER BY id")]
+    key = "order_id" if table == "web_order_details" else "id"
+    return [rowdict(r) for r in conn.execute("SELECT * FROM " + table + " ORDER BY " + key)]
 
 
 def perform_import(conn):
@@ -327,6 +328,11 @@ def main():
     parser.add_argument("--apply", action="store_true", help="Only after verified legacy write freeze")
     args = parser.parse_args()
     source = Path(os.getenv("ALI_LEGACY_DB_PATH", "/var/data/ali_kuryer.db"))
+    if args.apply and (
+        os.getenv("ALI_MIGRATION_CONFIRMED") != "yes"
+        or os.getenv("ALI_LEGACY_WRITES_FROZEN") != "1"
+    ):
+        raise SystemExit("Migration requires explicit confirmation AND verified legacy write freeze.")
     backup = snapshot(source)
     try:
         with sqlite3.connect("file:" + str(backup) + "?mode=ro", uri=True) as conn:
