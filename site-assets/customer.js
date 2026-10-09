@@ -2,7 +2,7 @@
 (() => {
   "use strict";
   const accountAPI = "https://ali-kuryer.onrender.com";
-  const defaultBot = "https://t.me/AliKuryerBot";
+  const defaultBot = "https://t.me/AliKuryerYordamBot";
   let config = {bot_url: defaultBot, ai_available: false, google_client_id: ""};
   let me = null;
   const $ = (selector, context=document) => context.querySelector(selector);
@@ -110,7 +110,7 @@
       });
     }
     const help = el("section", "public-help");
-    help.innerHTML = `<div><h2>Yordam kerakmi?</h2><p>Buyurtma, kuryerlik va restoran hamkorligi bo‘yicha Telegram yordamchi botimizga yozing.</p></div><a class="ali-help-link" href="https://t.me/AliKuryerBot" target="_blank" rel="noopener noreferrer">💬 Telegram yordamchi bot</a>`;
+    help.innerHTML = `<div><h2>Yordam kerakmi?</h2><p>Buyurtma, kuryerlik va restoran hamkorligi bo‘yicha Telegram yordamchi botimizga yozing.</p></div><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot" target="_blank" rel="noopener noreferrer">💬 Telegram yordamchi bot</a>`;
     section.after(help);
   }
 
@@ -279,7 +279,7 @@
     const footer=$("footer");
     if(!footer)return;
     const links=el("div","legal-links");
-    links.innerHTML='<a href="/legal/offer.html">Ommaviy oferta</a><a href="/legal/privacy.html">Maxfiylik siyosati</a><a class="ali-help-link" href="https://t.me/AliKuryerBot" target="_blank" rel="noopener noreferrer">Yordamchi bot</a><a href="#hamkorlik">Hamkorlik</a>';
+    links.innerHTML='<a href="/legal/offer.html">Ommaviy oferta</a><a href="/legal/privacy.html">Maxfiylik siyosati</a><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot" target="_blank" rel="noopener noreferrer">Yordamchi bot</a><a href="#hamkorlik">Hamkorlik</a>';
     footer.appendChild(links);
   }
   buildPartners();
