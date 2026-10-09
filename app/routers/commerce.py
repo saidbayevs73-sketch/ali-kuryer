@@ -32,6 +32,12 @@ def require_durable_storage():
         raise HTTPException(
             503, "Doimiy PostgreSQL bazasi ulanmagan. Buyurtmalar va chatlar vaqtincha to‘xtatilgan."
         )
+    # Never open checkout immediately upon merely attaching PostgreSQL:
+    # legacy website may still be writing to its original SQLite disk.
+    if is_deployed and os.getenv("ALI_COMMERCE_CUTOVER_ENABLED", "") != "1":
+        raise HTTPException(
+            503, "Ma’lumotlarni ko‘chirish tekshiruvi yakunlanmaguncha yangi buyurtmalar qabul qilinmaydi."
+        )
 
 
 
