@@ -1,11 +1,14 @@
 """Idempotent loyalty points on legacy delivered orders.
 
-Disabled until the admin enables loyalty in settings and defines a rate.
+The approved earning rate is 10,000 UZS per point. Activation is separate.
 Points have no money value or redemption behavior in this module.
 """
 import re
 
 def initialize(db):
+    # User-approved earning rate; keep earning disabled until rollout.
+    db.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('loyalty_sum_per_point','10000')")
+    db.execute("INSERT OR IGNORE INTO settings(key,value) VALUES('loyalty_enabled','0')")
     db.execute("""CREATE TABLE IF NOT EXISTS loyalty_ledger (
         order_id INTEGER PRIMARY KEY REFERENCES orders(id),
         customer_id INTEGER NOT NULL,
