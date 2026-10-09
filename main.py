@@ -16,6 +16,7 @@ import app.models  # Register SQLAlchemy tables before create_all
 from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth
+from app.routers import support_bot
 from app.routers import customer, panels, restaurant, orders, admin, courier
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -44,6 +45,8 @@ app.include_router(restaurant.router)
 app.include_router(orders.router)
 app.include_router(admin.router)
 app.include_router(courier.router)
+app.include_router(support_bot.router)
+app.add_event_handler("startup", support_bot.register_support_webhook)
 
 
 @app.get("/", include_in_schema=False)
