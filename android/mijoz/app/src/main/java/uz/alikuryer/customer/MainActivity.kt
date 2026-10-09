@@ -65,9 +65,9 @@ private fun AliSplash() {
     Surface(color = Color.White, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally) {
-            AliMark(size = 96)
+            AliMark(size = 190)
             Spacer(Modifier.height(18.dp))
-            Text("ALI KURYER", fontWeight = FontWeight.Black, fontSize = 32.sp,
+            Text("ALI KURYER", fontWeight = FontWeight.Black, fontSize = 28.sp,
                 color = AliBlack, letterSpacing = 1.4.sp)
             Spacer(Modifier.height(7.dp))
             Text("MAZALI TAOMLAR. SIZGA YAQIN.", color = AliRed,
