@@ -59,3 +59,56 @@ class OrderItem(Base):
     menu_item_id = Column(Integer, ForeignKey("menu_items.id"))
     quantity = Column(Integer, default=1)
     price = Column(Float, nullable=False)
+
+
+# Additional tables are additive; existing order/customer records are not modified.
+class DeliveryDetail(Base):
+    __tablename__ = "delivery_details"
+
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), unique=True, nullable=False, index=True)
+    recipient_name = Column(String(150), nullable=False)
+    phone = Column(String(30), nullable=False)
+    street = Column(String(160), nullable=False)
+    house = Column(String(40), nullable=False)
+    entrance = Column(String(40), default="")
+    floor = Column(String(40), default="")
+    apartment = Column(String(40), default="")
+    note = Column(String(300), default="")
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    tracking_token = Column(String(80), unique=True, nullable=False, index=True)
+
+
+class Complaint(Base):
+    __tablename__ = "complaints"
+
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True)
+    name = Column(String(150), nullable=False)
+    phone = Column(String(30), nullable=False)
+    message = Column(String(1500), nullable=False)
+    status = Column(String(30), default="new")
+    reply = Column(String(2000), default="")
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class CourierShift(Base):
+    __tablename__ = "courier_shifts"
+
+    id = Column(Integer, primary_key=True)
+    courier_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    selfie_path = Column(String(300), nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    status = Column(String(30), default="pending")
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class CourierLocation(Base):
+    __tablename__ = "courier_locations"
+
+    courier_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
