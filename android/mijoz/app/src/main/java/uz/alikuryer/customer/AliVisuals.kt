@@ -1,6 +1,7 @@
 package uz.alikuryer.customer
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -33,15 +36,12 @@ internal fun priceText(value: Long): String =
 
 @Composable
 internal fun AliMark(modifier: Modifier = Modifier, size: Int = 43) {
-    Box(
-        modifier = modifier.size(size.dp)
-            .clip(RoundedCornerShape((size / 3).dp))
-            .background(AliRed),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(Icons.Default.DeliveryDining, contentDescription = "Ali Kuryer belgisi",
-            tint = Color.White, modifier = Modifier.size((size * 0.65).dp))
-    }
+    Image(
+        painter = painterResource(id = R.drawable.ali_kuryer_user_logo),
+        contentDescription = "Ali Kuryer original logotipi",
+        modifier = modifier.size(size.dp).clip(RoundedCornerShape((size / 4).dp)),
+        contentScale = ContentScale.Fit
+    )
 }
 
 @Composable
