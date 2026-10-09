@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def app_context():
     with tempfile.TemporaryDirectory(prefix="ali-kuryer-test-") as directory:
         os.environ["DATABASE_URL"] = f"sqlite:///{directory}/test.db"
