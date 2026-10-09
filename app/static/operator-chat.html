@@ -41,6 +41,7 @@ header small{display:block;color:#999}#warning{color:#a52a31;margin:10px}
 <hr>
 <h3>Buyurtma chatlari</h3>
 <div id="orders"></div>
+<hr><h3>Muhammadali AI yozishmalari</h3><p class="muted">Faqat mijoz rozilik bilan saqlagan 30 kunlik suhbatlar.</p><button class="ghost" id="loadAi">AI tarixini ko‘rish</button><div id="aiLogs"></div>
 </aside>
 <main>
 <h2 id="conversationTitle">Suhbatni tanlang</h2>
@@ -105,6 +106,20 @@ async function refreshThreads(){
   }
  }catch(e){$("warning").textContent=e.message}
 }
+async function loadAi(){
+ try{
+  const rows=await api("/api/v1/admin/assistant-conversations");
+  const box=$("aiLogs");box.replaceChildren();
+  if(!rows.length)box.append(node("p","Rozilik bilan saqlangan AI yozishmalar hozircha yo‘q."));
+  for(let row of rows.slice(0,50)){
+   let item=node("div",undefined,"msg");
+   item.append(node("strong","Mijoz №"+row.customer_id),
+     node("div","Savol: "+row.question),
+     node("div","Javob: "+row.answer));
+   box.append(item);
+  }
+ }catch(e){$("warning").textContent=e.message}
+}
 function selectThread(type,id){
  selected={type,id};
  $("conversationTitle").textContent=type==="support"?"Mijoz №"+id:"Buyurtma №"+id;
@@ -140,6 +155,7 @@ async function send(){
 }
 $("signIn").onclick=signIn;$("exit").onclick=logout;
 $("refreshThreads").onclick=refreshThreads;$("send").onclick=send;
+$("loadAi").onclick=loadAi;
 $("message").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();send()}});
 </script>
 </body></html>
