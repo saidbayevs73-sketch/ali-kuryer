@@ -301,6 +301,7 @@ async function submitComplaint(event) {
   try {
     const result = await postJSON("/api/customer/complaints", payload);
     status.textContent = "✅ Murojaat №" + result.complaint_id + " adminga yuborildi.";
+    localStorage.setItem("ali_customer_complaint", JSON.stringify({id: result.complaint_id, token: result.tracking_token}));
     byId("complaint-message").value = "";
   } catch (error) {
     status.textContent = error.message;
@@ -323,6 +324,7 @@ function startCustomer() {
   byId("checkout-form").addEventListener("submit", placeOrder);
   byId("track-btn").addEventListener("click", trackOrder);
   byId("complaint-form").addEventListener("submit", submitComplaint);
+  byId("complaint-check").addEventListener("click", checkComplaint);
   trackOrder();
 }
 
@@ -788,3 +790,23 @@ function startAdminExtras() {
 
 startStaff();
 startAdminExtras();
+
+async function checkComplaint() {
+  const target = byId("complaint-reply");
+  const receipt = readSaved("ali_customer_complaint", null);
+  if (!receipt?.id || !receipt.token) {
+    target.textContent = "Avval murojaat yuboring.";
+    return;
+  }
+  target.textContent = "Javob tekshirilmoqda…";
+  try {
+    const result = await postJSON("/api/customer/complaints/" +
+      receipt.id + "/status", {tracking_token: receipt.token});
+    const statuses = {new: "Yangi", answered: "Javob berildi", closed: "Yakunlandi"};
+    target.textContent = "Murojaat №" + result.complaint_id + " • " +
+      (statuses[result.status] || result.status) +
+      (result.reply ? " • Admin javobi: " + result.reply : " • Admin javobini kuting.");
+  } catch (error) {
+    target.textContent = error.message;
+  }
+}
