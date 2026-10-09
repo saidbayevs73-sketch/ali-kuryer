@@ -134,3 +134,13 @@ class MenuPhoto(Base):
     menu_item_id = Column(Integer, ForeignKey("menu_items.id"), primary_key=True)
     content_type = Column(String(30), nullable=False)
     binary_data = Column(LargeBinary, nullable=False)
+
+
+class AssistantConversationLog(Base):
+    """Stored only when the signed-in customer opts in to conversation retention."""
+    __tablename__ = "assistant_conversation_logs"
+    id = Column(Integer, primary_key=True)
+    customer_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    question = Column(String(600), nullable=False)
+    answer = Column(String(2200), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
