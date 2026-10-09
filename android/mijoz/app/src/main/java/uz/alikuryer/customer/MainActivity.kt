@@ -106,6 +106,7 @@ private fun AliCustomerApp() {
     var password by remember { mutableStateOf("") }
     var registerMode by remember { mutableStateOf(false) }
     var chatText by remember { mutableStateOf("") }
+    var retainAiHistory by remember { mutableStateOf(false) }
     val chat = remember { mutableStateListOf<Pair<Boolean, String>>() }
     var privacyAccepted by remember { mutableStateOf(false) }
     var myOrders by remember { mutableStateOf<List<AliOrder>>(emptyList()) }
@@ -1000,6 +1001,17 @@ private fun AliCustomerApp() {
                         }
                     }
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = retainAiHistory && session != null,
+                            enabled = session != null,
+                            onCheckedChange = { retainAiHistory = it })
+                        Text(
+                            if (session == null) "AI suhbatini saqlash uchun profilga kiring"
+                            else "AI suhbatini 30 kungacha saqlashga roziman; admin ko‘rishi mumkin",
+                            fontSize = 11.sp, color = AliMuted,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(chatText, { chatText = it.take(600) },
                             modifier = Modifier.weight(1f), maxLines = 3,
                             placeholder = { Text("Savolingizni yozing...") },
@@ -1011,7 +1023,8 @@ private fun AliCustomerApp() {
                                 chat.add(true to question)
                                 chatText = ""
                                 scope.launch {
-                                    try { chat.add(false to AliApi.chat(question)) }
+                                    try { chat.add(false to AliApi.chat(question, session?.token,
+                                        session != null && retainAiHistory)) }
                                     catch (_: Exception) {
                                         chat.add(false to "Yordamchi hozir javob bera olmadi. " +
                                             "Operatorga Telegram orqali yozishingiz mumkin.")
