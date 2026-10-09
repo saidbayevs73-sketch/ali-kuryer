@@ -69,6 +69,36 @@ def install(legacy):
                             record['counts'][table] = read_only.execute(
                                 'SELECT COUNT(*) FROM ' + table
                             ).fetchone()[0]
+            # Inspect the attached persistent disk without writing or copying.
+            # Useful when the active legacy DB accidentally lives on ephemeral storage.
+            record["persistent_disk_candidates"] = []
+            disk_root = Path("/var/data")
+            if disk_root.is_dir():
+                for candidate in sorted(disk_root.iterdir()):
+                    if len(record["persistent_disk_candidates"]) >= 12:
+                        break
+                    if (not candidate.is_file() or candidate.is_symlink()
+                            or candidate.suffix.lower() not in {".db", ".sqlite", ".sqlite3"}):
+                        continue
+                    found = {"file": candidate.name, "bytes": candidate.stat().st_size,
+                             "counts": {}, "integrity_ok": False}
+                    try:
+                        with sqlite3.connect('file:' + str(candidate) + '?mode=ro', uri=True,
+                                             timeout=3) as diskdb:
+                            names = {row[0] for row in diskdb.execute(
+                                "SELECT name FROM sqlite_master WHERE type='table'")}
+                            for table in ("customers", "restaurants", "menu_items",
+                                          "orders", "order_items", "couriers",
+                                          "tickets", "ticket_messages", "settings"):
+                                if table in names:
+                                    found["counts"][table] = diskdb.execute(
+                                        "SELECT COUNT(*) FROM " + table).fetchone()[0]
+                            found["integrity_ok"] = (
+                                diskdb.execute("PRAGMA quick_check").fetchone()[0] == "ok"
+                            )
+                    except (sqlite3.Error, OSError):
+                        found["error"] = "unreadable"
+                    record["persistent_disk_candidates"].append(found)
             print('ALI_LEGACY_MIGRATION_READINESS ' +
                   json.dumps(record, sort_keys=True), flush=True)
         except Exception as audit_error:
