@@ -90,6 +90,7 @@ class Complaint(Base):
     message = Column(String(1500), nullable=False)
     status = Column(String(30), default="new")
     reply = Column(String(2000), default="")
+    tracking_token = Column(String(80), unique=True, nullable=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
