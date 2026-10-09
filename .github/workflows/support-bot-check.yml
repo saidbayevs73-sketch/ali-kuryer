@@ -1,6 +1,8 @@
 name: Telegram Support Tests
 
 on:
+  push:
+    branches: ['feature/telegram-support-operator']
   pull_request:
     paths:
       - 'app/routers/support_bot.py'
