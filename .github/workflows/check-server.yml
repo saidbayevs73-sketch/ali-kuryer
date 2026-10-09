@@ -19,7 +19,7 @@ jobs:
       - name: Install backend dependencies
         run: pip install -r requirements.txt
       - name: Verify Python syntax
-        run: python -m compileall -q main.py app scripts/migrate_legacy_to_postgres.py
+        run: python -m compileall -q main.py app legacy_customer_api.py ali_kuryer.py scripts/migrate_legacy_to_postgres.py
       - name: Test application boot and health
         run: python -m pytest -q tests/test_render_startup.py tests/test_customer_experience.py tests/test_legacy_migration.py
       - name: Verify customer JavaScript syntax
