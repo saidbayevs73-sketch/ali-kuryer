@@ -1,0 +1,161 @@
+<!doctype html><html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ali Kuryer — Oshxona kabineti</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#17171b;background:#f8f8fa}
+*{box-sizing:border-box}body{margin:0}header{background:#17171b;color:#fff;padding:18px 6%;font-weight:900;font-size:22px}header span{color:#f23948}
+main{max-width:1100px;margin:auto;padding:22px}section{background:#fff;border:1px solid #ededf0;padding:22px;margin-bottom:18px;border-radius:19px}
+section h2{margin:0 0 13px}input,select,textarea{width:100%;border:1px solid #dddde2;border-radius:12px;padding:12px;font:inherit;margin:5px 0 12px}
+button{border:0;background:#e02032;color:white;border-radius:12px;padding:12px 16px;font-weight:bold;cursor:pointer;margin:5px 4px 5px 0}
+button.secondary{background:#17171b}.muted{color:#7a7b82;font-size:13px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.menuItem{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px;border-bottom:1px solid #eee}
+.menuItem img{width:83px;height:72px;object-fit:cover;border-radius:12px}.menuItem button{padding:8px}#app{display:none}
+@media(max-width:700px){.grid{display:block}main{padding:12px}section{padding:15px}input{margin-bottom:11px}}
+</style></head><body>
+<header><span>Ali</span>Kuryer.UZ <small style="font-size:12px;font-weight:500">Oshxona boshqaruvi</small></header>
+<main>
+<section id="login">
+<h2>Oshxona hisobiga kirish</h2>
+<p class="muted">Faqat tasdiqlangan oshxona egasi yoki administrator.</p>
+<input id="phone" placeholder="+998XXXXXXXXX" inputmode="tel">
+<input id="password" type="password" placeholder="Parol">
+<button id="signIn">Kirish</button>
+<p id="loginError" role="alert"></p>
+</section>
+<div id="app">
+<section>
+<h2>Mening oshxonam</h2>
+<select id="restaurants"></select>
+<p class="muted" id="approval"></p>
+<button id="refresh">Menyuni yangilash</button>
+<button id="logout" class="secondary">Chiqish</button>
+</section>
+<div class="grid">
+<section><h2>Yangi taom qo‘shish</h2>
+<form id="menuForm">
+<label>Taom nomi<input id="name" required maxlength="150" placeholder="Masalan, Qozon kabob"></label>
+<label>Narxi, so‘m<input id="price" required type="number" min="100" step="100"></label>
+<label>Turkum<input id="category" maxlength="60" placeholder="Milliy taomlar"></label>
+<label>Qisqacha tavsif<textarea id="description" maxlength="400" placeholder="Tarkibi, porsiya, og‘irlik..."></textarea></label>
+<label>Taom fotosurati (JPG, PNG, WebP — 2MB gacha)
+<input id="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
+<button>Taomni qo‘shish</button>
+</form>
+<p class="muted">Foto serverning ma’lumotlar bazasida saqlanadi va GPS/EXIF metadata tozalanadi.</p>
+</section>
+<section><h2>Savdo statistikasi</h2><div id="stats"></div>
+<h3>Oshxona GPS nuqtasi</h3>
+<p class="muted">Yaqin kuryerlarni tanlash uchun oshxonaning aniq GPS nuqtasini belgilang.</p>
+<input id="lat" type="number" step="any" placeholder="Kenglik, masalan 40.9961">
+<input id="lng" type="number" step="any" placeholder="Uzunlik, masalan 71.6726">
+<button id="saveGeo" class="secondary">GPS saqlash</button>
+</section>
+</div>
+<section><h2>Taomlar va narxlar</h2><div id="menuList"></div></section>
+</div><p id="notice" role="status"></p>
+</main>
+<script>
+"use strict";
+let token="", restId=0;const $=id=>document.getElementById(id);
+async function api(path, method="GET", body, isFile=false){
+ let headers={"Authorization":"Bearer "+token};
+ if(!isFile)headers["Content-Type"]="application/json";
+ let response=await fetch(path,{method,headers,body:isFile?body:body?JSON.stringify(body):undefined,cache:"no-store"});
+ let data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(typeof data.detail==="string"?data.detail:"Xato: "+response.status);
+ return data;
+}
+const el=(tag,text)=>{let e=document.createElement(tag);e.textContent=text;return e};
+const alertText=(text)=>{$("notice").textContent=text};
+async function login(){
+ try{
+  const r=await api("/api/auth/login","POST",{phone:$("phone").value.trim(),password:$("password").value});
+  if(!["restaurant","admin"].includes(r.role))throw Error("Faqat oshxona yoki admin");
+  token=r.access_token;$("password").value="";$("login").style.display="none";$("app").style.display="block";
+  await init();
+ }catch(e){$("loginError").textContent=e.message}
+}
+async function init(){
+ const data=await api("/api/v1/staff/restaurants"),sel=$("restaurants");sel.replaceChildren();
+ for(let r of data){let o=el("option",r.name+" (№"+r.id+")");o.value=r.id;sel.append(o)}
+ restId=Number(sel.value||0);
+ if(!restId){alertText("Sizga biriktirilgan oshxona topilmadi");return}
+ await refresh();
+}
+async function refresh(){
+ restId=Number($("restaurants").value||0);if(!restId)return;
+ try{
+  const [items,stats]=await Promise.all([
+    api("/api/v1/restaurants/"+restId+"/manage-menu"),
+    api("/api/v1/restaurants/"+restId+"/statistics")
+  ]);
+  const list=$("menuList");list.replaceChildren();
+  for(let item of items){
+   const row=el("div","");row.className="menuItem";
+   const left=el("div","");left.style.flex="1";
+   const title=el("strong",item.name+" — "+item.price+" so‘m");
+   const detail=el("p",(item.category||"Turkum yo‘q")+" · "+
+      (item.is_available?"Sotuvda":"Vaqtincha yo‘q"));detail.className="muted";
+   left.append(title,detail);
+   const right=el("div","");
+   if(item.image_url){let img=el("img","");img.src=item.image_url;img.alt=item.name;right.append(img)}
+   const edit=el("button","Tahrirlash");
+   edit.onclick=async()=>{
+    let name=prompt("Taom nomi",item.name);if(name===null)return;
+    let price=prompt("Yangi narx",item.price);if(price===null)return;
+    let category=prompt("Turkum",item.category||"");if(category===null)return;
+    try{
+     await api("/api/v1/restaurants/"+restId+"/menu/"+item.id,"PATCH",
+       {name,price:Number(price),category});
+     await refresh();
+    }catch(e){alertText(e.message)}
+   };
+   const avail=el("button",item.is_available?"Yashirish":"Sotuvga chiqarish");
+   avail.className="secondary";avail.onclick=async()=>{
+    try{await api("/api/v1/restaurants/"+restId+"/menu/"+item.id,"PATCH",
+      {is_available:!item.is_available});await refresh()}catch(e){alertText(e.message)}
+   };
+   const photo=el("input","");photo.type="file";photo.accept="image/*";
+   photo.onchange=async()=>{
+    if(!photo.files?.length)return;
+    try{
+     const f=new FormData();f.append("file",photo.files[0]);
+     await api("/api/v1/restaurants/"+restId+"/menu/"+item.id+"/photo","POST",f,true);
+     alertText("Foto yangilandi");await refresh();
+    }catch(e){alertText(e.message)}
+   };
+   right.append(edit,avail,photo);row.append(left,right);list.append(row);
+  }
+  if(!items.length)list.append(el("p","Hozircha taom yo‘q"));
+  $("stats").replaceChildren();
+  for(let s of stats){$("stats").append(el("p",(s.sold_count?"✅ ":"⚪ ")+s.name+" — "+s.sold_count+" ta sotildi"))}
+  if(!stats.length)$("stats").append(el("p","Sotuv hali yo‘q"));
+  $("approval").textContent="Ruxsat: menyu qo‘shish, narx va foto tahrirlash, statistika";
+ }catch(e){alertText("Oshxonani yuklab bo‘lmadi: "+e.message)}
+}
+async function addFood(e){
+ e.preventDefault();const name=$("name").value.trim(),price=Number($("price").value);
+ if(!name||!price||!restId)return;
+ try{
+  const food=await api("/api/v1/restaurants/"+restId+"/menu","POST",
+    {name,price,category:$("category").value,description:$("description").value,
+     is_available:true});
+  if($("photo").files.length){
+   const data=new FormData();data.append("file",$("photo").files[0]);
+   await api("/api/v1/restaurants/"+restId+"/menu/"+food.id+"/photo","POST",data,true);
+  }
+  $("menuForm").reset();alertText("Taom muvaffaqiyatli saqlandi");await refresh();
+ }catch(e){alertText("Taom saqlanmadi: "+e.message)}
+}
+async function saveGeo(){
+ try{
+  await api("/api/v1/restaurants/"+restId+"/geo","PUT",
+    {latitude:Number($("lat").value),longitude:Number($("lng").value)});
+  alertText("Oshxona GPS nuqtasi saqlandi")
+ }catch(e){alertText(e.message)}
+}
+$("signIn").onclick=login;$("menuForm").onsubmit=addFood;
+$("restaurants").onchange=refresh;$("refresh").onclick=refresh;
+$("saveGeo").onclick=saveGeo;
+$("logout").onclick=()=>{token="";restId=0;$("app").style.display="none";$("login").style.display="block"};
+</script></body></html>
