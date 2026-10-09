@@ -4,7 +4,7 @@ Ommaviy sayt va mijoz ilovasi: oshxona/taom tanlash, savat, ism/telefon/manzil, 
 Admin, kuryer va restoran hisoblari mijoz hisobidan alohida. Ommaviy HTML panellar standart holatda 404 qaytaradi; role-based API yopilmaydi. Alohida native xodim ilovalari bu PR tarkibida yaratilmagan.
 
 ## Hozirgi xizmatlar
-- index.html katalog va checkout: https://ali-kuryer-1.onrender.com — eski ali_kuryer_v2.py API.
+- index.html katalog va checkout: https://ali-kuryer-1.onrender.com — Render startCommand: python ali_kuryer.py (legacy server; ali_kuryer_v2.py sxemasi alohida tekshiriladi).
 - site-assets/customer.js hisob, ariza va yordam konfiguratsiyasi: https://ali-kuryer.onrender.com — FastAPI.
 - Har ikkala URL Render xizmatlari bilan solishtirilib tasdiqlanishi kerak.
 - FastAPI main branch orders router faqat status endpointiga ega; uni eski checkout serveri o‘rniga qo‘ymang.
@@ -45,3 +45,12 @@ Sayt ichida operator bilan ikki tomonlama jonli suhbat bu PRda yo‘q; buni aloh
 
 ## Chiqarish
 Staging dalillari va backup/rollback tayyor bo‘lgandan keyin PRni main bilan birlashtiring. Bunda legacy buyurtma serverini FastAPI bilan almashtirmang. Frontend domeni GitHub Pages yoki Renderdan qaysi biri orqali xizmat olayotganini aniqlab, shu hostingdagi chiqarishni tekshiring.
+
+## Render tekshiruvi — 2026-10-09
+- Ish maydoni: My Workspace, foydalanuvchi tasdiqlagan.
+- ali-kuryer-1: srv-db0m4g2d0e5s73c7vtvg; main tarmoq, autoDeploy yoqilgan; /var/data 1 GB disk; startCommand python ali_kuryer.py.
+- ali-kuryer: srv-db0ls8qd0e5s73c70490; main tarmoq, autoDeploy yoqilgan; uvicorn main:app; free plan, konfiguratsiyada doimiy disk ko‘rsatilmagan.
+- Har ikkala oxirgi deploy 07ff198 commitida live. PR #10 hali chiqarilmagan.
+- 2026-10-09 10:08:10Z–12:04:00Z oralig‘ida error/Traceback/failed filtrida xatolar qaytmadi. Bu endpointlar va buyurtmalar to‘liq tekshirilganini bildirmaydi.
+- FastAPI/support SQLite saqlanishi doimiy disksiz kafolatlanmaydi. Disk yoki managed DBga ko‘chirishdan oldin mavjud fayllar va zaxiralarni olib, tiklashni tekshirish kerak; SUPPORT_DB_PATH ni mavjud bo‘lmagan mountga shunchaki o‘zgartirmang.
+- Izolyatsiyalangan JavaScript tekshiruvi: xarita oldidan tasdiq yo‘q, xarita preview tasdiq bermaydi, alohida tasdiq koordinatani saqlaydi, bo‘sh yoki noto‘g‘ri koordinata rad etiladi.
