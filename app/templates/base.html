@@ -3,12 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Ali Kuryer{% endblock %}</title>
+  <meta name="theme-color" content="#e50914">
+  <title>{% block title %}Ali Kuryer — Taom yetkazish{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+  {% block extra_head %}{% endblock %}
   <script src="{{ url_for('static', path='/app.js') }}" defer></script>
 </head>
 <body>
-<header><a href="/">Ali Kuryer</a><nav><a href="/admin">Admin</a> <a href="/restaurant">Oshxona</a> <a href="/courier">Kuryer</a></nav></header>
+<header class="site-header">
+  <a href="/" class="brand"><span>Ali</span> Kuryer</a>
+  <nav class="public-nav" aria-label="Mijoz menyusi">
+    <a href="/#restaurants">Oshxonalar</a>
+    <a href="/#checkout">Savatcha</a>
+    <a href="/#help">Yordam</a>
+  </nav>
+</header>
 <main>{% block content %}{% endblock %}</main>
+<footer class="site-footer">Ali Kuryer • Qulay va ishonchli taom yetkazish</footer>
 </body>
 </html>
