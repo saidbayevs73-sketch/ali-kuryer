@@ -88,6 +88,9 @@ def test_anonymous_complaint_and_admin_auth(app_context):
     })
     assert response.status_code == 201, response.text
     complaint_id = response.json()["complaint_id"]
+    receipt = response.json()["tracking_token"]
+    assert client.post(f"/api/customer/complaints/{complaint_id}/status",
+                       json={"tracking_token": receipt}).json()["status"] == "new"
 
     assert client.get("/api/admin/complaints").status_code == 401
 
@@ -118,3 +121,7 @@ def test_anonymous_complaint_and_admin_auth(app_context):
     )
     assert reply.status_code == 200
     assert reply.json()["status"] == "answered"
+    latest = client.post(f"/api/customer/complaints/{complaint_id}/status",
+                         json={"tracking_token": receipt})
+    assert latest.status_code == 200
+    assert "qabul qilindi" in latest.json()["reply"]
