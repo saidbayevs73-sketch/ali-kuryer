@@ -22,6 +22,13 @@
     <div id="admin-orders" class="white-panel" aria-live="polite"></div>
     <h2 class="top-gap">🛵 Kuryer smenalari</h2>
     <div id="admin-shifts" class="cards" aria-live="polite"></div>
+    <h2 class="top-gap">📹 Xodimlar videoaloqasi</h2>
+    <form id="meeting-create-form" class="white-panel">
+      <label>Videoqo‘ng‘iroq nomi<input id="meeting-title" maxlength="120" minlength="3" required placeholder="Joriy buyurtmalar haqida yig‘ilish"></label>
+      <button type="submit">Videoxona yaratish</button>
+      <p id="meeting-create-status" role="status"></p>
+    </form>
+    <div id="meeting-admin-list" class="cards"></div>
     <h2 class="top-gap">Xodim qo‘shish</h2>
     <form id="staff-create-form" class="white-panel form-grid">
       <label>Ismi<input id="staff-name" required minlength="2"></label>
@@ -46,6 +53,7 @@
   <div class="staff-workspace" hidden>
     <button type="button" class="staff-refresh button-outline">Yangilash</button>
     <button type="button" class="staff-logout button-outline">Chiqish</button>
+    <h2 class="top-gap">📹 Xodimlar videoaloqasi</h2><div class="staff-meetings cards"></div>
     <h2 class="top-gap">Buyurtmalar</h2>
     <div class="staff-orders cards"></div>
     <h2 class="top-gap">Menyuga taom qo‘shish</h2>
@@ -70,6 +78,7 @@
   <div class="staff-workspace" hidden>
     <button type="button" class="staff-refresh button-outline">Yangilash</button>
     <button type="button" class="staff-logout button-outline">Chiqish</button>
+    <h2 class="top-gap">📹 Xodimlar videoaloqasi</h2><div class="staff-meetings cards"></div>
     <h2 class="top-gap">Ish boshlash / selfie</h2>
     <form id="courier-shift-form" class="white-panel">
       <p>Ish boshlaganda fotosuratingizni yuklang. Admin tasdiqlagandan so‘ng buyurtmalarni olasiz.</p>
