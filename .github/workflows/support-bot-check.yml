@@ -1,0 +1,27 @@
+name: Telegram Support Tests
+
+on:
+  push:
+    branches: ['feature/telegram-support-live']
+  pull_request:
+    paths:
+      - 'app/routers/support_bot.py'
+      - 'tests/test_support_bot.py'
+      - 'main.py'
+      - '.github/workflows/support-bot-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  support:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'fastapi>=0.115,<1'
+      - run: python -m py_compile app/routers/support_bot.py main.py
+      - run: python -m unittest discover -s tests -p 'test_support_bot.py' -v
