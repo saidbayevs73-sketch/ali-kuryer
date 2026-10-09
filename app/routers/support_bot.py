@@ -11,6 +11,7 @@ import sqlite3
 import urllib.error
 import urllib.request
 from pathlib import Path
+from contextlib import contextmanager
 
 from fastapi import APIRouter, HTTPException, Request
 
@@ -56,13 +57,18 @@ def settings():
     }
 
 
+@contextmanager
 def get_db():
     path = Path(settings()["db"])
     path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(str(path), timeout=20)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
-    return connection
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
 
 
 def init_db():
