@@ -560,3 +560,93 @@ def admin_assistant_history(db: Session = Depends(get_db), user=Depends(me)):
              "question": item.question, "answer": item.answer,
              "created_at": item.created_at.isoformat() if item.created_at else None}
             for item in logs]
+
+
+class MenuUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=150)
+    price: float | None = Field(default=None, gt=0, le=100000000)
+    image_url: str | None = Field(default=None, max_length=500)
+    category: str | None = Field(default=None, max_length=60)
+    description: str | None = Field(default=None, max_length=400)
+    is_available: bool | None = None
+
+
+@router.get("/staff/restaurants")
+def my_staff_restaurants(db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "restaurant", "admin")
+    q = db.query(models.Restaurant)
+    if user.role == "restaurant":
+        q = q.filter(models.Restaurant.owner_id == user.id)
+    return [{"id": r.id, "name": r.name, "address": r.address,
+             "is_approved": bool(r.is_approved)} for r in q.order_by(models.Restaurant.id).all()]
+
+
+@router.get("/restaurants/{restaurant_id}/manage-menu")
+def manage_menu(restaurant_id: int, db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "restaurant", "admin")
+    r = db.get(models.Restaurant, restaurant_id)
+    if not r or (user.role != "admin" and r.owner_id != user.id):
+        raise HTTPException(403, "Bu oshxona ma’lumotlari sizga tegishli emas")
+    items = db.query(models.MenuItem).filter_by(restaurant_id=restaurant_id).all()
+    extra = {x.menu_item_id: x for x in db.query(models.MenuExtra).filter(
+        models.MenuExtra.menu_item_id.in_([it.id for it in items])
+    ).all()}
+    base = os.getenv("PUBLIC_BASE_URL", "https://ali-kuryer.onrender.com").rstrip("/")
+    photos = {x.menu_item_id for x in db.query(models.MenuPhoto.menu_item_id).filter(
+        models.MenuPhoto.menu_item_id.in_([it.id for it in items])
+    ).all()}
+    return [
+        {
+            "id": it.id, "name": it.name, "price": it.price,
+            "is_available": it.is_available,
+            "image_url": f"{base}/api/v1/menu-photo/{it.id}" if it.id in photos else it.image_url,
+            "category": extra[it.id].category if it.id in extra else "",
+            "description": extra[it.id].description if it.id in extra else ""
+        } for it in items
+    ]
+
+
+@router.patch("/restaurants/{restaurant_id}/menu/{item_id}")
+def update_menu(restaurant_id: int, item_id: int, data: MenuUpdateIn,
+                db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "restaurant", "admin")
+    r = db.get(models.Restaurant, restaurant_id)
+    item = db.get(models.MenuItem, item_id)
+    if not r or not item or item.restaurant_id != restaurant_id:
+        raise HTTPException(404, "Taom topilmadi")
+    if user.role != "admin" and r.owner_id != user.id:
+        raise HTTPException(403, "Faqat o‘z oshxonangiz")
+    changes = data.model_dump(exclude_unset=True)
+    for field in ("name", "price", "image_url", "is_available"):
+        if field in changes:
+            value = changes[field]
+            if field == "image_url" and value and not value.startswith("https://"):
+                raise HTTPException(422, "Rasm manzili HTTPS bo‘lishi kerak")
+            setattr(item, field, value)
+    if "category" in changes or "description" in changes:
+        extra = db.get(models.MenuExtra, item_id)
+        if extra is None:
+            extra = models.MenuExtra(menu_item_id=item_id)
+            db.add(extra)
+        if "category" in changes:
+            extra.category = changes["category"]
+        if "description" in changes:
+            extra.description = changes["description"]
+    db.commit()
+    return {"ok": True, "menu_item_id": item_id}
+
+
+class RestaurantApproval(BaseModel):
+    approved: bool
+
+
+@router.post("/admin/restaurants/{restaurant_id}/approval")
+def approve_restaurant(restaurant_id: int, data: RestaurantApproval,
+                       db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "admin")
+    r = db.get(models.Restaurant, restaurant_id)
+    if not r:
+        raise HTTPException(404, "Oshxona topilmadi")
+    r.is_approved = data.approved
+    db.commit()
+    return {"ok": True, "is_approved": r.is_approved}
