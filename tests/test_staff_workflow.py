@@ -37,6 +37,24 @@ def test_staff_lifecycle(app_context, tmp_path, monkeypatch):
     courier_id = courier_response.json()["id"]
     courier_auth = auth(courier_id)
 
+
+    # Video meeting links are staff-only; only admin may create/close.
+    assert client.get("/api/panels/meetings").status_code == 401
+    assert client.post("/api/panels/meetings", headers=courier_auth,
+                       json={"title": "Test yig‘ilish"}).status_code == 403
+    meeting = client.post("/api/panels/meetings", headers=admin_auth,
+                          json={"title": "Test yig‘ilish"})
+    assert meeting.status_code == 201, meeting.text
+    meeting_id = meeting.json()["id"]
+    assert meeting.json()["join_url"].startswith("https://meet.jit.si/")
+    assert client.get("/api/panels/meetings", headers=restaurant_auth).status_code == 200
+    assert any(r["id"] == meeting_id for r in client.get(
+        "/api/panels/meetings", headers=courier_auth).json())
+    assert client.post(f"/api/panels/meetings/{meeting_id}/close",
+                       headers=restaurant_auth).status_code == 403
+    assert client.post(f"/api/panels/meetings/{meeting_id}/close",
+                       headers=admin_auth).status_code == 200
+
     # Staff accounts are scoped to their own roles.
     assert client.get("/api/restaurant/orders", headers=courier_auth).status_code == 403
     assert client.get("/api/courier/orders/mine", headers=restaurant_auth).status_code == 403
