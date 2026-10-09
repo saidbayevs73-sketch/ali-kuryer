@@ -148,7 +148,8 @@ object AliApi {
 
     suspend fun createOrder(
         token: String, restaurantId: Int, address: String, phone: String,
-        items: Map<Int, Int>, privacyAccepted: Boolean
+        items: Map<Int, Int>, privacyAccepted: Boolean,
+        latitude: Double? = null, longitude: Double? = null
     ): AliOrder {
         val lines = JSONArray()
         items.filterValues { it > 0 }.forEach { (id, qty) ->
@@ -161,6 +162,9 @@ object AliApi {
             .put("payment_method", "cash")
             .put("privacy_accepted", privacyAccepted)
             .put("items", lines)
+        if (latitude != null && longitude != null) {
+            data.put("latitude", latitude).put("longitude", longitude)
+        }
         return parseOrder(JSONObject(request("POST", "/api/v1/orders", data, token)))
     }
 
