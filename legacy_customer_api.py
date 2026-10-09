@@ -39,6 +39,41 @@ def install(legacy):
             marker.write_text(backup_path.name, encoding='utf-8')
             print('Customer API: pre-migration SQLite backup verified', flush=True)
         old_init()
+        # Operational readiness only: log aggregate counts and backup integrity,
+        # never phone numbers, names, passwords or order contents.
+        try:
+            source = Path(legacy['DB']).resolve()
+            record = {
+                "storage_persistent": source == Path("/var/data").resolve() or
+                    Path("/var/data").resolve() in source.parents,
+                "legacy_db_exists": source.is_file(),
+                "source_bytes": source.stat().st_size if source.exists() else 0,
+                "backup_verified": False,
+                "counts": {}
+            }
+            marker_file = source.parent / (source.name + '.customer-api-backup-complete')
+            if marker_file.is_file():
+                backup_name = marker_file.read_text(encoding='utf-8').strip()
+                backup_file = source.parent / backup_name
+                if backup_file.parent == source.parent and backup_file.is_file():
+                    with sqlite3.connect('file:' + str(backup_file) + '?mode=ro', uri=True) as check:
+                        record['backup_verified'] = (
+                            check.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+                        )
+            if source.is_file():
+                with sqlite3.connect('file:' + str(source) + '?mode=ro', uri=True) as read_only:
+                    for table in ('customers', 'restaurants', 'menu_items', 'orders', 'order_items'):
+                        if table in {r[0] for r in read_only.execute(
+                            "SELECT name FROM sqlite_master WHERE type='table'"
+                        )}:
+                            record['counts'][table] = read_only.execute(
+                                'SELECT COUNT(*) FROM ' + table
+                            ).fetchone()[0]
+            print('ALI_LEGACY_MIGRATION_READINESS ' +
+                  json.dumps(record, sort_keys=True), flush=True)
+        except Exception as audit_error:
+            print('ALI_LEGACY_MIGRATION_READINESS check_failed ' +
+                  type(audit_error).__name__, flush=True)
         with legacy['conn']() as db:
             db.execute('''CREATE TABLE IF NOT EXISTS web_order_details (
                 order_id INTEGER PRIMARY KEY REFERENCES orders(id),
