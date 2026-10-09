@@ -69,8 +69,33 @@ def submit_complaint(data: ComplaintRequest, db: Session = Depends(get_db)):
         phone=data.phone,
         message=message,
         status="new",
+        tracking_token=secrets.token_urlsafe(28),
     )
     db.add(complaint)
     db.commit()
     db.refresh(complaint)
-    return {"complaint_id": complaint.id, "status": "new"}
+    return {"complaint_id": complaint.id, "status": "new",
+            "tracking_token": complaint.tracking_token}
+
+
+class ComplaintStatusRequest(BaseModel):
+    tracking_token: str = Field(min_length=20, max_length=100)
+
+
+@router.post("/complaints/{complaint_id}/status")
+def complaint_status(
+    complaint_id: int,
+    data: ComplaintStatusRequest,
+    db: Session = Depends(get_db),
+):
+    complaint = db.get(models.Complaint, complaint_id)
+    if (
+        complaint is None or not complaint.tracking_token
+        or not secrets.compare_digest(complaint.tracking_token, data.tracking_token)
+    ):
+        raise HTTPException(404, "Murojaat topilmadi")
+    return {
+        "complaint_id": complaint.id,
+        "status": complaint.status,
+        "reply": complaint.reply,
+    }
