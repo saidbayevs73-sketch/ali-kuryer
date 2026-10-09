@@ -214,3 +214,6 @@ def install(legacy):
     Handler.end_headers = headers
     Handler.do_GET, Handler.do_POST, Handler.do_OPTIONS = get, post, options
     legacy['init_db'] = initialize
+
+    from loyalty_points import install as install_loyalty
+    install_loyalty(legacy)
