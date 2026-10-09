@@ -7,8 +7,20 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 
-data class Restaurant(val id: Int, val name: String, val address: String)
-data class Food(val id: Int, val name: String, val price: Long)
+data class Restaurant(
+    val id: Int,
+    val name: String,
+    val address: String,
+    val logoUrl: String? = null
+)
+data class Food(
+    val id: Int,
+    val name: String,
+    val price: Long,
+    val imageUrl: String? = null,
+    val category: String = ""
+)
+data class FoodHit(val restaurant: Restaurant, val food: Food)
 data class Session(val token: String, val role: String)
 
 object AliApi {
@@ -48,23 +60,31 @@ object AliApi {
         val arr = JSONArray(request("GET", "/api/customer/restaurants"))
         return (0 until arr.length()).mapNotNull { i ->
             val item = arr.optJSONObject(i) ?: return@mapNotNull null
-            val approved = item.optBoolean("is_approved", false)
             val id = item.optInt("id", 0)
-            if (!approved || id <= 0) return@mapNotNull null
-            Restaurant(id, item.optString("name", "Restoran"),
-                item.optString("address", "").takeUnless { it == "null" }.orEmpty())
+            if (id <= 0 || !item.optBoolean("is_approved", false)) return@mapNotNull null
+            Restaurant(
+                id = id,
+                name = item.optString("name", "Restoran"),
+                address = item.optString("address", "").takeUnless { it == "null" }.orEmpty(),
+                logoUrl = item.optString("logo_url", "").takeIf { it.startsWith("https://") }
+            )
         }
     }
 
     suspend fun menu(restaurantId: Int): List<Food> {
-        val response = JSONObject(request("GET", "/api/customer/restaurants/" + restaurantId + "/menu"))
+        val response = JSONObject(request("GET", "/api/customer/restaurants/$restaurantId/menu"))
         val arr = response.optJSONArray("items") ?: JSONArray()
         return (0 until arr.length()).mapNotNull { i ->
             val item = arr.optJSONObject(i) ?: return@mapNotNull null
             val id = item.optInt("id", 0)
             if (id <= 0 || !item.optBoolean("is_available", true)) return@mapNotNull null
-            Food(id, item.optString("name", "Taom"),
-                item.optDouble("price", 0.0).toLong().coerceAtLeast(0L))
+            Food(
+                id = id,
+                name = item.optString("name", "Taom"),
+                price = item.optDouble("price", 0.0).toLong().coerceAtLeast(0L),
+                imageUrl = item.optString("image_url", "").takeIf { it.startsWith("https://") },
+                category = item.optString("category", "").takeUnless { it == "null" }.orEmpty()
+            )
         }
     }
 
@@ -76,10 +96,19 @@ object AliApi {
     suspend fun login(phone: String, password: String): Session {
         val body = JSONObject().put("phone", phone).put("password", password)
         val json = JSONObject(request("POST", "/api/auth/login", body))
-        val role = json.optString("role", "")
-        if (role != "customer") throw IllegalStateException("Bu dastur faqat mijozlar uchun")
+        if (json.optString("role") != "customer") {
+            throw IllegalStateException("Bu dastur faqat mijozlar uchun")
+        }
         val token = json.optString("access_token", "")
         if (token.isBlank()) throw IllegalStateException("Kirish tokeni olinmadi")
-        return Session(token, role)
+        return Session(token, "customer")
+    }
+
+    suspend fun chat(message: String): String {
+        val body = JSONObject().put("message", message)
+        val reply = JSONObject(request("POST", "/api/assistant/chat", body))
+            .optString("reply", "")
+        if (reply.isBlank()) throw IllegalStateException("Yordamchi javob bermadi")
+        return reply
     }
 }
