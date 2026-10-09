@@ -81,3 +81,48 @@ class GoogleIdentity(Base):
     google_sub = Column(String(160), nullable=False, unique=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     created_at = Column(DateTime, server_default=func.now())
+
+
+# New tables only: these do not change existing production table columns.
+class DeliveryInfo(Base):
+    __tablename__ = "order_delivery_info"
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), unique=True, nullable=False, index=True)
+    phone = Column(String(30), nullable=False)
+    note = Column(String(500), nullable=False, default="")
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+
+
+class CourierPresence(Base):
+    __tablename__ = "courier_presence"
+    courier_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+    is_available = Column(Boolean, nullable=False, default=False)
+    tracking_consent = Column(Boolean, nullable=False, default=False)
+    last_seen_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class RestaurantGeo(Base):
+    __tablename__ = "restaurant_geo"
+    restaurant_id = Column(Integer, ForeignKey("restaurants.id"), primary_key=True)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+
+
+class ConversationMessage(Base):
+    __tablename__ = "conversation_messages"
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
+    support_customer_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    body = Column(String(1000), nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class MenuExtra(Base):
+    __tablename__ = "menu_extra"
+    menu_item_id = Column(Integer, ForeignKey("menu_items.id"), primary_key=True)
+    category = Column(String(60), nullable=False, default="")
+    description = Column(String(400), nullable=False, default="")
