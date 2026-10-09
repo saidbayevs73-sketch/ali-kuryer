@@ -21,7 +21,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth
 from app.routers import support_bot
-from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience
+from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
 
 ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
@@ -72,6 +72,7 @@ app.include_router(customer.router)
 app.include_router(panels.router)
 app.include_router(restaurant.router)
 app.include_router(orders.router)
+app.include_router(commerce.router)
 app.include_router(admin.router)
 app.include_router(courier.router)
 app.include_router(support_bot.router)
