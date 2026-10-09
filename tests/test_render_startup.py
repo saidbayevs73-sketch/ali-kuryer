@@ -112,3 +112,86 @@ def test_customer_order_chat_and_permissions():
     assert support.status_code == 201
     assert client.get("/api/v1/support/messages",
                       headers=headers(other_id, "customer")).json() == []
+
+
+def test_restaurant_photo_and_nearest_courier_tracking():
+    import io
+    from PIL import Image
+    from app import models, security
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        owner = models.User(name="Photo restoran", phone="+998900000061",
+                            password_hash="test", role="restaurant", is_active=True)
+        customer = models.User(name="Photo xaridor", phone="+998900000062",
+                               password_hash="test", role="customer", is_active=True)
+        courier = models.User(name="Photo kuryer", phone="+998900000063",
+                              password_hash="test", role="courier", is_active=True)
+        db.add_all([owner, customer, courier])
+        db.flush()
+        rest = models.Restaurant(name="Sotuv sinov restoran", owner_id=owner.id, is_approved=True)
+        db.add(rest)
+        db.flush()
+        food = models.MenuItem(name="Ajoyib palov", restaurant_id=rest.id,
+                               price=35000, is_available=True)
+        order = models.Order(customer_id=customer.id, restaurant_id=rest.id,
+                             address="Namangan, 12-uy", total=35000,
+                             status="ready", payment_method="cash")
+        db.add_all([food, order])
+        db.flush()
+        db.add(models.OrderItem(order_id=order.id, menu_item_id=food.id,
+                                price=35000, quantity=1))
+        db.add(models.DeliveryInfo(order_id=order.id, phone=customer.phone))
+        db.commit()
+        rid, fid, oid = rest.id, food.id, order.id
+        owner_id, customer_id, courier_id = owner.id, customer.id, courier.id
+    finally:
+        db.close()
+
+    def h(uid, role):
+        return {"Authorization": "Bearer " + security.create_access_token(
+            {"sub": str(uid), "role": role}
+        )}
+
+    # Real restaurant photos are resized and EXIF is stripped.
+    picture = Image.new("RGB", (60, 60), (220, 40, 45))
+    buf = io.BytesIO()
+    picture.save(buf, format="PNG")
+    uploaded = client.post(f"/api/v1/restaurants/{rid}/menu/{fid}/photo",
+                           files={"file": ("food.png", buf.getvalue(), "image/png")},
+                           headers=h(owner_id, "restaurant"))
+    assert uploaded.status_code == 200, uploaded.text
+    assert uploaded.json()["image_url"].endswith(f"/api/v1/menu-photo/{fid}")
+    image = client.get(f"/api/v1/menu-photo/{fid}")
+    assert image.status_code == 200
+    assert image.headers["content-type"].startswith("image/webp")
+    assert image.content.startswith(b"RIFF")
+    assert client.post(
+        f"/api/v1/restaurants/{rid}/menu/{fid}/photo",
+        files={"file": ("food.png", buf.getvalue(), "image/png")},
+        headers=h(customer_id, "customer")
+    ).status_code == 403
+
+    assert client.put(
+        f"/api/v1/restaurants/{rid}/geo",
+        json={"latitude": 40.9961, "longitude": 71.6726},
+        headers=h(owner_id, "restaurant")
+    ).status_code == 200
+    assert client.post(
+        "/api/v1/courier/position",
+        json={"latitude": 40.9962, "longitude": 71.6727,
+              "available": True, "tracking_consent": True},
+        headers=h(courier_id, "courier")
+    ).status_code == 200
+    offers = client.get("/api/v1/courier/offers",
+                        headers=h(courier_id, "courier"))
+    assert offers.status_code == 200
+    assert oid in [o["order"]["id"] for o in offers.json()]
+    claim = client.post(f"/api/v1/courier/orders/{oid}/accept",
+                        headers=h(courier_id, "courier"))
+    assert claim.status_code == 200, claim.text
+    assert claim.json()["courier"]["phone"] == "+998900000063"
+    assert claim.json()["courier_location"] is not None
+    assert client.post(f"/api/v1/courier/orders/{oid}/accept",
+                       headers=h(courier_id, "courier")).status_code == 409
