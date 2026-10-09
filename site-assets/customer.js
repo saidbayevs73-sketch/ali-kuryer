@@ -214,6 +214,9 @@
     sessionStorage.setItem("ali_customer_token",token);
     me=profile;
     $("#customerLoginBtn").textContent="👤 "+(me.name||"Kabinet");
+    const nameField=$("#customerName"), phoneField=$("#phone");
+    if(nameField && !nameField.value && me.name) nameField.value=me.name;
+    if(phoneField && !phoneField.value && me.phone) phoneField.value=me.phone;
   }
   async function restoreLogin() {
     const token=sessionStorage.getItem("ali_customer_token");
