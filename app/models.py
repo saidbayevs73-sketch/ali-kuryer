@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, LargeBinary
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -126,3 +126,11 @@ class MenuExtra(Base):
     menu_item_id = Column(Integer, ForeignKey("menu_items.id"), primary_key=True)
     category = Column(String(60), nullable=False, default="")
     description = Column(String(400), nullable=False, default="")
+
+
+class MenuPhoto(Base):
+    """Store restaurant-supplied images in the persistent database, not Render's ephemeral disk."""
+    __tablename__ = "menu_photos"
+    menu_item_id = Column(Integer, ForeignKey("menu_items.id"), primary_key=True)
+    content_type = Column(String(30), nullable=False)
+    binary_data = Column(LargeBinary, nullable=False)
