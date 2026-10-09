@@ -502,3 +502,61 @@ def get_menu_photo(item_id: int, db: Session = Depends(get_db)):
     return Response(photo.binary_data, media_type=photo.content_type,
                     headers={"Cache-Control": "public, max-age=900",
                              "X-Content-Type-Options": "nosniff"})
+
+
+class AssistantOptInMessage(BaseModel):
+    message: str = Field(min_length=2, max_length=600)
+    retain_history: bool = False
+
+
+@router.post("/assistant/chat")
+async def logged_customer_assistant(data: AssistantOptInMessage,
+                                    db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "customer")
+    from app.routers.customer_experience import AssistantChatIn, assistant_chat
+    result = await assistant_chat(AssistantChatIn(message=data.message))
+    # Retain only with informed, explicit user opt-in.
+    if data.retain_history:
+        db.add(models.AssistantConversationLog(
+            customer_id=user.id, question=data.message, answer=result["reply"]
+        ))
+        db.commit()
+    return {"reply": result["reply"], "saved": bool(data.retain_history)}
+
+
+@router.get("/assistant/history")
+def my_assistant_history(db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "customer")
+    cutoff = datetime.utcnow() - timedelta(days=30)
+    logs = db.query(models.AssistantConversationLog).filter(
+        models.AssistantConversationLog.customer_id == user.id,
+        models.AssistantConversationLog.created_at >= cutoff
+    ).order_by(models.AssistantConversationLog.id.desc()).limit(100).all()
+    return [{"id": item.id, "question": item.question, "answer": item.answer}
+            for item in logs]
+
+
+@router.delete("/assistant/history")
+def delete_my_assistant_history(db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "customer")
+    db.query(models.AssistantConversationLog).filter_by(customer_id=user.id).delete()
+    db.commit()
+    return {"deleted": True}
+
+
+@router.get("/admin/assistant-conversations")
+def admin_assistant_history(db: Session = Depends(get_db), user=Depends(me)):
+    role(user, "admin")
+    cutoff = datetime.utcnow() - timedelta(days=30)
+    # Keep retention limited, even if a periodic cleanup task is not running.
+    db.query(models.AssistantConversationLog).filter(
+        models.AssistantConversationLog.created_at < cutoff
+    ).delete(synchronize_session=False)
+    db.commit()
+    logs = db.query(models.AssistantConversationLog).order_by(
+        models.AssistantConversationLog.id.desc()
+    ).limit(200).all()
+    return [{"id": item.id, "customer_id": item.customer_id,
+             "question": item.question, "answer": item.answer,
+             "created_at": item.created_at.isoformat() if item.created_at else None}
+            for item in logs]
