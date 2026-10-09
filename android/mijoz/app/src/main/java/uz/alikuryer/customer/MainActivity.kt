@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -33,11 +35,11 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        @Suppress("DEPRECATION")
-        window.statusBarColor = android.graphics.Color.WHITE
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility =
-            android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        // Android 15 edge-to-edge: use window insets so content never overlaps clock/notch.
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK),
+            navigationBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK)
+        )
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
@@ -47,7 +49,12 @@ class MainActivity : ComponentActivity() {
             ) {
                 var splash by remember { mutableStateOf(true) }
                 LaunchedEffect(Unit) { delay(950); splash = false }
-                if (splash) AliSplash() else AliCustomerApp()
+                Surface(
+                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                    color = AliCanvas
+                ) {
+                    if (splash) AliSplash() else AliCustomerApp()
+                }
             }
         }
     }
