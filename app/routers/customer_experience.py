@@ -5,6 +5,7 @@ visible only to authenticated administrators.
 """
 import os
 import re
+import logging
 from urllib.parse import urlparse
 
 import httpx
@@ -16,6 +17,7 @@ from app import models
 from app.dependencies import get_db, get_current_user
 
 router = APIRouter(tags=["Customer experience"])
+log = logging.getLogger(__name__)
 _PHONE = re.compile(r"^\+998[0-9]{9}$")
 
 
@@ -78,6 +80,26 @@ def create_application(data: PartnerApplicationIn, db: Session = Depends(get_db)
     )
     db.add(application)
     db.commit()
+    # Optional delivery to the existing private operator chat.
+    # Do not make public submission dependent on Telegram availability.
+    from app.routers import support_bot
+    support_settings = support_bot.settings()
+    if support_settings.get("token") and support_settings.get("group"):
+        try:
+            support_bot.tg_call(
+                "sendMessage",
+                chat_id=int(support_settings["group"]),
+                text=(
+                    f"Ali Kuryer hamkorlik arizasi №{application.id}\\n"
+                    f"Turi: {application.kind}\\n"
+                    f"Ism: {application.full_name}\\n"
+                    f"Telefon: {application.phone}\\n"
+                    f"Shahar: {application.city}\\n"
+                    f"Izoh: {application.detail}"
+                ),
+            )
+        except Exception:
+            log.warning("Partner application notification failed; record saved", exc_info=False)
     return {"received": True, "application_id": application.id}
 
 
