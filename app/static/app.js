@@ -385,6 +385,7 @@ async function loadAdminComplaints() {
       target.append(card);
     }
     byId("admin-login-message").textContent = "";
+    await loadAdminExtras();
   } catch (error) {
     target.textContent = error.message;
     byId("admin-workspace").hidden = true;
@@ -430,3 +431,360 @@ if (byId("panel-status")) {
     .then((result) => { byId("panel-status").textContent = result.message; })
     .catch((error) => { byId("panel-status").textContent = error.message; });
 }
+
+
+// Each staff panel uses its own role-scoped login token and protected API.
+const staffPanel = document.querySelector(".staff-panel");
+let gpsWatchId = null;
+let gpsLastUpload = 0;
+function staffRole() { return staffPanel?.dataset.staffRole || ""; }
+function staffToken() { return sessionStorage.getItem("ali_staff_" + staffRole()) || ""; }
+function staffHeaders() { return {Authorization: "Bearer " + staffToken()}; }
+function staffMessage(text) {
+  if (staffPanel) staffPanel.querySelector(".staff-message").textContent = text;
+}
+async function staffRead(path) { return api(path, {headers: staffHeaders()}); }
+async function staffPost(path, payload) { return postJSON(path, payload, staffToken()); }
+
+async function loadStaff() {
+  const role = staffRole();
+  if (!role || !staffToken()) return;
+  const container = staffPanel.querySelector(".staff-orders");
+  container?.replaceChildren();
+  try {
+    const orders = await staffRead("/api/" + role + "/orders" + (role === "courier" ? "/available" : ""));
+    staffPanel.querySelector(".staff-login").hidden = true;
+    staffPanel.querySelector(".staff-workspace").hidden = false;
+    staffMessage("");
+    if (role === "restaurant") {
+      showRestaurantOrders(orders);
+      await showRestaurantMenu();
+    } else {
+      showAvailableOrders(orders);
+      await showCourierOrders();
+      const shift = await staffRead("/api/courier/shifts/current");
+      byId("courier-shift-status").textContent = "Smena holati: " + shift.status;
+    }
+  } catch (error) {
+    // Courier may be logged in with an unapproved shift: show the workspace,
+    // but available orders are withheld by the API until admin approves.
+    if (role === "courier" && staffToken() && error.message.includes("Smena")) {
+      staffPanel.querySelector(".staff-login").hidden = true;
+      staffPanel.querySelector(".staff-workspace").hidden = false;
+      byId("courier-available").textContent = error.message;
+      await showCourierOrders().catch(() => {});
+      const shift = await staffRead("/api/courier/shifts/current").catch(() => null);
+      if (shift) byId("courier-shift-status").textContent = "Smena holati: " + shift.status;
+      return;
+    }
+    staffMessage(error.message);
+    if (error.message.includes("Tizimga kiring") || error.message.includes("Token")) {
+      sessionStorage.removeItem("ali_staff_" + role);
+      staffPanel.querySelector(".staff-login").hidden = false;
+      staffPanel.querySelector(".staff-workspace").hidden = true;
+    }
+  }
+}
+
+function showRestaurantOrders(orders) {
+  const target = staffPanel.querySelector(".staff-orders");
+  target.replaceChildren();
+  if (!orders.length) target.textContent = "Buyurtma yo‘q.";
+  for (const order of orders) {
+    const card = document.createElement("article");
+    card.className = "white-panel";
+    const title = document.createElement("h3");
+    title.textContent = "Buyurtma №" + order.id + " • " + order.status;
+    const items = document.createElement("p");
+    items.textContent = order.items.map((i) => i.name + " × " + i.quantity).join(", ");
+    const total = document.createElement("p");
+    total.textContent = "Jami: " + uzs(order.total);
+    card.append(title, items, total);
+    const statusButtons = order.status === "pending" ? [
+      ["Tayyorlashni boshlash", "preparing"], ["Bekor qilish", "canceled"]
+    ] : order.status === "preparing" ? [["Tayyor", "ready"]] : [];
+    for (const [label, value] of statusButtons) {
+      card.append(button(label, async () => {
+        try {
+          await staffPost("/api/restaurant/orders/" + order.id + "/status", {status: value});
+          await loadStaff();
+        } catch (error) { staffMessage(error.message); }
+      }, value === "canceled" ? "button-outline" : ""));
+    }
+    target.append(card);
+  }
+}
+
+async function showRestaurantMenu() {
+  const list = byId("restaurant-menu-list");
+  list.replaceChildren();
+  const items = await staffRead("/api/restaurant/menu");
+  if (!items.length) list.textContent = "Menyuda taom yo‘q.";
+  for (const item of items) {
+    const card = document.createElement("article");
+    card.className = "white-panel";
+    const title = document.createElement("h3");
+    title.textContent = item.name;
+    const info = document.createElement("p");
+    info.textContent = uzs(item.price) + (item.is_available ? "" : " • Mavjud emas");
+    card.append(title, info);
+    list.append(card);
+  }
+}
+
+function showAvailableOrders(orders) {
+  const container = byId("courier-available");
+  container.replaceChildren();
+  if (!orders.length) container.textContent = "Hozircha tayyor buyurtma yo‘q.";
+  for (const order of orders) {
+    const card = document.createElement("article");
+    card.className = "white-panel";
+    const title = document.createElement("h3");
+    title.textContent = "Buyurtma №" + order.id + " • " + order.restaurant;
+    const detail = document.createElement("p");
+    detail.textContent = "Olish joyi: " + order.pickup_address;
+    const claim = button("Buyurtmani olish", async () => {
+      try {
+        await staffPost("/api/courier/orders/" + order.id + "/claim", {});
+        await loadStaff();
+      } catch (error) { staffMessage(error.message); }
+    });
+    card.append(title, detail, claim);
+    container.append(card);
+  }
+}
+
+async function showCourierOrders() {
+  const container = byId("courier-mine");
+  container.replaceChildren();
+  const orders = await staffRead("/api/courier/orders/mine");
+  if (!orders.length) container.textContent = "Sizga hali buyurtma biriktirilmagan.";
+  for (const order of orders) {
+    const card = document.createElement("article");
+    card.className = "white-panel";
+    const heading = document.createElement("h3");
+    heading.textContent = "Buyurtma №" + order.id + " • " + order.status;
+    const info = document.createElement("p");
+    info.textContent = order.items.map((i) => i.name + " × " + i.quantity).join(", ") +
+      " • " + order.recipient_name + " • " + order.phone +
+      " • " + order.delivery_address + " • " + uzs(order.total);
+    card.append(heading, info);
+    if (order.latitude !== null && order.longitude !== null) {
+      const link = document.createElement("a");
+      link.href = "https://www.openstreetmap.org/?mlat=" + encodeURIComponent(order.latitude) +
+        "&mlon=" + encodeURIComponent(order.longitude) +
+        "#map=17/" + encodeURIComponent(order.latitude) + "/" + encodeURIComponent(order.longitude);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "📍 Yetkazish manzilini xaritada ochish";
+      card.append(link);
+    }
+    const next = {picked_up: "on_the_way", on_the_way: "delivered"}[order.status];
+    if (next) {
+      const label = next === "on_the_way" ? "Yo‘lga chiqdim" : "Yetkazildi";
+      card.append(button(label, async () => {
+        try {
+          await staffPost("/api/courier/orders/" + order.id + "/status", {status: next});
+          await loadStaff();
+        } catch (error) { staffMessage(error.message); }
+      }));
+    }
+    container.append(card);
+  }
+}
+
+function geolocationOnce() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error("GPS qurilmada yo‘q")); return; }
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      () => reject(new Error("GPS ruxsatini bering")),
+      {enableHighAccuracy: true, timeout: 15000, maximumAge: 0}
+    );
+  });
+}
+
+function stopCourierGPS() {
+  if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+  gpsWatchId = null;
+  if (byId("courier-gps-start")) byId("courier-gps-start").disabled = false;
+  if (byId("courier-gps-stop")) byId("courier-gps-stop").disabled = true;
+}
+
+function startCourierGPS() {
+  if (!navigator.geolocation) {
+    byId("courier-gps-status").textContent = "GPS mavjud emas.";
+    return;
+  }
+  if (gpsWatchId !== null) return;
+  gpsLastUpload = 0;
+  gpsWatchId = navigator.geolocation.watchPosition(async (position) => {
+    const now = Date.now();
+    if (now - gpsLastUpload < 10000) return;
+    gpsLastUpload = now;
+    try {
+      await staffPost("/api/courier/location", {
+        latitude: position.coords.latitude, longitude: position.coords.longitude,
+      });
+      byId("courier-gps-status").textContent = "✅ GPS ulashilmoqda • " + new Date().toLocaleTimeString();
+    } catch (error) {
+      byId("courier-gps-status").textContent = error.message;
+      if (error.message.includes("faol buyurtma") || error.message.includes("Smena")) stopCourierGPS();
+    }
+  }, () => {
+    byId("courier-gps-status").textContent = "GPS ruxsatini tekshiring.";
+    stopCourierGPS();
+  }, {enableHighAccuracy: true, maximumAge: 5000, timeout: 15000});
+  byId("courier-gps-start").disabled = true;
+  byId("courier-gps-stop").disabled = false;
+}
+
+function startStaff() {
+  if (!staffPanel) return;
+  const role = staffRole();
+  staffPanel.querySelector(".staff-login").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    staffMessage("Kirilmoqda…");
+    try {
+      const result = await postJSON("/api/auth/login", {
+        phone: staffPanel.querySelector(".staff-phone").value.trim(),
+        password: staffPanel.querySelector(".staff-password").value,
+      });
+      staffPanel.querySelector(".staff-password").value = "";
+      if (result.role !== role) throw new Error("Bu hisob " + role + " roli uchun emas");
+      sessionStorage.setItem("ali_staff_" + role, result.access_token);
+      await loadStaff();
+    } catch (error) { staffMessage(error.message); }
+  });
+  staffPanel.querySelector(".staff-refresh").addEventListener("click", loadStaff);
+  staffPanel.querySelector(".staff-logout").addEventListener("click", () => {
+    stopCourierGPS();
+    sessionStorage.removeItem("ali_staff_" + role);
+    staffPanel.querySelector(".staff-workspace").hidden = true;
+    staffPanel.querySelector(".staff-login").hidden = false;
+  });
+  if (role === "restaurant") {
+    byId("restaurant-menu-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        await staffPost("/api/restaurant/menu", {
+          name: byId("restaurant-food-name").value.trim(),
+          price: Number(byId("restaurant-food-price").value),
+          image_url: byId("restaurant-food-image").value.trim() || null,
+          is_available: true,
+        });
+        byId("restaurant-menu-status").textContent = "✅ Taom menyuga qo‘shildi";
+        event.target.reset();
+        await showRestaurantMenu();
+      } catch (error) { byId("restaurant-menu-status").textContent = error.message; }
+    });
+  } else {
+    byId("courier-shift-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const status = byId("courier-shift-status");
+      status.textContent = "GPS olinmoqda va foto yuborilmoqda…";
+      try {
+        const coords = await geolocationOnce();
+        const data = new FormData();
+        data.append("latitude", String(coords.latitude));
+        data.append("longitude", String(coords.longitude));
+        data.append("selfie", byId("courier-selfie").files[0]);
+        const result = await api("/api/courier/shifts/start", {
+          method: "POST", headers: staffHeaders(), body: data,
+        });
+        status.textContent = "✅ Smena №" + result.shift_id + " yuborildi. Admin tasdig‘ini kuting.";
+      } catch (error) { status.textContent = error.message; }
+    });
+    byId("courier-gps-start").addEventListener("click", startCourierGPS);
+    byId("courier-gps-stop").addEventListener("click", stopCourierGPS);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopCourierGPS();
+        byId("courier-gps-status").textContent = "Ilova yopildi yoki fonga o‘tdi. GPS to‘xtatildi.";
+      }
+    });
+  }
+  if (staffToken()) loadStaff();
+}
+
+async function loadAdminExtras() {
+  if (!adminToken() || !byId("admin-orders")) return;
+  const headers = {Authorization: "Bearer " + adminToken()};
+  try {
+    const orders = await api("/api/admin/orders", {headers});
+    const target = byId("admin-orders");
+    target.replaceChildren();
+    if (!orders.length) target.textContent = "Buyurtmalar yo‘q.";
+    for (const order of orders) {
+      const line = document.createElement("p");
+      line.textContent = "№" + order.id + " • " + order.restaurant + " • " +
+        order.status + " • " + order.recipient + " • " + uzs(order.total);
+      target.append(line);
+    }
+  } catch (error) { byId("admin-orders").textContent = error.message; }
+  try {
+    const shifts = await api("/api/admin/courier-shifts", {headers});
+    const target = byId("admin-shifts");
+    target.replaceChildren();
+    if (!shifts.length) target.textContent = "Smenalar yo‘q.";
+    for (const shift of shifts) {
+      const card = document.createElement("article");
+      card.className = "white-panel";
+      const title = document.createElement("p");
+      title.textContent = "Smena №" + shift.id + " • Kuryer №" +
+        shift.courier_id + " • " + shift.status;
+      card.append(title);
+      card.append(button("Fotosuratni ko‘rish", async () => {
+        try {
+          const response = await fetch("/api/admin/courier-shifts/" + shift.id + "/photo", {headers});
+          if (!response.ok) throw new Error("Rasmni yuklab bo‘lmadi");
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const photo = document.createElement("img");
+          photo.src = url;
+          photo.alt = "Kuryer smena selfiesi";
+          photo.style.maxWidth = "220px";
+          photo.style.height = "auto";
+          photo.onload = () => URL.revokeObjectURL(url);
+          card.append(photo);
+        } catch (error) { staffMessage(error.message); }
+      }, "button-outline"));
+      if (shift.status === "pending") {
+        for (const [label, status] of [["Tasdiqlash", "approved"], ["Rad etish", "rejected"]]) {
+          card.append(button(label, async () => {
+            try {
+              await postJSON("/api/admin/courier-shifts/" + shift.id + "/review",
+                {status}, adminToken());
+              await loadAdminExtras();
+            } catch (error) { alert(error.message); }
+          }, status === "rejected" ? "button-outline" : ""));
+        }
+      }
+      target.append(card);
+    }
+  } catch (error) { byId("admin-shifts").textContent = error.message; }
+}
+
+function startAdminExtras() {
+  const form = byId("staff-create-form");
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const message = byId("staff-create-status");
+    try {
+      const result = await postJSON("/api/admin/staff", {
+        name: byId("staff-name").value.trim(),
+        phone: byId("staff-phone").value.trim(),
+        password: byId("staff-password").value,
+        role: byId("staff-role").value,
+        restaurant_name: byId("staff-restaurant-name").value.trim() || null,
+        restaurant_address: byId("staff-restaurant-address").value.trim() || null,
+      }, adminToken());
+      message.textContent = "✅ " + result.role + " xodimi №" + result.id + " yaratildi";
+      byId("staff-password").value = "";
+    } catch (error) { message.textContent = error.message; }
+  });
+}
+
+startStaff();
+startAdminExtras();
