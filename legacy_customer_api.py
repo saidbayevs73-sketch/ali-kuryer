@@ -1,6 +1,7 @@
 """Customer JSON API for the existing SQLite server; no FastAPI schema swap."""
 import json
 import math
+import mimetypes
 import os
 import re
 import secrets
@@ -82,6 +83,23 @@ def install(legacy):
             return
         if path == '/':
             self.out((Path(__file__).parent / 'index.html').read_text(encoding='utf-8'))
+            return
+        public_files = {
+            '/site-assets/customer.js', '/site-assets/customer.css',
+            '/legal/offer.html', '/legal/privacy.html',
+        }
+        if path in public_files:
+            asset = Path(__file__).parent / path.lstrip('/')
+            if not asset.is_file():
+                self.out('Topilmadi', 404)
+                return
+            body = asset.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type', mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('X-Content-Type-Options', 'nosniff')
+            self.end_headers()
+            self.wfile.write(body)
             return
         if not path.startswith('/api/'):
             old_get(self)
