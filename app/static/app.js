@@ -467,6 +467,7 @@ async function loadStaff() {
       const shift = await staffRead("/api/courier/shifts/current");
       byId("courier-shift-status").textContent = "Smena holati: " + shift.status;
     }
+    await refreshVideoRooms(false);
   } catch (error) {
     // Courier may be logged in with an unapproved shift: show the workspace,
     // but available orders are withheld by the API until admin approves.
@@ -477,6 +478,7 @@ async function loadStaff() {
       await showCourierOrders().catch(() => {});
       const shift = await staffRead("/api/courier/shifts/current").catch(() => null);
       if (shift) byId("courier-shift-status").textContent = "Smena holati: " + shift.status;
+      await refreshVideoRooms(false).catch(() => {});
       return;
     }
     staffMessage(error.message);
@@ -765,11 +767,25 @@ async function loadAdminExtras() {
       target.append(card);
     }
   } catch (error) { byId("admin-shifts").textContent = error.message; }
+  await refreshVideoRooms(true).catch(() => {});
 }
 
 function startAdminExtras() {
   const form = byId("staff-create-form");
   if (!form) return;
+  const meetingForm = byId("meeting-create-form");
+  if (meetingForm) meetingForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = byId("meeting-create-status");
+    try {
+      await postJSON("/api/panels/meetings", {
+        title: byId("meeting-title").value.trim(),
+      }, adminToken());
+      status.textContent = "✅ Videoqo‘ng‘iroq yaratildi";
+      event.target.reset();
+      await refreshVideoRooms(true);
+    } catch (error) { status.textContent = error.message; }
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const message = byId("staff-create-status");
@@ -808,5 +824,40 @@ async function checkComplaint() {
       (result.reply ? " • Admin javobi: " + result.reply : " • Admin javobini kuting.");
   } catch (error) {
     target.textContent = error.message;
+  }
+}
+
+
+async function refreshVideoRooms(isAdmin) {
+  const target = isAdmin ? byId("meeting-admin-list") : staffPanel?.querySelector(".staff-meetings");
+  if (!target) return;
+  const token = isAdmin ? adminToken() : staffToken();
+  target.replaceChildren();
+  const meetings = await api("/api/panels/meetings", {
+    headers: {Authorization: "Bearer " + token},
+  });
+  if (!meetings.length) target.textContent = "Faol videoqo‘ng‘iroq yo‘q.";
+  for (const meeting of meetings) {
+    const card = document.createElement("article");
+    card.className = "white-panel";
+    const title = document.createElement("h3");
+    title.textContent = meeting.title;
+    const link = document.createElement("a");
+    link.href = meeting.join_url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "📹 Videoqo‘ng‘iroqqa qo‘shilish";
+    const note = document.createElement("p");
+    note.textContent = "Tashqi Jitsi xizmati. Havolani begonalarga yubormang.";
+    card.append(title, link, note);
+    if (isAdmin) {
+      card.append(button("Xonani yopish", async () => {
+        try {
+          await postJSON("/api/panels/meetings/" + meeting.id + "/close", {}, adminToken());
+          await refreshVideoRooms(true);
+        } catch (error) { alert(error.message); }
+      }, "button-outline"));
+    }
+    target.append(card);
   }
 }
