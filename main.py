@@ -3,6 +3,7 @@
 Do not require optional template/static directories on startup. The public
 landing page lives at the repository root in index.html.
 """
+import os
 from pathlib import Path
 import asyncio
 from contextlib import asynccontextmanager
@@ -90,6 +91,8 @@ def health():
 
 
 def _panel(request: Request):
+    if os.getenv("ENABLE_STAFF_WEB_PANELS", "0") != "1":
+        raise HTTPException(status_code=404, detail="Topilmadi")
     # Existing deployments do not include the panel template yet.
     # Do not return a false-success page or crash with TemplateNotFound.
     if templates is None or not (TEMPLATE_DIR / "panel.html").is_file():

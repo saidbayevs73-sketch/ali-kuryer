@@ -1066,6 +1066,9 @@ def dashboard(role,se,path,q):
         extra='<div class="grid panel-stats"><div class="card stat"><small>Yetkazilgan buyurtmalar</small><strong>'+str(delivered)+'</strong></div><div class="card stat"><small>Mijozlar bahosi • '+str(rating[1])+' baho</small><strong>'+('★ '+str(round(rating[0],1)) if rating[0] else '—')+'</strong></div></div>'
     return result.replace('<div class="wrap">','<div class="wrap">'+heading+extra,1)
 
+from legacy_customer_api import install as install_customer_api
+install_customer_api(globals())
+
 if __name__=='__main__':
     if not ADMIN_PASSWORD or ADMIN_PASSWORD=='ChangeMe_123!':raise SystemExit('ADMIN_PASSWORD muhit o‘zgaruvchisiga yangi kuchli parol kiriting.')
     init_db();print('ALI KURYER V2 READY')
