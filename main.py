@@ -1,48 +1,42 @@
+"""Ali Kuryer FastAPI entrypoint.
 
-from fastapi import FastAPI, Request
+Do not require optional template/static directories on startup. The public
+landing page lives at the repository root in index.html.
+"""
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app.database import Base, engine
-import app.models
+import app.models  # Register SQLAlchemy tables before create_all
 
 from app.bootstrap import ensure_admin
 from app.config import settings
-
 from app import auth
-from app.routers import (
-    customer,
-    panels,
-    restaurant,
-    orders,
-    admin,
-    courier,
-)
+from app.routers import customer, panels, restaurant, orders, admin, courier
+
+ROOT_DIR = Path(__file__).resolve().parent
+STATIC_DIR = ROOT_DIR / "app" / "static"
+TEMPLATE_DIR = ROOT_DIR / "app" / "templates"
 
 app = FastAPI(
-    title="Ali Kuryer NEW",
-    docs_url=(
-        None
-        if settings.environment == "production"
-        else "/api/docs"
-    ),
+    title="Ali Kuryer",
+    docs_url=None if settings.ENVIRONMENT == "production" else "/api/docs",
     redoc_url=None,
 )
 
-# Ma'lumotlar bazasi
 Base.metadata.create_all(bind=engine)
 ensure_admin()
 
-# Statik fayllar va HTML sahifalar
-app.mount(
-    "/static",
-    StaticFiles(directory="app/static"),
-    name="static",
-)
+# A missing optional directory must not crash the whole service.
+if STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR)) if TEMPLATE_DIR.is_dir() else None
 
-# API routerlar
 app.include_router(auth.router)
 app.include_router(customer.router)
 app.include_router(panels.router)
@@ -52,57 +46,47 @@ app.include_router(admin.router)
 app.include_router(courier.router)
 
 
-@app.get("/")
-def home(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {"request": request},
-    )
+@app.get("/", include_in_schema=False)
+def home():
+    index = ROOT_DIR / "index.html"
+    if not index.is_file():
+        raise HTTPException(status_code=503, detail="Bosh sahifa topilmadi")
+    return FileResponse(str(index), media_type="text/html")
 
 
 @app.get("/api/health")
 def health():
-    return {
-        "ok": True,
-        "service": "Ali Kuryer NEW",
-    }
+    return {"ok": True, "service": "Ali Kuryer"}
 
 
-@app.get("/admin")
+def _panel(request: Request):
+    # Existing deployments do not include the panel template yet.
+    # Do not return a false-success page or crash with TemplateNotFound.
+    if templates is None or not (TEMPLATE_DIR / "panel.html").is_file():
+        raise HTTPException(status_code=404, detail="Panel hozircha mavjud emas")
+    return templates.TemplateResponse(request=request, name="panel.html")
+
+
+@app.get("/admin", include_in_schema=False)
 def admin_panel(request: Request):
-    return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
-    )
+    return _panel(request)
 
 
-@app.get("/restaurant")
+@app.get("/restaurant", include_in_schema=False)
 def restaurant_panel(request: Request):
-    return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
-    )
+    return _panel(request)
 
 
-@app.get("/courier")
+@app.get("/courier", include_in_schema=False)
 def courier_panel(request: Request):
-    return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
-    )
+    return _panel(request)
 
 
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
-
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
-    response.headers["Referrer-Policy"] = (
-        "strict-origin-when-cross-origin"
-    )
-    response.headers["Permissions-Policy"] = (
-        "camera=(self), geolocation=(self)"
-    )
-
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(self), geolocation=(self)"
     return response
