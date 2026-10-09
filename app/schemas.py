@@ -1,6 +1,6 @@
 
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
 class UserCreate(BaseModel):
@@ -11,6 +11,23 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     phone: str
     password: str
+
+
+class RegisterRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=150, pattern=r"\S")
+    phone: str = Field(min_length=13, max_length=30)
+    password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_bytes(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
+            raise ValueError("Password must not exceed 72 UTF-8 bytes")
+        return value
+
+
+class LoginRequest(UserLogin):
+    pass
 
 
 class TokenResponse(BaseModel):

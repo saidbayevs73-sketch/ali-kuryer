@@ -1,4 +1,6 @@
 
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -23,7 +25,7 @@ app = FastAPI(
     title="Ali Kuryer NEW",
     docs_url=(
         None
-        if settings.environment == "production"
+        if settings.ENVIRONMENT == "production"
         else "/api/docs"
     ),
     redoc_url=None,
@@ -34,13 +36,14 @@ Base.metadata.create_all(bind=engine)
 ensure_admin()
 
 # Statik fayllar va HTML sahifalar
+APP_DIR = Path(__file__).resolve().parent / "app"
 app.mount(
     "/static",
-    StaticFiles(directory="app/static"),
+    StaticFiles(directory=str(APP_DIR / "static")),
     name="static",
 )
 
-templates = Jinja2Templates(directory="app/templates")
+templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
 # API routerlar
 app.include_router(auth.router)
@@ -55,8 +58,8 @@ app.include_router(courier.router)
 @app.get("/")
 def home(request: Request):
     return templates.TemplateResponse(
-        "index.html",
-        {"request": request},
+        request=request,
+        name="index.html",
     )
 
 
@@ -71,24 +74,24 @@ def health():
 @app.get("/admin")
 def admin_panel(request: Request):
     return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
+        request=request,
+        name="panel.html",
     )
 
 
 @app.get("/restaurant")
 def restaurant_panel(request: Request):
     return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
+        request=request,
+        name="panel.html",
     )
 
 
 @app.get("/courier")
 def courier_panel(request: Request):
     return templates.TemplateResponse(
-        "panel.html",
-        {"request": request},
+        request=request,
+        name="panel.html",
     )
 
 

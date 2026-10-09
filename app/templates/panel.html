@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Panel — Ali Kuryer{% endblock %}
+{% block content %}
+<h1>{{ {'/admin': 'Admin', '/restaurant': 'Oshxona', '/courier': 'Kuryer'}[request.url.path] }} paneli</h1>
+<p>API holati: <span id="panel-status" role="status">Tekshirilmoqda…</span></p>
+<p>Buyurtmalarni boshqarish interfeysi hali mavjud emas.</p>
+{% endblock %}
