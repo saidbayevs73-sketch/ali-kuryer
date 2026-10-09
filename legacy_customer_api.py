@@ -80,6 +80,27 @@ def install(legacy):
                 recipient_name TEXT NOT NULL, latitude REAL NOT NULL,
                 longitude REAL NOT NULL, street TEXT NOT NULL,
                 house TEXT NOT NULL, note TEXT NOT NULL DEFAULT '')''')
+        if os.getenv("ALI_LEGACY_WRITES_FROZEN") == "1":
+            # Server-side, opt-in guard: old staff and customer requests cannot
+            # modify SQLite while a validated migration is being reconciled.
+            original_conn = legacy["conn"]
+            blocked_ops = {
+                sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE,
+                sqlite3.SQLITE_DELETE, sqlite3.SQLITE_CREATE_TABLE,
+                sqlite3.SQLITE_DROP_TABLE, sqlite3.SQLITE_ALTER_TABLE,
+                sqlite3.SQLITE_CREATE_INDEX, sqlite3.SQLITE_DROP_INDEX,
+            }
+
+            def frozen_connection():
+                connection = original_conn()
+                def deny_writes(action, arg1, arg2, database, trigger):
+                    return sqlite3.SQLITE_DENY if action in blocked_ops else sqlite3.SQLITE_OK
+                connection.set_authorizer(deny_writes)
+                return connection
+
+            legacy["conn"] = frozen_connection
+            print("ALI_LEGACY_WRITE_FREEZE ACTIVE", flush=True)
+
 
     def headers(self):
         origin = self.headers.get('Origin', '')
@@ -165,6 +186,12 @@ def install(legacy):
 
     def post(self):
         path = urlsplit(self.path).path
+        if os.getenv("ALI_LEGACY_WRITES_FROZEN") == "1":
+            if path.startswith("/api/"):
+                respond(self, {"error": "Eski server vaqtincha faqat o‘qish rejimida"}, 503)
+            else:
+                self.out("Baza ko‘chirilmoqda. O‘zgartirishlar vaqtincha to‘xtatilgan.", 503)
+            return
         if staff_blocked(self):
             self.out('Topilmadi', 404)
             return
