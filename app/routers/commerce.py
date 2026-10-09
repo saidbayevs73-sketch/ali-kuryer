@@ -4,12 +4,15 @@ This router uses existing User/Restaurant/MenuItem/Order tables. New metadata
 lives in additive tables, avoiding destructive changes to existing databases.
 """
 import math
+import io
+import os
 import re
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Response
 from pydantic import BaseModel, Field
+from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -448,3 +451,54 @@ def restaurant_stats(restaurant_id: int,
          for it in menu],
         key=lambda row: row["sold_count"], reverse=True
     )
+
+
+@router.post("/restaurants/{restaurant_id}/menu/{item_id}/photo")
+def upload_menu_photo(restaurant_id: int, item_id: int, file: UploadFile = File(...),
+                      db: Session = Depends(get_db), user=Depends(me)):
+    """Accept restaurant photos and strip EXIF/GPS metadata before storing."""
+    role(user, "restaurant", "admin")
+    rest = db.get(models.Restaurant, restaurant_id)
+    item = db.get(models.MenuItem, item_id)
+    if not rest or not item or item.restaurant_id != restaurant_id:
+        raise HTTPException(404, "Taom topilmadi")
+    if user.role != "admin" and rest.owner_id != user.id:
+        raise HTTPException(403, "Faqat o‘z oshxonangizga rasm yuklay olasiz")
+    if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
+        raise HTTPException(415, "Faqat JPG, PNG yoki WebP rasm yuklang")
+    raw = file.file.read(2_000_001)
+    if len(raw) > 2_000_000:
+        raise HTTPException(413, "Rasm 2 MB dan kichik bo‘lishi kerak")
+    try:
+        with Image.open(io.BytesIO(raw)) as img:
+            img.verify()
+        with Image.open(io.BytesIO(raw)) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((1200, 1200))
+            converted = img.convert("RGB")
+            out = io.BytesIO()
+            converted.save(out, format="WEBP", quality=82, method=5)
+            safe_bytes = out.getvalue()
+    except (UnidentifiedImageError, OSError, ValueError):
+        raise HTTPException(422, "Rasm buzilgan yoki noto‘g‘ri formatda")
+    photo = db.get(models.MenuPhoto, item_id)
+    if photo is None:
+        photo = models.MenuPhoto(menu_item_id=item_id)
+        db.add(photo)
+    photo.content_type = "image/webp"
+    photo.binary_data = safe_bytes
+    db.commit()
+    base = os.getenv("PUBLIC_BASE_URL", "https://ali-kuryer.onrender.com").rstrip("/")
+    return {"ok": True, "image_url": f"{base}/api/v1/menu-photo/{item_id}"}
+
+
+@router.get("/menu-photo/{item_id}")
+def get_menu_photo(item_id: int, db: Session = Depends(get_db)):
+    photo = db.get(models.MenuPhoto, item_id)
+    item = db.get(models.MenuItem, item_id)
+    rest = db.get(models.Restaurant, item.restaurant_id) if item else None
+    if not photo or not rest or not rest.is_approved:
+        raise HTTPException(404, "Rasm topilmadi")
+    return Response(photo.binary_data, media_type=photo.content_type,
+                    headers={"Cache-Control": "public, max-age=900",
+                             "X-Content-Type-Options": "nosniff"})
