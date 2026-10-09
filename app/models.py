@@ -59,3 +59,25 @@ class OrderItem(Base):
     menu_item_id = Column(Integer, ForeignKey("menu_items.id"))
     quantity = Column(Integer, default=1)
     price = Column(Float, nullable=False)
+
+
+class PartnerApplication(Base):
+    __tablename__ = "partner_applications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    kind = Column(String(20), nullable=False)
+    full_name = Column(String(120), nullable=False)
+    phone = Column(String(20), nullable=False)
+    city = Column(String(100), nullable=False)
+    detail = Column(String(1000), nullable=False, default="")
+    status = Column(String(20), nullable=False, default="new")
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class GoogleIdentity(Base):
+    __tablename__ = "google_identities"
+
+    id = Column(Integer, primary_key=True, index=True)
+    google_sub = Column(String(160), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
+    created_at = Column(DateTime, server_default=func.now())
