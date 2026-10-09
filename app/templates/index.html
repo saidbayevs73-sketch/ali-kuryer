@@ -1,8 +1,82 @@
 {% extends "base.html" %}
-{% block content %}
-<h1>Ali Kuryer</h1>
-<p>Oshxonalar va ularning menyusi.</p>
-<p id="message" role="status"></p>
-<section id="restaurants" aria-label="Oshxonalar"></section>
-<section id="menu" aria-label="Menyu"></section>
+{% block title %}Ali Kuryer — Mijoz ilovasi{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoT00fzEKbYC8=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 {% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">ALI KURYER • MIJOZLAR UCHUN</p>
+  <h1>Sevimli taomingiz <span>eshigingizgacha.</span></h1>
+  <p>Oshxonani tanlang, taom buyurtma qiling va xaritada yetkazish manzilini aniq belgilang.</p>
+  <a class="button" href="#restaurants">Taomlarni ko‘rish</a>
+</section>
+
+<section class="content-section" id="restaurants">
+  <div class="section-title"><h2>Oshxonalar</h2><span id="restaurant-message" role="status"></span></div>
+  <div id="restaurant-list" class="cards"></div>
+</section>
+<section class="content-section" id="menu-section">
+  <div class="section-title"><h2>Taomlar</h2><span id="menu-message" role="status">Oshxonani tanlang</span></div>
+  <div id="menu-list" class="cards"></div>
+</section>
+
+<section class="content-section" id="checkout">
+  <h2>🛒 Savatcha va buyurtma</h2>
+  <p>Bir buyurtmada bitta oshxonadan taom tanlanadi.</p>
+  <div id="cart-items" class="white-panel" aria-live="polite">Savatcha bo‘sh</div>
+  <p class="cart-total">Jami: <strong id="cart-total">0 so‘m</strong></p>
+  <form id="checkout-form" class="white-panel form-grid">
+    <label>Ism va familiya<input id="customer-name" autocomplete="name" minlength="2" maxlength="150" required></label>
+    <label>Telefon raqami<input id="customer-phone" autocomplete="tel" type="tel" inputmode="tel" pattern="\+998[0-9]{9}" placeholder="+998901234567" required></label>
+    <label>Ko‘cha / mahalla<input id="street" autocomplete="street-address" minlength="2" maxlength="160" required></label>
+    <label>Uy raqami<input id="house" maxlength="40" required></label>
+    <label>Pod’yezd / kirish<input id="entrance" maxlength="40"></label>
+    <label>Qavat<input id="floor" maxlength="40"></label>
+    <label>Xonadon<input id="apartment" maxlength="40"></label>
+    <label>Mo‘ljal / izoh<input id="note" maxlength="300"></label>
+    <div class="full-width map-panel">
+      <h3>📍 Yetkazish joyini belgilang</h3>
+      <p>Xaritada uy joyini bosing yoki telefon GPS’idan foydalaning.</p>
+      <button type="button" id="gps-btn" class="button-outline">📍 Joylashuvimni aniqlash</button>
+      <div id="delivery-map" role="application" aria-label="Yetkazish joyini xaritada tanlash"></div>
+      <p id="location-status" role="status">Manzil hali belgilanmagan</p>
+    </div>
+    <fieldset class="full-width payment-field">
+      <legend>To‘lov usuli</legend>
+      <div class="payment-row">
+        <label class="payment-option active"><input type="radio" name="payment" value="cash" checked> Naqd</label>
+        <span class="payment-option disabled" title="Hali ulanmagan">Karta <small>tez kunda</small></span>
+        <span class="payment-option disabled" title="Hali ulanmagan">Click <small>tez kunda</small></span>
+        <span class="payment-option disabled" title="Hali ulanmagan">Payme <small>tez kunda</small></span>
+      </div>
+      <small>Karta, Click va Payme rasmiy to‘lov ulanishidan keyin yoqiladi.</small>
+    </fieldset>
+    <div class="full-width">
+      <button class="button" id="order-submit" type="submit">Buyurtma berish</button>
+      <p id="checkout-status" role="status"></p>
+    </div>
+  </form>
+</section>
+
+<section class="content-section" id="tracking">
+  <h2>📦 Buyurtmam holati</h2>
+  <div class="white-panel">
+    <p id="order-information">Buyurtma berganingizdan keyin holati shu yerda chiqadi.</p>
+    <button type="button" id="track-btn" class="button-outline">Holatni yangilash</button>
+  </div>
+</section>
+
+<section class="content-section" id="help">
+  <h2>💬 Adminga murojaat / shikoyat</h2>
+  <p>Buyurtma yoki xizmat yuzasidan admin jamoasiga to‘g‘ridan-to‘g‘ri murojaat yuboring.</p>
+  <form id="complaint-form" class="white-panel form-grid">
+    <label>Ismingiz<input id="complaint-name" required maxlength="150" minlength="2"></label>
+    <label>Telefon<input id="complaint-phone" type="tel" placeholder="+998901234567" pattern="\+998[0-9]{9}" required></label>
+    <label class="full-width">Murojaatingiz<textarea id="complaint-message" minlength="10" maxlength="1500" required rows="5" placeholder="Muammoni batafsil yozing"></textarea></label>
+    <div class="full-width">
+      <button class="button" type="submit">Adminga yuborish</button>
+      <p id="complaint-status" role="status"></p>
+    </div>
+  </form>
+</section>
