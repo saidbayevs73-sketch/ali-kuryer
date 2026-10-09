@@ -1,16 +1,15 @@
 """End-to-end API tests for staff login roles, order lifecycle, selfie and GPS."""
-from app.models import User, Restaurant, MenuItem
-from app.security import create_access_token
-
 from test_startup import app_context
 
 
 def auth(user_id):
+    from app.security import create_access_token
     return {"Authorization": "Bearer " + create_access_token({"sub": str(user_id)})}
 
 
 def test_staff_lifecycle(app_context, tmp_path, monkeypatch):
     client, Session = app_context
+    from app.models import User
     from app.routers import courier
     monkeypatch.setattr(courier, "PRIVATE_UPLOAD_DIR", tmp_path / "selfies")
     with Session() as db:
