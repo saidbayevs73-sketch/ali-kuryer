@@ -443,7 +443,7 @@ def restaurant_stats(restaurant_id: int,
         func.sum(models.OrderItem.quantity).label("sold")
     ).join(models.Order, models.Order.id == models.OrderItem.order_id).filter(
         models.Order.restaurant_id == restaurant_id,
-        models.Order.status.notin_(["cancelled"])
+        models.Order.status == "delivered"
     ).group_by(models.OrderItem.menu_item_id).all()
     sold = {row.menu_item_id: int(row.sold) for row in stats}
     return sorted(
