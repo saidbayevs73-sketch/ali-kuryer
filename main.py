@@ -9,7 +9,7 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -107,12 +107,12 @@ def admin_panel(request: Request):
 
 @app.get("/restaurant", include_in_schema=False)
 def restaurant_panel(request: Request):
-    return _panel(request)
+    return RedirectResponse("https://ali-kuryer-1.onrender.com/restaurant", status_code=303)
 
 
 @app.get("/courier", include_in_schema=False)
 def courier_panel(request: Request):
-    return _panel(request)
+    return RedirectResponse("https://ali-kuryer-1.onrender.com/courier", status_code=303)
 
 
 @app.middleware("http")
