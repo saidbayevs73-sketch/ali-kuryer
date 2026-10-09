@@ -50,3 +50,5 @@
 @media(prefers-reduced-motion:reduce) { .ali-orb,.assistant-button,.ali-orb:before,.ali-orb:after{animation:none} }
 
 .customer-dialog [hidden], .partner-callouts [hidden] {display:none!important}
+
+footer #contacts {display:none!important}
