@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -30,11 +31,16 @@ def restaurant_menu(restaurant_id: int, db: Session = Depends(get_db)):
             models.MenuExtra.menu_item_id.in_([i.id for i in items])
         ).all()
     }
+    photo_ids = {p.menu_item_id for p in db.query(models.MenuPhoto.menu_item_id).filter(
+        models.MenuPhoto.menu_item_id.in_([i.id for i in items])
+    ).all()}
+    base_url = os.getenv("PUBLIC_BASE_URL", "https://ali-kuryer.onrender.com").rstrip("/")
     return {"restaurant_id": restaurant_id, "items": [
         {
             "id": item.id, "restaurant_id": item.restaurant_id,
             "name": item.name, "price": item.price,
-            "image_url": item.image_url, "is_available": item.is_available,
+            "image_url": (f"{base_url}/api/v1/menu-photo/{item.id}" if item.id in photo_ids
+                          else item.image_url), "is_available": item.is_available,
             "category": extras[item.id].category if item.id in extras else "",
             "description": extras[item.id].description if item.id in extras else "",
         }
