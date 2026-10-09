@@ -52,3 +52,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 #checkout-status,#complaint-status{font-weight:700}
 .site-footer{text-align:center;padding:30px 18px;background:var(--black);color:#d4d4d4;margin-top:30px}
 @media(max-width:600px){.site-header{padding:12px 18px}.public-nav{gap:10px}.public-nav a{font-size:12px}.content-section{padding:28px 15px}.hero{padding:55px 20px}.form-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr}#delivery-map{height:250px}}
+
+[hidden]{display:none!important}
+.top-gap{margin-top:32px!important}
+.staff-panel textarea,.staff-panel input,.staff-panel select,#admin-workspace textarea,#admin-workspace input,#admin-workspace select{width:100%;font:inherit;padding:11px;margin:6px 0;border-radius:10px;border:1px solid #cfd3dd;background:#fff}
+.staff-panel input[type=file]{max-width:100%}
+.staff-login,.staff-workspace{max-width:1080px}
+.staff-workspace .section-title{margin-top:14px}
+#admin-workspace img{border:1px solid #e5e7eb;border-radius:12px;margin-top:8px}
