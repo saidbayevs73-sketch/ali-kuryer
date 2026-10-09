@@ -1,16 +1,29 @@
-
 from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
+class RegisterRequest(BaseModel):
+    # Used by app/auth.py
+    name: str = Field(min_length=2, max_length=100)
+    phone: str = Field(min_length=13, max_length=13)
+    password: str = Field(min_length=8, max_length=72)
+
+
+class LoginRequest(BaseModel):
+    # Used by app/auth.py
+    phone: str
+    password: str
+
+
+# Preserve older schema names for callers that already import them.
 class UserCreate(BaseModel):
     name: str = Field(min_length=2, max_length=100)
     phone: str = Field(min_length=9, max_length=20)
 
 
-class UserLogin(BaseModel):
-    phone: str
-    password: str
+class UserLogin(LoginRequest):
+    pass
 
 
 class TokenResponse(BaseModel):
@@ -20,14 +33,12 @@ class TokenResponse(BaseModel):
 
 class RestaurantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
 
 
 class MenuItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
     name: str
     price: int
