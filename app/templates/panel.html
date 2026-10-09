@@ -4,7 +4,7 @@
 {% if request.url.path == '/admin' %}
 <section class="content-section">
   <h1>🔐 Ali Kuryer — Admin</h1>
-  <p>Shikoyatlar faqat administrator hisobiga kirgandan keyin ko‘rinadi.</p>
+  <p>Bu kabinet faqat administrator loginidan keyin ishlaydi.</p>
   <form id="admin-login-form" class="white-panel form-grid">
     <label>Admin telefon<input id="admin-phone" type="tel" placeholder="+998901234567" required></label>
     <label>Parol<input id="admin-password" type="password" autocomplete="current-password" required></label>
@@ -12,23 +12,79 @@
   </form>
   <p id="admin-login-message" role="status"></p>
   <div id="admin-workspace" hidden>
-    <div class="section-title"><h2>Mijozlarning murojaatlari</h2>
+    <div class="section-title">
+      <h2>Mijozlarning murojaatlari</h2>
       <button type="button" class="button-outline" id="admin-refresh">Yangilash</button>
-      <button type="button" class="button-outline" id="admin-logout">Chiqish</button></div>
+      <button type="button" class="button-outline" id="admin-logout">Chiqish</button>
+    </div>
     <div id="admin-complaints" class="cards" aria-live="polite"></div>
+    <h2 class="top-gap">📦 Buyurtmalar</h2>
+    <div id="admin-orders" class="white-panel" aria-live="polite"></div>
+    <h2 class="top-gap">🛵 Kuryer smenalari</h2>
+    <div id="admin-shifts" class="cards" aria-live="polite"></div>
+    <h2 class="top-gap">Xodim qo‘shish</h2>
+    <form id="staff-create-form" class="white-panel form-grid">
+      <label>Ismi<input id="staff-name" required minlength="2"></label>
+      <label>Telefon<input id="staff-phone" required type="tel" placeholder="+998901234567"></label>
+      <label>Parol (12+ belgi)<input id="staff-password" required type="password" minlength="12"></label>
+      <label>Lavozim<select id="staff-role"><option value="courier">Kuryer</option><option value="restaurant">Oshxona</option></select></label>
+      <label>Oshxona nomi (oshxona xodimi uchun)<input id="staff-restaurant-name"></label>
+      <label>Oshxona manzili<input id="staff-restaurant-address"></label>
+      <div class="full-width"><button type="submit">Xodimni saqlash</button><p id="staff-create-status" role="status"></p></div>
+    </form>
   </div>
 </section>
 {% elif request.url.path == '/restaurant' %}
-<section class="content-section">
+<section class="content-section staff-panel" data-staff-role="restaurant">
   <h1>🏪 Oshxona kabineti</h1>
-  <p>Oshxona xodimlari uchun alohida login va buyurtmalar boshqaruvi ishlab chiqilmoqda.</p>
-  <p id="panel-status" role="status"></p>
+  <form class="staff-login white-panel form-grid">
+    <label>Telefon<input class="staff-phone" type="tel" placeholder="+998901234567" required></label>
+    <label>Parol<input class="staff-password" type="password" required></label>
+    <div class="full-width"><button type="submit">Kirish</button></div>
+  </form>
+  <p class="staff-message" role="status"></p>
+  <div class="staff-workspace" hidden>
+    <button type="button" class="staff-refresh button-outline">Yangilash</button>
+    <button type="button" class="staff-logout button-outline">Chiqish</button>
+    <h2 class="top-gap">Buyurtmalar</h2>
+    <div class="staff-orders cards"></div>
+    <h2 class="top-gap">Menyuga taom qo‘shish</h2>
+    <form id="restaurant-menu-form" class="white-panel form-grid">
+      <label>Taom nomi<input id="restaurant-food-name" required minlength="2"></label>
+      <label>Narx (so‘m)<input id="restaurant-food-price" type="number" min="1" required></label>
+      <label class="full-width">Rasm HTTPS havolasi<input id="restaurant-food-image" type="url" placeholder="https://..."></label>
+      <div class="full-width"><button type="submit">Taom qo‘shish</button><p id="restaurant-menu-status"></p></div>
+    </form>
+    <h2 class="top-gap">Mening menyum</h2><div id="restaurant-menu-list" class="cards"></div>
+  </div>
 </section>
 {% elif request.url.path == '/courier' %}
-<section class="content-section">
+<section class="content-section staff-panel" data-staff-role="courier">
   <h1>🛵 Kuryer kabineti</h1>
-  <p>Kuryer uchun smena fotosurati, buyurtmalar va GPS boshqaruvi ishlab chiqilmoqda.</p>
-  <p id="panel-status" role="status"></p>
+  <form class="staff-login white-panel form-grid">
+    <label>Telefon<input class="staff-phone" type="tel" placeholder="+998901234567" required></label>
+    <label>Parol<input class="staff-password" type="password" required></label>
+    <div class="full-width"><button type="submit">Kirish</button></div>
+  </form>
+  <p class="staff-message" role="status"></p>
+  <div class="staff-workspace" hidden>
+    <button type="button" class="staff-refresh button-outline">Yangilash</button>
+    <button type="button" class="staff-logout button-outline">Chiqish</button>
+    <h2 class="top-gap">Ish boshlash / selfie</h2>
+    <form id="courier-shift-form" class="white-panel">
+      <p>Ish boshlaganda fotosuratingizni yuklang. Admin tasdiqlagandan so‘ng buyurtmalarni olasiz.</p>
+      <label>Selfie<input id="courier-selfie" type="file" accept="image/jpeg,image/png,image/webp" capture="user" required></label>
+      <div><button type="submit">Surat va GPS bilan smena ochish</button></div>
+      <p id="courier-shift-status" role="status"></p>
+    </form>
+    <h2 class="top-gap">Tayyor buyurtmalar</h2><div id="courier-available" class="cards"></div>
+    <h2 class="top-gap">Mening buyurtmalarim</h2><div class="white-panel">
+      <button type="button" id="courier-gps-start" class="button-outline">📍 Faol buyurtmada GPS ulashishni boshlash</button>
+      <button type="button" id="courier-gps-stop" class="button-outline" disabled>GPS ulashishni to‘xtatish</button>
+      <p id="courier-gps-status" role="status">GPS faqat siz yoqqaningizda ishlaydi.</p>
+    </div>
+    <div id="courier-mine" class="cards"></div>
+  </div>
 </section>
 {% endif %}
 {% endblock %}
