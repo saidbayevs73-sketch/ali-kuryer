@@ -332,11 +332,11 @@ def process_private(msg):
 
 def process_operator(msg):
     chat_id = msg["chat"]["id"]
-    if chat_id not in allowed_groups():
-        return
     text = (msg.get("text") or "").strip()
     if text.split("@")[0] == "/chatid":
         send(chat_id, f"Guruh ID: {chat_id}")
+        return
+    if chat_id not in allowed_groups():
         return
     reply_to = (msg.get("reply_to_message") or {}).get("message_id")
     if not reply_to:
