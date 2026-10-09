@@ -7,7 +7,7 @@ import math
 import secrets
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -124,14 +124,18 @@ def create_order(data: CheckoutRequest, db: Session = Depends(get_db)):
         raise
 
 
-@router.get("/{order_id}/track")
+class TrackingRequest(BaseModel):
+    token: str = Field(min_length=20, max_length=100)
+
+
+@router.post("/{order_id}/track")
 def track_order(
     order_id: int,
-    token: str = Query(min_length=20, max_length=100),
+    data: TrackingRequest,
     db: Session = Depends(get_db),
 ):
     detail = db.query(models.DeliveryDetail).filter_by(order_id=order_id).first()
-    if not detail or not secrets.compare_digest(detail.tracking_token, token):
+    if not detail or not secrets.compare_digest(detail.tracking_token, data.token):
         raise HTTPException(404, "Buyurtma topilmadi")
 
     order = db.get(models.Order, order_id)
