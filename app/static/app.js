@@ -327,3 +327,106 @@ function startCustomer() {
 }
 
 startCustomer();
+
+
+function adminToken() { return sessionStorage.getItem("ali_admin_token") || ""; }
+
+async function loadAdminComplaints() {
+  const target = byId("admin-complaints");
+  const token = adminToken();
+  target.textContent = "Murojaatlar yuklanmoqda…";
+  try {
+    const items = await api("/api/admin/complaints", {
+      headers: {Authorization: "Bearer " + token},
+    });
+    byId("admin-login-form").hidden = true;
+    byId("admin-workspace").hidden = false;
+    target.replaceChildren();
+    if (!items.length) target.textContent = "Hozircha murojaatlar yo‘q.";
+    for (const item of items) {
+      const card = document.createElement("article");
+      card.className = "white-panel";
+      const title = document.createElement("h3");
+      title.textContent = "Murojaat №" + item.id + " • " + item.status;
+      const customer = document.createElement("p");
+      customer.textContent = item.name + " • " + item.phone +
+        (item.order_id ? " • Buyurtma №" + item.order_id : "");
+      const message = document.createElement("p");
+      message.textContent = item.message;
+      const replyForm = document.createElement("form");
+      const area = document.createElement("textarea");
+      area.required = true;
+      area.minLength = 2;
+      area.maxLength = 2000;
+      area.rows = 3;
+      area.placeholder = "Mijozga javob yozing";
+      area.value = item.reply || "";
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.textContent = "Javobni saqlash";
+      const info = document.createElement("p");
+      info.setAttribute("role", "status");
+      replyForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submit.disabled = true;
+        try {
+          await postJSON("/api/admin/complaints/" + item.id + "/reply", {
+            reply: area.value.trim(), status: "answered",
+          }, adminToken());
+          info.textContent = "✅ Javob saqlandi";
+        } catch (error) {
+          info.textContent = error.message;
+        } finally {
+          submit.disabled = false;
+        }
+      });
+      replyForm.append(area, submit, info);
+      card.append(title, customer, message, replyForm);
+      target.append(card);
+    }
+    byId("admin-login-message").textContent = "";
+  } catch (error) {
+    target.textContent = error.message;
+    byId("admin-workspace").hidden = true;
+    byId("admin-login-form").hidden = false;
+    sessionStorage.removeItem("ali_admin_token");
+    byId("admin-login-message").textContent = "Admin sifatida tizimga kiring.";
+  }
+}
+
+function startAdmin() {
+  if (!byId("admin-login-form")) return;
+  byId("admin-login-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const status = byId("admin-login-message");
+    status.textContent = "Tekshirilmoqda…";
+    try {
+      const login = await postJSON("/api/auth/login", {
+        phone: byId("admin-phone").value.trim(),
+        password: byId("admin-password").value,
+      });
+      byId("admin-password").value = "";
+      if (login.role !== "admin") throw new Error("Bu hisob administrator emas");
+      sessionStorage.setItem("ali_admin_token", login.access_token);
+      await loadAdminComplaints();
+    } catch (error) {
+      status.textContent = error.message;
+    }
+  });
+  byId("admin-refresh").addEventListener("click", loadAdminComplaints);
+  byId("admin-logout").addEventListener("click", () => {
+    sessionStorage.removeItem("ali_admin_token");
+    byId("admin-workspace").hidden = true;
+    byId("admin-login-form").hidden = false;
+    byId("admin-login-message").textContent = "Tizimdan chiqdingiz.";
+  });
+  if (adminToken()) loadAdminComplaints();
+}
+
+startAdmin();
+
+if (byId("panel-status")) {
+  api("/api" + location.pathname + "/status")
+    .then((result) => { byId("panel-status").textContent = result.message; })
+    .catch((error) => { byId("panel-status").textContent = error.message; });
+}
