@@ -672,3 +672,53 @@ def approve_restaurant(restaurant_id: int, data: RestaurantApproval,
     r.is_approved = data.approved
     db.commit()
     return {"ok": True, "is_approved": r.is_approved}
+
+
+class AdminStaffCreateIn(BaseModel):
+    name: str = Field(min_length=2, max_length=150)
+    phone: str
+    password: str = Field(min_length=12, max_length=128)
+    role: Literal["courier", "restaurant"]
+    restaurant_id: int | None = None
+
+
+@router.post("/admin/staff", status_code=201)
+def create_staff_by_admin(data: AdminStaffCreateIn,
+                          db: Session = Depends(get_db), user=Depends(me)):
+    """Only admin can provision couriers and restaurant owners: no public role escalation."""
+    role(user, "admin")
+    require_durable_storage()
+    from app.security import hash_password
+    from sqlalchemy.exc import IntegrityError
+
+    phone = data.phone.strip()
+    if not _PHONE.fullmatch(phone):
+        raise HTTPException(422, "Telefon +998XXXXXXXXX shaklida bo‘lsin")
+    if db.query(models.User).filter_by(phone=phone).first():
+        raise HTTPException(409, "Telefon allaqachon ro‘yxatdan o‘tgan")
+    restaurant = None
+    if data.role == "restaurant":
+        if data.restaurant_id is None:
+            raise HTTPException(422, "Oshxona ID sini kiriting")
+        restaurant = db.get(models.Restaurant, data.restaurant_id)
+        if restaurant is None:
+            raise HTTPException(404, "Oshxona topilmadi")
+        if restaurant.owner_id is not None:
+            current = db.get(models.User, restaurant.owner_id)
+            if current is not None and current.is_active:
+                raise HTTPException(409, "Bu oshxonada faol egasi mavjud")
+    employee = models.User(
+        name=data.name.strip(), phone=phone, password_hash=hash_password(data.password),
+        role=data.role, is_active=True
+    )
+    try:
+        db.add(employee)
+        db.flush()
+        if restaurant:
+            restaurant.owner_id = employee.id
+        db.commit()
+        db.refresh(employee)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Hisob yoki telefon raqami band")
+    return {"id": employee.id, "name": employee.name, "role": employee.role}
