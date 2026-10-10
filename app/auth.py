@@ -141,6 +141,101 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
 
 
 
+
+class FirebasePhoneLoginRequest(BaseModel):
+    id_token: str = Field(min_length=100, max_length=8192)
+    name: str = Field(default="Mijoz", max_length=150)
+
+
+def validate_firebase_phone_token(firebase_token: str) -> tuple[str, str]:
+    """Verify signature, issuer, audience and Firebase *phone* sign-in method.
+
+    Uses Google's public signing certificates; no service account private key,
+    Firebase API key or ID token is logged or trusted without verification.
+    """
+    import os
+    import re
+    from datetime import datetime, timezone
+    from google.auth.transport.requests import Request as GoogleRequest
+    from google.oauth2 import id_token as google_id_token
+
+    project = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+    if project != "ali-kuryer" or os.getenv("FIREBASE_PHONE_ENABLED") != "1":
+        raise HTTPException(503, "Firebase SMS tasdiqlash hali faollashtirilmagan")
+    try:
+        claims = google_id_token.verify_firebase_token(
+            firebase_token, GoogleRequest(), audience=project
+        )
+    except Exception:
+        raise HTTPException(401, "Firebase tasdiqlash tokeni yaroqsiz") from None
+    if (
+        claims.get("iss") != "https://securetoken.google.com/" + project
+        or claims.get("aud") != project
+        or not claims.get("sub")
+        or claims.get("firebase", {}).get("sign_in_provider") != "phone"
+    ):
+        raise HTTPException(401, "Firebase telefon orqali tasdiqlamagan")
+    phone = claims.get("phone_number", "")
+    if not isinstance(phone, str) or not re.fullmatch(r"\\+998\\d{9}", phone):
+        raise HTTPException(403, "Faqat O‘zbekiston telefon raqami qabul qilinadi")
+    # OTP proof must correspond to a recent actual phone sign-in, not a very old
+    # session's refresh token. Legitimate users can simply request a new SMS.
+    auth_time = claims.get("auth_time")
+    now = datetime.now(timezone.utc).timestamp()
+    if not isinstance(auth_time, (int, float)) or auth_time > now + 30 or now - auth_time > 600:
+        raise HTTPException(401, "Telefon tasdiqlash muddati tugagan. Yangi kod oling")
+    return phone, str(claims["sub"])
+
+
+@router.post("/firebase/phone-login")
+def firebase_phone_login(data: FirebasePhoneLoginRequest, db: Session = Depends(get_db)):
+    """Sign in/create CUSTOMER ONLY after real Firebase phone verification."""
+    import os
+    from sqlalchemy.exc import IntegrityError
+    from app.database import DATABASE_URL
+    from app import models
+
+    # Render ephemeral SQLite cannot safely persist authenticated customers.
+    if os.getenv("RENDER", "").lower() in {"true", "1", "yes"} and not DATABASE_URL.startswith("postgresql"):
+        raise HTTPException(503, "Doimiy PostgreSQL bazasi ulanmaguncha SMS kirish yopiq")
+    phone, firebase_uid = validate_firebase_phone_token(data.id_token)
+    existing = db.query(models.User).filter_by(phone=phone).with_for_update().first()
+    if existing and (existing.role != "customer" or not existing.is_active):
+        raise HTTPException(403, "Ushbu raqam mijoz hisobi sifatida ishlatilmaydi")
+    if not existing:
+        name = data.name.strip()[:150] or "Mijoz"
+        existing = models.User(
+            name=name, phone=phone, password_hash=None,
+            role="customer", is_active=True
+        )
+        db.add(existing)
+        db.flush()
+    # The unique firebase UID must never be bound to two different accounts.
+    binding = db.query(models.FirebasePhoneIdentity).filter_by(firebase_uid=firebase_uid).first()
+    if binding and binding.user_id != existing.id:
+        raise HTTPException(409, "Firebase hisobi boshqa mijozga bog‘langan")
+    if not binding:
+        db.add(models.FirebasePhoneIdentity(
+            firebase_uid=firebase_uid, user_id=existing.id, phone=phone
+        ))
+    proof = db.get(models.VerifiedPhone, phone)
+    if proof and proof.user_id != existing.id:
+        raise HTTPException(409, "Telefon raqami boshqa hisobda tasdiqlangan")
+    if not proof:
+        db.add(models.VerifiedPhone(phone=phone, user_id=existing.id))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Telefon allaqachon ro‘yxatga olingan")
+    access_token = security.create_access_token({
+        "sub": str(existing.id), "role": "customer"
+    })
+    return {"access_token": access_token, "token_type": "bearer", "role": "customer"}
+
+
+
+
 class GoogleCredentialRequest(BaseModel):
     credential: str
 
