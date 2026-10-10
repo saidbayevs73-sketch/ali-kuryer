@@ -1126,7 +1126,7 @@ filteredFoods
 .map(food=>{
 
 const hasActualPhoto=typeof food.image_url==="string" &&
- /^https:\/\/[A-Za-z0-9.-]+\//.test(food.image_url);
+ (/^https:\/\/[A-Za-z0-9.-]+\//.test(food.image_url) || /^\/(?!\/)[A-Za-z0-9_\/%?=&.-]+$/.test(food.image_url));
 const name=(food.name+" "+(food.category||"")).toLocaleLowerCase("uz");
 const samplePhoto=(function() {
   const picks=[
