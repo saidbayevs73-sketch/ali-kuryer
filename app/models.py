@@ -25,6 +25,14 @@ class UsernameIdentity(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
 
+class AdminLoginPreference(Base):
+    """Administrator-owned login alias, stored without changing the account's phone."""
+    __tablename__ = "admin_login_preferences"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    username = Column(String(32), nullable=False, unique=True)
+    updated_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class AdminPasswordResetEvent(Base):
     """One-time nonsecret event identifier for an owner-approved password recovery."""
     __tablename__ = "admin_password_reset_events"
