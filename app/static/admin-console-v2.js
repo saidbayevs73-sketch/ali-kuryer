@@ -126,7 +126,7 @@ function tab(name) {
   activeTab = name;
   document.querySelectorAll("[data-page]").forEach(el => show(el, el.id === name));
   document.querySelectorAll("[data-tab]").forEach(el => el.classList.toggle("active", el.dataset.tab === name));
-  const titles = {overview:"Umumiy nazorat",orders:"Buyurtmalar",restaurants:"Oshxonalar",partners:"Hamkorlik arizalari",support:"Operator suhbatlari",security:"Xavfsizlik"};
+  const titles = {overview:"Umumiy nazorat",orders:"Buyurtmalar",restaurants:"Oshxonalar",partners:"Hamkorlik arizalari",support:"Operator suhbatlari",team:"Xodimlar",security:"Xavfsizlik"};
   $("page-title").textContent = titles[name] || "Boshqaruv";
 }
 document.querySelectorAll("[data-tab]").forEach(el => el.addEventListener("click", () => tab(el.dataset.tab)));
@@ -149,6 +149,47 @@ $("login-form").addEventListener("submit", async e => {
     await refresh();
   } catch (err) { message(accessToken ? "content-message" : "login-message", err.message); }
   finally { $("login-button").disabled = false; }
+});
+const staffRoleField = $("staff-role");
+staffRoleField.addEventListener("change", () => {
+  show($("staff-restaurant-group"), staffRoleField.value === "restaurant");
+});
+$("staff-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  message("staff-message", "");
+  const button = $("create-staff");
+  const phone = $("staff-phone").value.trim();
+  const role = staffRoleField.value;
+  const name = $("staff-name").value.trim();
+  const password = $("staff-pass").value;
+  const restaurant = Number($("staff-restaurant").value);
+  if (!/^\+998[0-9]{9}$/.test(phone)) {
+    message("staff-message", "Telefonni +998XXXXXXXXX ko‘rinishida kiriting.");
+    return;
+  }
+  if (name.length < 2 || password.length < 12 || !["courier", "restaurant"].includes(role)) {
+    message("staff-message", "Ism, vazifa va kamida 12 belgili parolni tekshiring.");
+    return;
+  }
+  if (role === "restaurant" && (!Number.isSafeInteger(restaurant) || restaurant <= 0)) {
+    message("staff-message", "Oshxona ID raqamini kiriting.");
+    return;
+  }
+  button.disabled = true;
+  try {
+    const body = {name, phone, role, password,
+      restaurant_id: role === "restaurant" ? restaurant : null};
+    const data = await api("/api/v1/admin/staff", {
+      method: "POST", body: JSON.stringify(body)
+    });
+    $("staff-pass").value = "";
+    $("staff-name").value = "";
+    $("staff-phone").value = "";
+    message("staff-message", "Xodim yaratildi: ID " + data.id +
+      ". Vaqtinchalik parolni xavfsiz usulda xodimga yetkazing.");
+    await refresh();
+  } catch (err) { message("staff-message", err.message || "Xodim yaratilmadi"); }
+  finally { button.disabled = false; }
 });
 $("password-form").addEventListener("submit", async e => {
   e.preventDefault();
