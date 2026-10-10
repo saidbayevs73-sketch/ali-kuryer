@@ -22,6 +22,7 @@ data class Food(
 )
 data class FoodHit(val restaurant: Restaurant, val food: Food)
 data class Session(val token: String, val role: String)
+data class TelegramSession(val session: Session, val phone: String)
 data class AliOrder(
     val id: Int, val status: String, val total: Long,
     val restaurantId: Int, val address: String,
@@ -122,6 +123,26 @@ object AliApi {
         val body = JSONObject().put("name", name).put("phone", phone)
             .put("password", password).put("otp_code", otpCode)
         request("POST", "/api/auth/register", body)
+    }
+
+    suspend fun telegramStart(deviceSecret: String): String {
+        val body = JSONObject().put("device_secret", deviceSecret)
+        val response = JSONObject(request("POST", "/api/auth/telegram/start", body))
+        return response.getString("authorization_url")
+    }
+
+    suspend fun telegramFinish(ticket: String, deviceSecret: String): TelegramSession {
+        val body = JSONObject().put("ticket", ticket).put("device_secret", deviceSecret)
+        val response = JSONObject(request("POST", "/api/auth/telegram/finish", body))
+        if (response.optString("role") != "customer") {
+            throw IllegalStateException("Faqat mijoz akkauntiga kirish mumkin")
+        }
+        val token = response.optString("access_token")
+        if (token.isBlank()) throw IllegalStateException("Kirish tokeni olinmadi")
+        return TelegramSession(
+            Session(token, "customer"),
+            response.optString("phone", "")
+        )
     }
 
     suspend fun firebasePhoneLogin(idToken: String, name: String): Session {
