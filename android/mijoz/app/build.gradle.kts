@@ -12,9 +12,37 @@ android {
         applicationId = "uz.alikuryer.customer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.3.1"
+        versionCode = 6
+        versionName = "1.4.0"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
+    }
+
+    flavorDimensions += "audience"
+    productFlavors {
+        create("mijoz") {
+            dimension = "audience"
+            applicationId = "uz.alikuryer.customer"
+            buildConfigField("String", "APP_ROLE", "\"customer\"")
+            resValue("string", "app_name", "Ali Kuryer — Mijoz")
+        }
+        create("kuryer") {
+            dimension = "audience"
+            applicationId = "uz.alikuryer.courier"
+            buildConfigField("String", "APP_ROLE", "\"courier\"")
+            resValue("string", "app_name", "Ali Kuryer — Kuryer")
+        }
+        create("oshxona") {
+            dimension = "audience"
+            applicationId = "uz.alikuryer.restaurant"
+            buildConfigField("String", "APP_ROLE", "\"restaurant\"")
+            resValue("string", "app_name", "Ali Kuryer — Oshxona")
+        }
+        create("admin") {
+            dimension = "audience"
+            applicationId = "uz.alikuryer.admin"
+            buildConfigField("String", "APP_ROLE", "\"admin\"")
+            resValue("string", "app_name", "Ali Kuryer — Admin")
+        }
     }
 
     buildFeatures { compose = true; buildConfig = true }
