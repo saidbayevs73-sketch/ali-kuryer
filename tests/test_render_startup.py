@@ -362,3 +362,21 @@ def test_admin_password_change_fails_closed_on_ephemeral_production_db(monkeypat
     monkeypatch.setenv("RENDER", "false")
     monkeypatch.setenv("ENVIRONMENT", "test")
     auth.require_durable_admin_password_store()
+
+
+def test_production_ephemeral_sqlite_never_provisions_admin(monkeypatch):
+    from app import database
+    from app.bootstrap import ensure_admin
+    from app.database import SessionLocal
+    from app.models import User
+    phone = "+998900000877"
+    monkeypatch.setattr(database, "DATABASE_URL", "sqlite:////tmp/ephemeral-for-test.db")
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setenv("ALI_ADMIN_BOOTSTRAP_ENABLED", "1")
+    monkeypatch.setenv("ADMIN_PHONE", phone)
+    monkeypatch.setenv("ADMIN_PASSWORD", "StrongAdmin#Bootstrap2026")
+    with SessionLocal() as session:
+        assert session.query(User).filter_by(phone=phone).first() is None
+    ensure_admin()
+    with SessionLocal() as session:
+        assert session.query(User).filter_by(phone=phone).first() is None
