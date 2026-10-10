@@ -125,16 +125,45 @@ def list_applications(
     } for x in items]
 
 
+def basic_muhammadali_reply(message: str) -> str | None:
+    """Simple published support answers, not fabricated model output.
+
+    Keep these distinct from an AI response, so greeting users still receive
+    useful assistance when a paid provider is unavailable.
+    """
+    normalized = " ".join(message.casefold().strip().split())
+    if normalized in {"salom", "assalom", "assalomu alaykum", "assalom alaykum",
+                      "salom muhammadali", "hello", "hi"}:
+        return (
+            "Assalomu alaykum! Men Ali Kuryer yordamchisiman. "
+            "Taom topish, buyurtma tartibi va operator bilan bog‘lanishga yordam beraman. "
+            "Hozir AI xizmatida uzilish bo‘lishi mumkin. Nima haqida so‘ramoqchisiz?"
+        )
+    if normalized in {"rahmat", "katta rahmat", "tashakkur"}:
+        return "Arzimaydi! Ali Kuryerdan foydalanganingiz uchun rahmat."
+    return None
+
+
 @router.post("/api/assistant/chat")
 async def assistant_chat(data: AssistantChatIn):
     """OpenAI-compatible upstream. Respond honestly when not configured."""
+    basic_reply = basic_muhammadali_reply(data.message)
+    if basic_reply is not None:
+        return {"reply": basic_reply, "mode": "basic"}
+
     api_url = os.getenv("AI_API_URL", "").strip()
     key = os.getenv("AI_API_KEY", "").strip()
     if not api_url or not key:
-        raise HTTPException(status_code=503, detail="AI xizmati hozircha ulanmagan")
+        log.warning("Muhammadali provider not configured: missing URL or API key")
+        raise HTTPException(status_code=503, detail="Muhammadali AI xizmatiga ulanish sozlanmagan")
     url = urlparse(api_url)
-    if url.scheme != "https" or not url.hostname:
-        raise HTTPException(status_code=503, detail="AI xizmati noto‘g‘ri sozlangan")
+    if url.scheme != "https" or not url.hostname or url.username or url.password or url.fragment:
+        log.warning("Muhammadali provider URL invalid")
+        raise HTTPException(status_code=503, detail="Muhammadali AI manzili noto‘g‘ri sozlangan")
+    # A common deployment mistake is giving only the provider API base URL.
+    # Do not rewrite unknown third-party providers or redirect credentials.
+    if url.hostname.casefold() == "api.openai.com" and url.path.rstrip("/") in {"", "/v1"}:
+        api_url = "https://api.openai.com/v1/chat/completions"
     system_message = (
         "Siz Ali Kuryer saytining Muhammadali nomli o‘zbek tilidagi "
         "virtual yordamchisisiz. Xushmuomala, ixcham, aniq javob bering. "
@@ -160,11 +189,24 @@ async def assistant_chat(data: AssistantChatIn):
                     "temperature": 0.4,
                 },
             )
+            # Status only: never log tokens, user prompts, response content, or URLs.
+            if response.status_code >= 400:
+                log.warning("Muhammadali upstream status=%s", response.status_code)
             response.raise_for_status()
             payload = response.json()
         answer = payload["choices"][0]["message"]["content"]
         if not isinstance(answer, str) or not answer.strip():
             raise ValueError("empty response")
-        return {"reply": answer[:2200]}
-    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-        raise HTTPException(status_code=502, detail="AI xizmati vaqtincha javob bermadi")
+        return {"reply": answer[:2200], "mode": "ai"}
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        if code in (401, 403):
+            detail = "Muhammadali AI kaliti tasdiqlanmadi. Operatorga yozing."
+        elif code == 429:
+            detail = "Muhammadali AI xizmatining so‘rov limiti tugagan. Keyinroq urinib ko‘ring."
+        else:
+            detail = "Muhammadali AI serveri vaqtincha javob bermadi."
+        raise HTTPException(status_code=503, detail=detail) from None
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
+        log.warning("Muhammadali upstream failed category=%s", type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Muhammadali AI serveriga ulanishda xatolik.") from None
