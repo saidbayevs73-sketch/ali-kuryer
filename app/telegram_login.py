@@ -30,7 +30,7 @@ CALLBACK_URL = "https://ali-kuryer.onrender.com/api/auth/telegram/callback"
 MOBILE_CALLBACK = "alikuryer://telegram-login"
 MAX_AGE = timedelta(minutes=6)
 APP_SECRET_RE = re.compile(r"^[A-Za-z0-9_-]{43}$")
-UZ_PHONE_RE = re.compile(r"^\\+998[0-9]{9}$")
+UZ_PHONE_RE = re.compile(r"^\+998[0-9]{9}$")
 
 
 def get_db():
