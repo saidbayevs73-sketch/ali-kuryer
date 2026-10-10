@@ -8,6 +8,7 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=2, max_length=100)
     phone: str = Field(min_length=13, max_length=13)
     password: str = Field(min_length=8, max_length=72)
+    otp_code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
 class LoginRequest(BaseModel):
