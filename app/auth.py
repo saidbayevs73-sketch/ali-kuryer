@@ -359,11 +359,33 @@ def change_admin_password(data: AdminChangePassword,
 
 
 @router.post("/login")
-def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.phone == data.phone.strip()).first()
+def login(data: schemas.LoginRequest, request: Request,
+          db: Session = Depends(get_db)):
+    import os
+    import hmac
+    phone = data.phone.strip()
+    owner_phone = os.getenv("ADMIN_PHONE", "").strip()
+    owner_attempt = bool(owner_phone) and hmac.compare_digest(phone, owner_phone)
+    peer = request.client.host if request.client else "unknown"
 
-    if not user or not user.is_active or not user.password_hash or not security.verify_password(data.password, user.password_hash):
+    # Legacy operator pages may still use phone/password. Apply the same
+    # throttle as /admin/login or it becomes a brute-force bypass.
+    if owner_attempt and owner_login_guard.blocked(peer):
+        raise HTTPException(
+            status_code=429, detail="Ko‘p noto‘g‘ri urinish. 5 daqiqadan keyin qayta urinib ko‘ring.",
+            headers={"Retry-After": "300"},
+        )
+    user = db.query(models.User).filter(models.User.phone == phone).first()
+    # Additional admin accounts may not authenticate with this legacy route;
+    # only the owner account configured for /admin/login is recognized.
+    if (not user or not user.is_active or not user.password_hash or
+            (user.role == "admin" and not owner_attempt) or
+            not security.verify_password(data.password, user.password_hash)):
+        if owner_attempt:
+            owner_login_guard.fail(peer)
         raise HTTPException(status_code=401, detail="Telefon yoki parol noto'g'ri")
+    if owner_attempt:
+        owner_login_guard.success(peer)
 
     token = (security.admin_access_token(user) if user.role == "admin" else
              security.create_access_token({"sub": str(user.id), "role": user.role}))
