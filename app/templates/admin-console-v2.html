@@ -30,6 +30,7 @@
       <button type="button" data-tab="orders">☷ Buyurtmalar</button>
       <button type="button" data-tab="restaurants">▤ Oshxonalar</button>
       <button type="button" data-tab="partners">✦ Hamkorlik arizalari</button>
+      <button type="button" data-tab="team">♧ Kuryer va oshxona xodimlari</button>
       <button type="button" data-tab="support">◌ Operator</button>
       <button type="button" data-tab="security">⚙ Xavfsizlik</button>
     </nav>
@@ -60,6 +61,29 @@
     <section id="restaurants" data-page class="panel hidden"><h2>Oshxonalar ro‘yxati</h2><div id="restaurant-list"></div></section>
     <section id="partners" data-page class="panel hidden"><h2>Hamkorlik arizalari</h2><div id="partner-list"></div></section>
     <section id="support" data-page class="panel hidden"><h2>Operator suhbatlari</h2><div id="support-list"></div></section>
+    <section id="team" data-page class="panel hidden">
+      <h2>Yangi xodimni ro‘yxatga olish</h2>
+      <p class="muted">Faqat Super Admin yangi kuryer va oshxona vakillariga kirish huquqi berishi mumkin. Parolni xodimga xavfsiz usulda yetkazing.</p>
+      <form id="staff-form" class="narrow-form" autocomplete="off">
+        <label for="staff-name">F.I.Sh.</label>
+        <input id="staff-name" maxlength="150" required minlength="2">
+        <label for="staff-phone">Telefon raqami</label>
+        <input id="staff-phone" type="tel" required placeholder="+998901234567" pattern="\+998[0-9]{9}">
+        <label for="staff-role">Vazifa</label>
+        <select id="staff-role" required>
+          <option value="courier">Kuryer</option>
+          <option value="restaurant">Oshxona vakili</option>
+        </select>
+        <div id="staff-restaurant-group" class="hidden">
+          <label for="staff-restaurant">Oshxona ID raqami</label>
+          <input id="staff-restaurant" type="number" min="1" step="1" placeholder="Masalan, 12">
+        </div>
+        <label for="staff-pass">Vaqtinchalik kuchli parol</label>
+        <input id="staff-pass" type="password" minlength="12" maxlength="128" required autocomplete="new-password">
+        <button type="submit" id="create-staff" class="btn primary full">Xodim yaratish</button>
+      </form>
+      <p id="staff-message" role="status" class="notice hidden"></p>
+    </section>
     <section id="security" data-page class="panel hidden">
       <h2>Admin parolini almashtirish</h2>
       <p class="muted">Barcha ilovalar uchun yagona autentifikatsiya serverini ishlatish maqsad qilingan. Ikkinchi eski Render xizmati hali alohida parol tizimida bo‘lishi mumkin.</p>
