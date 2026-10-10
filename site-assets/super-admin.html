@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ali Kuryer — Super Admin</title>
+<style>
+:root{--red:#e83e38;--ink:#161a22;--bg:#f6f7fb;--border:#e4e5eb}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Arial,sans-serif}
+header{background:#151820;color:#fff;padding:22px max(18px,calc((100% - 1100px)/2));display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{font-size:21px;margin:0}header small{display:block;color:#bec3cb}main{max-width:1100px;margin:22px auto;padding:0 16px 65px}
+.card{background:#fff;border:1px solid var(--border);border-radius:19px;padding:22px;margin:0 0 18px;box-shadow:0 6px 24px #10101809}
+h2{font-size:19px;margin:0 0 8px}h3{font-size:15px;margin:18px 0 12px}p{color:#5d6571;margin:6px 0 15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+label{display:block;font-weight:650;margin:12px 0}input:not([type=checkbox]),textarea{display:block;width:100%;font:inherit;border:1px solid #cad0dc;border-radius:10px;padding:12px;margin-top:5px}
+textarea{min-height:75px;resize:vertical}input[type=color]{height:48px;padding:4px}
+.switch{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding:13px 0;gap:16px;font-weight:600}
+.switch input{appearance:none;position:relative;width:52px;height:30px;flex-shrink:0;border-radius:30px;background:#cbd0d6;cursor:pointer;transition:background .15s}
+.switch input:after{content:"";position:absolute;top:4px;left:4px;border-radius:50%;height:22px;width:22px;background:white;transition:transform .15s}
+.switch input:checked{background:var(--red)}.switch input:checked:after{transform:translateX(22px)}
+button{border:0;border-radius:10px;background:var(--red);color:white;cursor:pointer;padding:12px 18px;font:inherit;font-weight:700}
+button.secondary{background:#252c39}button:disabled{opacity:.55;cursor:not-allowed}.muted{font-size:13px;color:#677080}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+[hidden]{display:none!important}#message{min-height:26px;font-weight:600}#history li{font-size:13px;margin-bottom:10px;overflow-wrap:anywhere}
+.status{padding:12px 15px;background:#f0f4ff;border-radius:10px;margin:14px 0}
+@media(max-width:690px){.grid{grid-template-columns:1fr}header{padding:18px}main{margin-top:15px;padding:0 11px 50px}.card{padding:17px}.switch{font-size:14px}}
+</style>
+</head>
+<body>
+<header><div><h1>⚙️ Ali Kuryer — Super Admin</h1><small>Mijozlar sayti · Kuryer · Oshxona</small></div><button type="button" id="logout" class="secondary" hidden>Chiqish</button></header>
+<main>
+<section class="card" id="loginCard">
+<h2>Admin sifatida kirish</h2>
+<p>Administrator login va o‘z paroli orqali kiradi. Telefon raqami talab qilinmaydi.</p>
+<form id="loginForm">
+<label>Login<input name="username" autocomplete="username" value="admin" required></label>
+<label>Parol<input name="password" type="password" autocomplete="current-password" required></label>
+<button type="submit">Admin panelga kirish</button>
+</form></section>
+<div id="dashboard" hidden>
+<div class="toolbar"><div><h2>Boshqaruv markazi</h2><p>Sozlamalar veb-sayt va yangi mobil ilovalar uchun yagona API orqali tarqatiladi.</p></div><button type="button" id="save">O‘zgarishlarni saqlash</button></div>
+<div class="grid">
+<section class="card"><h2>👤 Mijozlar: kirish usullari</h2>
+<p class="muted">O‘chirilgan usullar FastAPI serverida ham bloklanadi. SMSni yoqish uchun SMS operatori alohida sozlangan bo‘lishi kerak.</p>
+<div id="customerFlags"></div></section>
+<section class="card"><h2>🚴 Kuryer va oshxona</h2>
+<p class="muted">Kuryer va oshxonaning yangi ilovalari ushbu sozlamalarni API orqali o‘qiydi. Eski alohida serverlar avtomatik o‘zgarmaydi.</p>
+<div id="staffFlags"></div>
+<label>Kuryer uchun xabar<textarea id="courier_notice" maxlength="250"></textarea></label>
+<label>Kuryer ilovasi asosiy rangi<input id="courier_accent" type="color"></label>
+<label>Oshxona uchun xabar<textarea id="restaurant_notice" maxlength="250"></textarea></label>
+<label>Oshxona ilovasi asosiy rangi<input id="restaurant_accent" type="color"></label>
+</section>
+<section class="card"><h2>🌐 Mijozlar veb-sayti</h2>
+<p class="muted">Sayt aksent rangini va tepada chiqadigan e’lonni kod yozmasdan almashtiring.</p>
+<label>Asosiy rang<input type="color" id="site_accent"></label>
+<label>Saytdagi e’lon<textarea id="site_notice" maxlength="250" placeholder="Masalan: Yangi aksiyamiz boshlandi!"></textarea></label>
+<p class="muted">Saytning umumiy tuzilishi yoki mobil ilova kodi o‘zgarsa, alohida dastur yangilanishi kerak.</p>
+</section>
+<section class="card"><h2>🔐 Admin xavfsizligi</h2>
+<p class="muted">Parollarni ko‘rsatish yoki boshqa foydalanuvchining parolini ochish mumkin emas. O‘z parolingizni almashtirgandan keyin qayta kirasiz.</p>
+<form id="passwordForm">
+<label>Joriy parol<input type="password" name="current_password" autocomplete="current-password" required></label>
+<label>Yangi parol<input type="password" name="new_password" autocomplete="new-password" minlength="14" maxlength="72" required></label>
+<button type="submit" class="secondary">Parolni almashtirish</button>
+</form><p class="muted">Kamida 14 belgi, katta-kichik harf, raqam va maxsus belgi ishlating.</p></section>
+</div>
+<section class="card"><h2>🧾 Sozlamalar tarixi</h2><p class="muted">Oxirgi 40 ta o‘zgarish qaydi</p><button type="button" id="reloadHistory" class="secondary">Tarixni yangilash</button><ul id="history"></ul></section>
+</div>
+<div role="status" aria-live="polite" id="message"></div>
+</main>
+<script>
+(()=>{
+"use strict";
+const tokenKey="ali_super_admin_token";
+const $=id=>document.getElementById(id);
+const labels={
+customer_password_login:"Telefon raqam + parol",
+customer_username_login:"Login nomi + parol",
+customer_sms:"SMS orqali tasdiqlash",
+customer_firebase_phone:"Firebase telefon orqali kirish",
+customer_google_login:"Google bilan kirish",
+customer_telegram_login:"Telegram bilan kirish",
+courier_login:"Kuryerning login orqali kirishi",
+restaurant_login:"Oshxonaning login orqali kirishi"
+};
+let settings=null;
+const status=(text,ok=false)=>{const node=$("message");node.textContent=text;node.style.color=ok?"#236c3b":"#b52d28"};
+async function request(path,options={}){
+ const token=sessionStorage.getItem(tokenKey);
+ const response=await fetch(path,{
+  ...options,
+  headers:{"Content-Type":"application/json",...(token?{"Authorization":"Bearer "+token}:{}),...(options.headers||{})},
+  cache:"no-store"
+ });
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok)throw Error(typeof data.detail==="string"?data.detail:"Xatolik: "+response.status);
+ return data;
+}
+function flagRows(container,keys){
+ const root=$(container);root.replaceChildren();
+ keys.forEach(key=>{
+  const label=document.createElement("label");label.className="switch";
+  const name=document.createElement("span");name.textContent=labels[key];
+  const box=document.createElement("input");box.type="checkbox";box.id=key;box.checked=Boolean(settings[key]);
+  label.append(name,box);root.append(label);
+ });
+}
+function showAuth(logged){
+ $("loginCard").hidden=logged;$("dashboard").hidden=!logged;$("logout").hidden=!logged;
+}
+function render(){
+ flagRows("customerFlags",Object.keys(labels).filter(k=>k.startsWith("customer_")));
+ flagRows("staffFlags",["courier_login","restaurant_login"]);
+ ["site_accent","site_notice","courier_accent","courier_notice","restaurant_accent","restaurant_notice"].forEach(k=>{$(k).value=settings[k]});
+ showAuth(true);
+}
+async function refresh(){
+ const data=await request("/api/admin/control-center");settings=data.settings;render();
+ await history().catch(()=>{});
+}
+async function history(){
+ const data=await request("/api/admin/control-center/history");
+ $("history").replaceChildren();
+ for(const row of data.events||[]){
+  const li=document.createElement("li");
+  li.textContent=(row.at||"")+" | "+row.key+" : "+row.from+" → "+row.to;
+  $("history").append(li);
+ }
+}
+$("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();status("");
+ const f=new FormData(e.currentTarget);
+ try{
+  const data=await request("/api/auth/admin/login",{
+   method:"POST",body:JSON.stringify({username:f.get("username"),password:f.get("password")})
+  });
+  sessionStorage.setItem(tokenKey,data.access_token);e.currentTarget.reset();
+  await refresh();status("Admin panel ochildi.",true);
+ }catch(err){sessionStorage.removeItem(tokenKey);showAuth(false);status(err.message)}
+});
+$("save").addEventListener("click",async()=>{
+ const changes={};
+ Object.keys(labels).forEach(key=>{changes[key]=$(key).checked});
+ ["site_accent","site_notice","courier_accent","courier_notice","restaurant_accent","restaurant_notice"].forEach(key=>{changes[key]=$(key).value});
+ $("save").disabled=true;status("Sozlamalar saqlanmoqda...");
+ try{const result=await request("/api/admin/control-center",{method:"POST",body:JSON.stringify({changes})});settings=result.settings;render();status("Saqlandi. O‘zgargan sozlamalar: "+result.changed.length,true);await history()}
+ catch(err){status(err.message)}
+ finally{$("save").disabled=false}
+});
+$("passwordForm").addEventListener("submit",async e=>{
+ e.preventDefault();const f=new FormData(e.currentTarget);
+ try{
+  const data=await request("/api/auth/admin/change-password",{method:"POST",body:JSON.stringify({
+   current_password:f.get("current_password"),new_password:f.get("new_password")
+  })});
+  sessionStorage.removeItem(tokenKey);e.currentTarget.reset();showAuth(false);status(data.message||"Parol o‘zgardi",true);
+ }catch(err){status(err.message)}
+});
+$("reloadHistory").onclick=()=>history().catch(err=>status(err.message));
+$("logout").onclick=()=>{sessionStorage.removeItem(tokenKey);showAuth(false);settings=null;status("Sessiyadan chiqdingiz.",true)};
+if(sessionStorage.getItem(tokenKey)){refresh().catch(()=>{sessionStorage.removeItem(tokenKey);showAuth(false)})}
+})();
+</script>
+</body>
+</html>
