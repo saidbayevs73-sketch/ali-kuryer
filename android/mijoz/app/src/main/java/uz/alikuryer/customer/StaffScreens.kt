@@ -11,6 +11,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -920,7 +922,7 @@ private fun StaffLogin(role: String, phone: String, password: String,
     val ctx = LocalContext.current
     var showRecovery by remember { mutableStateOf(false) }
     Column(
-        modifier = Modifier.fillMaxSize().padding(25.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(25.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
