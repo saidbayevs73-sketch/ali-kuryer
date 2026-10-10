@@ -653,12 +653,15 @@ def google_login(data: GoogleCredentialRequest, db: Session = Depends(get_db)):
 
 
 @router.get("/me")
-def profile(user: models.User = Depends(shared_get_current_user)):
+def profile(user: models.User = Depends(shared_get_current_user),
+            db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Hisob faol emas")
+    contact = db.get(models.UnverifiedCustomerContact, user.id) if user.role == "customer" else None
+    phone = user.phone or (contact.phone if contact else None)
+    proof = db.get(models.VerifiedPhone, user.phone) if user.phone else None
+    verified = bool(proof and proof.user_id == user.id)
     return {
-        "id": user.id,
-        "name": user.name,
-        "phone": user.phone,
-        "role": user.role,
+        "id": user.id, "name": user.name, "phone": phone, "role": user.role,
+        "phone_verified": verified,
     }
