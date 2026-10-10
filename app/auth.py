@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from app.database import SessionLocal
-from app import models, schemas, security, otp
+from app import models, schemas, security, otp, control_center
 from app.dependencies import get_current_user as shared_get_current_user
 from pydantic import BaseModel, Field
 
@@ -41,13 +41,13 @@ def customer_auth_options():
         sms_available = True
     except HTTPException:
         sms_available = False
-    telegram_available = telegram_login.service_ready()
-    google_available = bool(os.getenv("GOOGLE_CLIENT_ID", "").strip())
+    telegram_available = telegram_login.service_ready() and control_center.enabled("customer_telegram_login")
+    google_available = bool(os.getenv("GOOGLE_CLIENT_ID", "").strip()) and control_center.enabled("customer_google_login")
     return {
-        "password_login": True,  # existing phone/password users
+        "password_login": control_center.enabled("customer_password_login"),
         "username_signup": _username_signup_ready(),
-        "sms_registration": sms_available,
-        "sms_verification": sms_available,
+        "sms_registration": sms_available and control_center.enabled("customer_sms"),
+        "sms_verification": sms_available and control_center.enabled("customer_sms"),
         "telegram_login": telegram_available,
         "google_login": google_available,
         "message": (
@@ -81,7 +81,7 @@ def _username_signup_ready() -> bool:
         os.getenv("ENVIRONMENT", "").lower() == "production"
     )
     permanent = not production or DATABASE_URL.startswith("postgresql")
-    return os.getenv("ALI_USERNAME_LOGIN_ENABLED") == "1" and permanent
+    return os.getenv("ALI_USERNAME_LOGIN_ENABLED") == "1" and permanent and control_center.enabled("customer_username_login")
 
 
 def _require_username_signup_ready() -> None:
@@ -233,6 +233,7 @@ def confirm_existing_customer_phone(
 
 @router.post("/register", status_code=201)
 def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
+    control_center.require_enabled("customer_sms")
     phone = data.phone.strip()
 
     if not phone.startswith("+998") or len(phone) != 13 or not phone[1:].isdigit():
@@ -331,6 +332,12 @@ def change_admin_password(data: AdminChangePassword,
 @router.post("/login")
 def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.phone == data.phone.strip()).first()
+    if user and user.role == "customer":
+        control_center.require_enabled("customer_password_login")
+    elif user and user.role == "restaurant":
+        control_center.require_enabled("restaurant_login")
+    elif user and user.role == "courier":
+        control_center.require_enabled("courier_login")
 
     if not user or not user.is_active or not user.password_hash or not security.verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Telefon yoki parol noto'g'ri")
@@ -403,6 +410,7 @@ def firebase_phone_login(data: FirebasePhoneLoginRequest, db: Session = Depends(
     # Render ephemeral SQLite cannot safely persist authenticated customers.
     if os.getenv("RENDER", "").lower() in {"true", "1", "yes"} and not DATABASE_URL.startswith("postgresql"):
         raise HTTPException(503, "Doimiy PostgreSQL bazasi ulanmaguncha SMS kirish yopiq")
+    control_center.require_enabled("customer_firebase_phone")
     phone, firebase_uid = validate_firebase_phone_token(data.id_token)
     existing = db.query(models.User).filter_by(phone=phone).with_for_update().first()
     if existing and (existing.role != "customer" or not existing.is_active):
@@ -448,6 +456,7 @@ class GoogleCredentialRequest(BaseModel):
 @router.post("/google")
 def google_login(data: GoogleCredentialRequest, db: Session = Depends(get_db)):
     """Verify a Google Identity Services ID token on the server, then sign in."""
+    control_center.require_enabled("customer_google_login")
     import os
 
     from google.auth.transport.requests import Request as GoogleRequest
