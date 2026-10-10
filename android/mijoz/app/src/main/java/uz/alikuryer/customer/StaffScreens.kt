@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,6 +49,9 @@ internal fun AliStaffApp() {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var token by remember { mutableStateOf("") }
+    var quickUnlockSaved by remember {
+        mutableStateOf(role == "admin" && AdminQuickUnlock.hasSaved(ctx))
+    }
     var phone by remember {
         mutableStateOf(if (role == "admin")
             ctx.getSharedPreferences("ali_admin", Context.MODE_PRIVATE)
@@ -240,6 +244,38 @@ internal fun AliStaffApp() {
             role = role, phone = phone, password = password,
             busy = busy, error = error,
             onPhone = { phone = it }, onPassword = { password = it },
+            quickUnlockSaved = quickUnlockSaved,
+            onQuickUnlock = {
+                val activity = ctx as? FragmentActivity
+                if (activity == null) {
+                    error = "Telefon identifikatsiya oynasi ochilmadi"
+                } else {
+                    AdminQuickUnlock.authenticate(
+                        activity,
+                        onSuccess = {
+                            scope.launch {
+                                busy = true; error = ""
+                                try {
+                                    val saved = AdminQuickUnlock.read(ctx)
+                                    if (saved.isNullOrBlank() ||
+                                        !StaffApi.verifyAdminToken(saved)) {
+                                        AdminQuickUnlock.clear(ctx)
+                                        quickUnlockSaved = false
+                                        error = "Avvalgi sessiya tugagan. Joriy parol bilan kiring."
+                                    } else {
+                                        token = saved; tab = "home"
+                                    }
+                                } catch (_: Exception) {
+                                    AdminQuickUnlock.clear(ctx)
+                                    quickUnlockSaved = false
+                                    error = "Tezkor kirish muddati tugadi. Parol bilan kiring."
+                                } finally { busy = false }
+                            }
+                        },
+                        onError = { error = it }
+                    )
+                }
+            },
             onLogin = {
                 scope.launch {
                     busy = true; error = ""
@@ -289,6 +325,10 @@ internal fun AliStaffApp() {
                                 fontWeight = FontWeight.Bold)
                         }
                         IconButton(onClick = {
+                            if (role == "admin") {
+                                AdminQuickUnlock.clear(ctx)
+                                quickUnlockSaved = false
+                            }
                             token = ""; online = false; selectedOrder = 0; selectedCustomer = 0
                             orders = emptyList(); menu = emptyList(); tab = "home"
                         }) { Icon(Icons.Default.Logout, "Chiqish", tint = AliRed) }
@@ -654,6 +694,54 @@ internal fun AliStaffApp() {
             if (role == "admin" && tab == "settings") {
                 item {
                     StaffCard {
+                        Text("Parolsiz qayta kirish — telefon qulfi",
+                            fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text("Avval admin hisobiga parol bilan kiring. Keyin shu telefonda " +
+                            "barmoq izi yoki ekran qulfi bilan 24 soatgacha qayta ochishingiz mumkin. " +
+                            "Admin paroli telefonda saqlanmaydi. Chiqish bosilsa, tezkor kirish o‘chadi.",
+                            color = AliMuted, fontSize = 12.sp)
+                        Button(
+                            enabled = !busy,
+                            onClick = {
+                                val activity = ctx as? FragmentActivity
+                                if (activity == null) {
+                                    error = "Telefon tekshiruvi ishlamadi"
+                                } else {
+                                    AdminQuickUnlock.authenticate(
+                                        activity,
+                                        onSuccess = {
+                                            try {
+                                                AdminQuickUnlock.save(ctx, token)
+                                                quickUnlockSaved = true
+                                                error = "Telefon qulfi orqali tezkor kirish yoqildi"
+                                            } catch (_: Exception) {
+                                                AdminQuickUnlock.clear(ctx)
+                                                quickUnlockSaved = false
+                                                error = "Telefon himoyasi tokenni saqlay olmadi"
+                                            }
+                                        },
+                                        onError = { error = it }
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(if (quickUnlockSaved) "Tezkor kirishni qayta yoqish"
+                                 else "Telefon qulfi orqali kirishni yoqish")
+                        }
+                        if (quickUnlockSaved) {
+                            OutlinedButton(
+                                onClick = {
+                                    AdminQuickUnlock.clear(ctx)
+                                    quickUnlockSaved = false
+                                    error = "Tezkor kirish o‘chirildi"
+                                }, modifier = Modifier.fillMaxWidth()
+                            ) { Text("Tezkor kirishni o‘chirish") }
+                        }
+                    }
+                }
+                item {
+                    StaffCard {
                         Text("Super Admin — ilovalar boshqaruvi",
                             fontSize = 19.sp, fontWeight = FontWeight.Bold)
                         Text("Mijoz, kuryer va oshxona kirish usullarini telefondan boshqaring. " +
@@ -746,6 +834,8 @@ internal fun AliStaffApp() {
                                     ctx.getSharedPreferences("ali_admin", Context.MODE_PRIVATE)
                                         .edit().putString("login_alias", updated).apply()
                                     phone = updated
+                                    AdminQuickUnlock.clear(ctx)
+                                    quickUnlockSaved = false
                                     newAdminUsername = ""
                                     usernameCurrentPassword = ""
                                     oldAdminPassword = ""
@@ -795,6 +885,8 @@ internal fun AliStaffApp() {
                                         oldAdminPassword = ""
                                         newAdminPassword = ""
                                         repeatAdminPassword = ""
+                                        AdminQuickUnlock.clear(ctx)
+                                        quickUnlockSaved = false
                                         token = ""
                                         tab = "home"
                                         error = ""
@@ -823,7 +915,8 @@ internal fun AliStaffApp() {
 @Composable
 private fun StaffLogin(role: String, phone: String, password: String,
                        busy: Boolean, error: String, onPhone: (String) -> Unit,
-                       onPassword: (String) -> Unit, onLogin: () -> Unit) {
+                       onPassword: (String) -> Unit, quickUnlockSaved: Boolean,
+                       onQuickUnlock: () -> Unit, onLogin: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize().padding(25.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -839,6 +932,16 @@ private fun StaffLogin(role: String, phone: String, password: String,
             Text("Hisobga kirish", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
             Text("Faqat tasdiqlangan ${roleLabel(role).lowercase()} hisobi uchun.",
                 fontSize = 12.sp, color = AliMuted)
+            if (role == "admin" && quickUnlockSaved) {
+                OutlinedButton(
+                    onClick = onQuickUnlock, enabled = !busy,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Fingerprint, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Telefon qulfi orqali kirish")
+                }
+            }
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(phone, onPhone, modifier = Modifier.fillMaxWidth(),
                 label = { Text(if (role == "admin") "Login nomi" else "Telefon +998XXXXXXXXX") },
