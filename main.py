@@ -103,6 +103,35 @@ def _panel(request: Request):
     return templates.TemplateResponse(request=request, name="panel.html")
 
 
+@app.get("/owner-console", include_in_schema=False)
+def owner_console():
+    """Opt-in owner-only entry page; all data APIs require an admin token.
+
+    The private URL is not linked from the public storefront. Keep disabled
+    until an owner verifies the admin account and persistent database.
+    """
+    if os.getenv("ENABLE_ADMIN_CONSOLE", "0") != "1":
+        raise HTTPException(status_code=404, detail="Topilmadi")
+    template = TEMPLATE_DIR / "admin-console-v2.html"
+    if not template.is_file():
+        raise HTTPException(status_code=503, detail="Admin panel topilmadi")
+    return FileResponse(
+        str(template),
+        media_type="text/html",
+        headers={
+            "Cache-Control": "no-store, private",
+            "X-Robots-Tag": "noindex, nofollow",
+            "Content-Security-Policy": (
+                "default-src 'self'; base-uri 'none'; object-src 'none'; "
+                "connect-src 'self'; img-src 'self' data:; "
+                "script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "form-action 'self'; frame-ancestors 'none'"
+            ),
+        },
+    )
+
+
 @app.get("/admin", include_in_schema=False)
 def admin_panel(request: Request):
     return _panel(request)
