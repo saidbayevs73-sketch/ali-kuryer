@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     color = AliCanvas
                 ) {
-                    if (splash) AliSplash() else if (BuildConfig.APP_ROLE == "customer") AliCustomerApp() else AliStaffApp()
+                    if (splash) AliSplash() else if (BuildConfig.APP_ROLE == "customer") AliCustomerWebsite() else AliStaffApp()
                 }
             }
         }
