@@ -62,10 +62,26 @@ def test_google_signin_not_faked_when_unconfigured():
     assert result.status_code == 503
 
 
-def test_phone_registration_login_and_customer_profile():
+def test_phone_registration_login_and_customer_profile(monkeypatch):
+    from app import otp
+    # Test-only SMS transport, no real SMS is sent and no production OTP bypass.
     phone = "+998909876543"
+    captured = {}
+    monkeypatch.setenv("ALI_SMS_PROVIDER", "eskiz")
+    monkeypatch.setenv("ESKIZ_API_TOKEN", "test-only-no-network")
+    monkeypatch.setenv("ALI_SMS_SENDER", "TEST")
+    def receive_test_sms(destination, code):
+        captured["phone"] = destination
+        captured["code"] = code
+    monkeypatch.setattr(otp, "send_sms", receive_test_sms)
+    sent = client.post("/api/auth/otp/request", json={"phone": phone})
+    assert sent.status_code == 200, sent.text
+    assert sent.json()["sent"] is True
+    assert "code" not in sent.json()
+    assert captured["phone"] == phone
     reg = client.post("/api/auth/register", json={
-        "name":"Ali Test", "phone":phone, "password":"StrongTest123"
+        "name":"Ali Test", "phone":phone, "password":"StrongTest123",
+        "otp_code": captured["code"]
     })
     assert reg.status_code == 201, reg.text
     login = client.post("/api/auth/login", json={
