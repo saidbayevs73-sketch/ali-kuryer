@@ -295,3 +295,12 @@ footer strong {color:#fff}
   #chat .ali-photo-help {font-size:10px}
   #chat .chat-body {min-height:80px;overflow:auto}
 }
+
+/* Photographic menus: large natural pictures; fallback examples clearly labeled. */
+.card-image {position:relative;min-height:218px;background-size:cover;background-position:center}
+.ali-photo-watermark{
+  position:absolute;right:12px;bottom:11px;display:inline-flex;
+  background:rgba(12,12,15,.78);color:white;font-size:11px;
+  border-radius:9px;padding:6px 10px;font-weight:650;letter-spacing:.1px
+}
+@media(max-width:680px){.card-image{min-height:225px}}

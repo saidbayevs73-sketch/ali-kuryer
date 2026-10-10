@@ -214,7 +214,7 @@ def helpful_muhammadali_fallback(message: str) -> str:
 _OPERATOR_URL = "https://t.me/AliKuryerYordamBot"
 _ALLOWED_IMAGE_FORMATS = {"JPEG", "PNG", "WEBP"}
 _MAX_RAW_IMAGE_BYTES = 4_000_000
-_MAX_IMAGE_PIXELS = 12_000_000
+_MAX_IMAGE_PIXELS = 32_000_000
 
 
 def _operator_url() -> str:
@@ -247,8 +247,10 @@ def _prepare_food_image(encoded: str) -> str:
             if image.format not in _ALLOWED_IMAGE_FORMATS:
                 raise HTTPException(400, "Faqat JPEG, PNG yoki WEBP rasm yuboring.")
             width, height = image.size
-            if width < 16 or height < 16 or width * height > _MAX_IMAGE_PIXELS:
-                raise HTTPException(400, "Rasm o‘lchamlari mos emas.")
+            if width < 16 or height < 16:
+                raise HTTPException(400, "Rasm juda kichik. Boshqa fotosurat tanlang.")
+            if width * height > _MAX_IMAGE_PIXELS:
+                raise HTTPException(413, "Rasm juda katta. Kichraytirib yuboring.")
             photo = ImageOps.exif_transpose(image)
             photo.thumbnail((1280, 1280), Image.Resampling.LANCZOS)
             # Place transparent images on white before compressing.

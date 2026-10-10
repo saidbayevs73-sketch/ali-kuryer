@@ -1018,13 +1018,9 @@ filteredRestaurants
 .map((restaurant,index)=>{
 
 const photos=[
-
-"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
-
-"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-
-"https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=800&q=80"
-
+"https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=85",
+"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1100&q=85",
+"https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=85"
 ];
 
 return `
@@ -1036,6 +1032,7 @@ class="card-image"
 style="
 background-image:url('${photos[index%photos.length]}')
 ">
+<span class="ali-photo-watermark">Namunaviy surat</span>
 </div>
 
 <div class="card-content">
@@ -1128,11 +1125,32 @@ foodGrid.innerHTML=
 filteredFoods
 .map(food=>{
 
-const image=
-
-food.image_url ||
-
-"https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80";
+const hasActualPhoto=typeof food.image_url==="string" &&
+ (/^https:\/\/[A-Za-z0-9.-]+\//.test(food.image_url) || /^\/(?!\/)[A-Za-z0-9_\/%?=&.-]+$/.test(food.image_url));
+const name=(food.name+" "+(food.category||"")).toLocaleLowerCase("uz");
+const samplePhoto=(function() {
+  const picks=[
+    [/palov|plov|osh(?:\s|$)|pilaf/, "photo-1512058564366-18510be2db19"],
+    [/pitsa|pizza/, "photo-1513104890138-7c749659a591"],
+    [/burger|gamburger/, "photo-1568901346375-23c9450c58cd"],
+    [/lavash|shaurma|shawarma|doner/, "photo-1529006557810-274b9b2fc783"],
+    [/shashlik|shashliq|kebab|kabob/, "photo-1529193591184-b1d58069ecdd"],
+    [/lag'mon|lagmon|ramen|makaron|noodle|lapsha/, "photo-1569718212165-3a8278d5f624"],
+    [/somsa|samsa|samosa/, "photo-1601050690597-df0568f70950"],
+    [/manti|chuchvara|pelmen|dumpling/, "photo-1563245372-f21724e3856d"],
+    [/salat|achchiq|sabzavot/, "photo-1512621776951-a57141f2eefd"],
+    [/shorva|sho.rva|sup|soup/, "photo-1547592180-85f173990554"],
+    [/tovuq|chicken|qanot|naggets/, "photo-1562967914-608f82629710"],
+    [/kartoshka|fri|fries/, "photo-1573080496219-bb080dd4f877"],
+    [/sushi|roll/, "photo-1579871494447-9811cf80d66c"],
+    [/tort|shirin|piroj|dessert|cake/, "photo-1551024506-0bccd828d307"],
+    [/kofe|coffee|cappuccino/, "photo-1509042239860-f550ce710b93"],
+    [/non|bread|patir/, "photo-1509440159596-0249088772ff"]
+  ];
+  const found=picks.find(entry=>entry[0].test(name));
+  return "https://images.unsplash.com/"+(found?found[1]:"photo-1546069901-ba9599a7e63c")+"?auto=format&fit=crop&w=1000&q=85";
+})();
+const image=hasActualPhoto?food.image_url:samplePhoto;
 
 
 return `
@@ -1144,6 +1162,7 @@ class="card-image"
 style="
 background-image:url('${safe(image)}')
 ">
+${hasActualPhoto?'':'<span class="ali-photo-watermark">Namunaviy surat</span>'}
 </div>
 
 <div class="card-content">

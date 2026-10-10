@@ -25,6 +25,15 @@ def configure(monkeypatch):
     monkeypatch.setenv("TELEGRAM_LOGIN_ENABLED", "1")
 
 
+def test_telegram_status_only_exposes_readiness(monkeypatch):
+    monkeypatch.delenv("TELEGRAM_LOGIN_ENABLED", raising=False)
+    result = client.get("/api/auth/telegram/status")
+    assert result.status_code == 200
+    assert result.json()["available"] is False
+    assert "SMS" in result.json()["message"]
+    assert "CLIENT_SECRET" not in result.text
+
+
 def test_telegram_disabled_by_default(monkeypatch):
     monkeypatch.delenv("TELEGRAM_LOGIN_ENABLED", raising=False)
     result = client.post("/api/auth/telegram/start", json={"device_secret": DEVICE})

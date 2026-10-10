@@ -182,6 +182,23 @@ def test_image_when_key_rejected_does_not_invent_calories(monkeypatch):
     assert "tahlil qila olmayapti" in response.json()["reply"]
 
 
+def test_large_phone_camera_photo_resizes_instead_of_rejecting():
+    # A common 4080 × 3060 mobile photo exceeds the old 12-million-pixel limit.
+    import base64
+    from io import BytesIO
+    from PIL import Image
+    from app.routers.customer_experience import _prepare_food_image
+    buf = BytesIO()
+    Image.new("RGB", (4080, 3060), (181, 114, 49)).save(
+        buf, format="JPEG", quality=65
+    )
+    encoded = base64.b64encode(buf.getvalue()).decode("ascii")
+    compressed = _prepare_food_image(encoded)
+    assert compressed.startswith("data:image/jpeg;base64,")
+    thumbnail = Image.open(BytesIO(base64.b64decode(compressed.split(",", 1)[1])))
+    assert max(thumbnail.size) <= 1280
+
+
 def test_image_rejects_bad_and_oversized_uploads(monkeypatch):
     monkeypatch.delenv("AI_API_KEY", raising=False)
     for value in ("not a base64 data string!", "SGVsbG8gd29ybGQ="):

@@ -49,6 +49,25 @@ def configured() -> bool:
     )
 
 
+def service_ready() -> bool:
+    return configured() and not (
+        os.getenv("RENDER", "").lower() in {"true", "1", "yes"}
+        and not DATABASE_URL.startswith("postgresql")
+    )
+
+
+@router.get("/status")
+def telegram_status():
+    # Readiness only: never reveal provider secrets, database DSNs or credentials.
+    return {
+        "available": service_ready(),
+        "message": ("Telegram orqali kirish tayyor."
+                    if service_ready() else
+                    "Telegram orqali kirish hozircha sozlanmoqda. "
+                    "Ro‘yxatdan o‘tish uchun SMS yoki parolni tanlang."),
+    }
+
+
 def require_ready() -> None:
     if not configured():
         raise HTTPException(503, "Telegram kirish hozircha sozlanmagan")
