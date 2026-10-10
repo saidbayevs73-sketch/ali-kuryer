@@ -114,7 +114,7 @@
     section.after(help);
   }
 
-  const state = {register:false, smsReady:false, smsChecked:false};
+  const state = {register:false, smsReady:false, smsChecked:false, usernameReady:false, usernameSelected:false, usernameRegister:false};
   function buildLogin() {
     const header = $("header .header-buttons");
     if (header) {
@@ -158,6 +158,39 @@
           Telegram tasdiqlash xizmati tekshirilmoqda...
         </p>
       </section>
+      <section id="aliUsernameArea" class="ali-username-account" hidden>
+        <button id="aliUsernameOpen" class="ali-username-open" type="button">
+          Login nomi va parol bilan kirish yoki ro‘yxatdan o‘tish
+        </button>
+        <form id="aliUsernameForm" hidden>
+          <div class="auth-switch">
+            <button type="button" id="aliUsernameSignIn" class="active">Kirish</button>
+            <button type="button" id="aliUsernameSignUp">Ro‘yxatdan o‘tish</button>
+          </div>
+          <label id="aliUsernameDisplayNameWrap" hidden>Ismingiz
+            <input type="text" name="display_name" autocomplete="name" minlength="2" maxlength="100"></label>
+          <label>Login nomi
+            <input type="text" name="username" autocomplete="username" minlength="3" maxlength="32"
+              pattern="[a-zA-Z][a-zA-Z0-9_.]{2,31}" required placeholder="masalan: ali_mijoz"></label>
+          <label>Parol
+            <input type="password" name="password" minlength="10" maxlength="72" autocomplete="current-password" required></label>
+          <label id="aliUsernamePrivacy" class="checkline" hidden>
+            <input type="checkbox" name="accepted_privacy">
+            <span><a href="/legal/privacy.html" target="_blank" rel="noopener noreferrer">
+             Maxfiylik shartlari</a>ga roziman.</span>
+          </label>
+          <p class="muted">Bu kirish telefon raqami tasdiqlanganini anglatmaydi.
+            Telefonni Telegram yoki SMS orqali alohida tasdiqlash kerak.</p>
+          <button type="submit" class="auth-submit">Login nomi bilan kirish</button>
+          <p class="status" role="status" aria-live="polite"></p>
+          <button type="button" id="aliUsernameBack" class="ali-username-back">
+            Telefon raqami orqali kirishga qaytish</button>
+        </form>
+        <p id="aliUsernameUnavailable" class="muted" hidden>
+          Login nomi va parol bilan yangi kabinet yaratish doimiy ma’lumotlar bazasi
+          ulangandan keyin yoqiladi. Hozir mavjud hisob bilan kiring.
+        </p>
+      </section>
       <div id="googleSignInBox" class="google-container"></div>
       <p id="googleSetupMessage" class="google-setup">Google hisob orqali kirish sozlanmoqda.</p>
       <div id="customerProfile" hidden></div>`;
@@ -167,23 +200,114 @@
     $("#customerAuthForm").addEventListener("submit", submitAuth);
     $("#authSmsSend").addEventListener("click", requestRegisterSms);
     $("#aliTelegramLogin").addEventListener("click", startTelegramLogin);
+    $("#aliUsernameOpen").addEventListener("click",()=>openUsernameMode());
+    $("#aliUsernameBack").addEventListener("click",()=>closeUsernameMode());
+    $("#aliUsernameSignIn").addEventListener("click",()=>setUsernameRegister(false));
+    $("#aliUsernameSignUp").addEventListener("click",()=>setUsernameRegister(true));
+    $("#aliUsernameForm").addEventListener("submit",submitUsernameAccount);
     loadAuthOptions();
   }
 
   async function loadAuthOptions() {
-    let ready=false;
+    let ready=false, usernameReady=false;
     try {
       const options=await api("/api/auth/options");
       ready=options?.sms_registration === true;
+      usernameReady=options?.username_signup === true;
     }catch(_){
       // An unavailable readiness endpoint must not make SMS appear to work.
       ready=false;
     }
     state.smsReady=ready;
     state.smsChecked=true;
+    state.usernameReady=usernameReady;
+    const area=$("#aliUsernameArea"),open=$("#aliUsernameOpen");
+    if(area)area.hidden=false;
+    if(open){
+      open.disabled=!usernameReady;
+      open.textContent=usernameReady
+        ? "Login nomi va parol bilan kabinetga kirish / yaratish"
+        : "Login nomi va parol — tayyorlanmoqda";
+    }
+    const notice=$("#aliUsernameUnavailable");
+    if(notice)notice.hidden=usernameReady;
     setAuthMode(state.register);
     const send=$("#customerProfile .customer-sms-verify button");
     if(send)send.disabled=!ready;
+  }
+
+
+  function setUsernameRegister(register){
+    state.usernameRegister=register;
+    const form=$("#aliUsernameForm");
+    if(!form)return;
+    $("#aliUsernameDisplayNameWrap").hidden=!register;
+    $("#aliUsernamePrivacy").hidden=!register;
+    form.elements.display_name.required=register;
+    form.elements.accepted_privacy.required=register;
+    form.elements.password.minLength=register?10:1;
+    form.elements.password.autocomplete=register?"new-password":"current-password";
+    form.querySelector("button[type=submit]").textContent=register
+      ?"Kabinet yaratish":"Login nomi bilan kirish";
+    $("#aliUsernameSignIn").classList.toggle("active",!register);
+    $("#aliUsernameSignUp").classList.toggle("active",register);
+    form.querySelector(".status").textContent="";
+  }
+  function openUsernameMode(){
+    if(!state.usernameReady)return;
+    state.usernameSelected=true;
+    $("#customerAuthForm").hidden=true;
+    $("#customerDialog .auth-switch").hidden=true;
+    $("#telegramLoginArea").hidden=true;
+    $("#googleSignInBox").hidden=true;
+    $("#googleSetupMessage").hidden=true;
+    $("#aliUsernameOpen").hidden=true;
+    $("#aliUsernameForm").hidden=false;
+    setUsernameRegister(false);
+  }
+  function closeUsernameMode(){
+    state.usernameSelected=false;
+    $("#customerAuthForm").hidden=false;
+    $("#customerDialog .auth-switch").hidden=false;
+    $("#telegramLoginArea").hidden=false;
+    $("#googleSignInBox").hidden=false;
+    $("#googleSetupMessage").hidden=false;
+    $("#aliUsernameOpen").hidden=false;
+    $("#aliUsernameForm").hidden=true;
+    setAuthMode(state.register);
+  }
+  async function submitUsernameAccount(event){
+    event.preventDefault();
+    const form=event.currentTarget,msg=form.querySelector(".status");
+    if(!state.usernameReady){
+      msg.textContent="Doimiy hisoblar bazasi ulanmaguncha ro‘yxatdan o‘tish mumkin emas.";
+      return;
+    }
+    const values=new FormData(form);
+    const username=String(values.get("username")||"").trim().toLowerCase();
+    const password=String(values.get("password")||"");
+    const button=form.querySelector("button[type=submit]");
+    button.disabled=true;msg.textContent="Hisob tekshirilmoqda...";
+    try{
+      if(state.usernameRegister){
+        await api("/api/auth/username/register",{
+          method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            name:String(values.get("display_name")||"").trim(),
+            username,password,accepted_privacy:values.get("accepted_privacy")==="on"
+          })
+        });
+      }
+      const answer=await api("/api/auth/username/login",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({username,password})
+      });
+      await finishLogin(answer.access_token);
+      form.reset();
+      $("#customerDialog").close();
+    }catch(error){
+      msg.textContent=humanError(error);
+    }finally{button.disabled=false;}
   }
 
   function setAuthMode(register) {
@@ -215,6 +339,7 @@
     const d=$("#customerDialog");
     if (!d) return;
     if (me) {
+      $("#aliUsernameArea").hidden=true;
       $("#customerAuthForm").hidden=true;
       $(".auth-switch",d).hidden=true;
       $(".auth-divider",d).hidden=true;
@@ -223,7 +348,28 @@
       $("#googleSetupMessage").hidden=true;
       const profile=$("#customerProfile");
       profile.hidden=false;
-      profile.replaceChildren(el("p", "", "Salom, " + (me.name||"Mijoz") + "!"));
+      profile.replaceChildren();
+      const intro=el("div","ali-profile-heading");
+      intro.appendChild(el("h3","","Xush kelibsiz, "+(me.name||"Mijoz")+"!"));
+      intro.appendChild(el("p","muted","Shaxsiy kabinet · "+(me.phone||"Telefon tasdiqlanmagan")));
+      profile.appendChild(intro);
+      const shortcuts=el("div","ali-profile-shortcuts");
+      const action=(text,callback)=>{
+        const b=el("button","ali-profile-shortcut",text);
+        b.type="button";b.addEventListener("click",()=>{
+          d.close();
+          callback();
+        });
+        shortcuts.appendChild(b);
+      };
+      action("📦 Buyurtmalarim",()=>window.openAliOrders?.());
+      action("♡ Sevimli taomlarim",()=>{
+        const btn=document.getElementById("favoriteFilter");
+        if(btn&&!btn.classList.contains("active"))btn.click();
+        document.getElementById("foodGrid")?.scrollIntoView({behavior:"smooth"});
+      });
+      action("📍 Yetkazish manzilim",()=>window.getLocation?.());
+      profile.appendChild(shortcuts);
       const logout=el("button","auth-submit","Chiqish");
       logout.type="button";
       logout.addEventListener("click",()=>{sessionStorage.removeItem("ali_customer_token");me=null;$("#customerLoginBtn").textContent="👤 Kirish";d.close();});
@@ -242,8 +388,9 @@
       send.type="button";send.disabled=!state.smsReady;
       const confirm=el("button","btn btn-black","Raqamni tasdiqlash");confirm.type="button";
       const h={"Authorization":"Bearer "+sessionStorage.getItem("ali_customer_token")};
-      function verifiedScreen() {verification.replaceChildren(el("p","","✅ Telefoningiz SMS orqali tasdiqlangan."));}
+      function verifiedScreen() {verification.replaceChildren(el("p","","✅ Telefon raqamingiz tasdiqlangan."));}
       verification.append(vStatus,vPhone,send,vCode,confirm);
+      if(!state.smsReady){send.hidden=true;vCode.hidden=true;confirm.hidden=true;}
       profile.appendChild(verification);
       api("/api/auth/phone/status",{headers:h}).then(data=>{
         if(data.verified) verifiedScreen();
@@ -276,6 +423,8 @@
       };
       profile.appendChild(logout);
     } else {
+      $("#aliUsernameArea").hidden=false;
+      if(state.usernameSelected)closeUsernameMode();
       $("#customerAuthForm").hidden=false;
       $(".auth-switch",d).hidden=false;
       $(".auth-divider",d).hidden=false;
