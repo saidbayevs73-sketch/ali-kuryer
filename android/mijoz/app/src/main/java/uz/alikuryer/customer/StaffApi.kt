@@ -56,6 +56,9 @@ internal object StaffApi {
             JSONObject().put("current_password", current).put("new_password", updated))
     }
 
+    suspend fun verifyAdminToken(token: String): Boolean =
+        JSONObject(call("/api/auth/me", token = token)).optString("role") == "admin"
+
     suspend fun getAdminUsername(token: String): String =
         JSONObject(call("/api/auth/admin/account", token = token)).optString("username", "admin")
 
