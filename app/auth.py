@@ -263,7 +263,11 @@ def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(409, "Bu raqam allaqachon band")
     db.refresh(user)
 
-    return {"message": "Telefon SMS orqali tasdiqlandi", "user_id": user.id}
+    return {
+        "message": "Telefon SMS orqali tasdiqlandi", "user_id": user.id,
+        "access_token": security.create_access_token({"sub": str(user.id), "role": "customer"}),
+        "token_type": "bearer",
+    }
 
 
 
