@@ -141,3 +141,67 @@ def test_customer_auth_options_report_configuration_readiness(monkeypatch):
     assert data["telegram_login"] is True
     assert data["google_login"] is True
     assert "test-public-client-id" not in result.text
+
+
+def test_username_signup_off_until_persistent_database_and_explicit_activation(monkeypatch):
+    monkeypatch.delenv("ALI_USERNAME_LOGIN_ENABLED", raising=False)
+    assert client.get("/api/auth/username/status").json()["available"] is False
+    body = {
+        "name": "Yangi mijoz", "username": "mijoz_registration_a",
+        "password": "MijozStrongPassword123!", "accepted_privacy": True,
+    }
+    result = client.post("/api/auth/username/register", json=body)
+    assert result.status_code == 503
+    with SessionLocal() as db:
+        assert db.get(models.UsernameIdentity, "mijoz_registration_a") is None
+
+
+def test_username_signup_creates_unverified_customer_and_cabinet(monkeypatch):
+    monkeypatch.setenv("ALI_USERNAME_LOGIN_ENABLED", "1")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.delenv("RENDER", raising=False)
+    body = {
+        "name": "Yangi sinov xaridor", "username": "mijoz_login_test_b",
+        "password": "MijozStrongPassword123!", "accepted_privacy": True,
+    }
+    created = client.post("/api/auth/username/register", json=body)
+    assert created.status_code == 201, created.text
+    assert created.json()["phone_verified"] is False
+    assert client.post("/api/auth/username/register", json=body).status_code == 409
+    assert client.post("/api/auth/username/login", json={
+        "username": body["username"], "password": "badpassword",
+    }).status_code == 401
+    login = client.post("/api/auth/username/login", json={
+        "username": body["username"], "password": body["password"],
+    })
+    assert login.status_code == 200, login.text
+    token = login.json()["access_token"]
+    details = client.get("/api/auth/me",
+        headers={"Authorization": "Bearer " + token})
+    assert details.status_code == 200
+    assert details.json()["role"] == "customer"
+    assert details.json()["phone"] is None
+    with SessionLocal() as db:
+        binding = db.get(models.UsernameIdentity, body["username"])
+        assert binding is not None
+        assert db.get(models.VerifiedPhone, "+998901112233") is None
+        created_user = db.get(models.User, binding.user_id)
+        assert created_user.role == "customer"
+        assert created_user.password_hash != body["password"]
+
+
+def test_username_signup_never_accepts_reserved_name_or_unconfirmed_privacy(monkeypatch):
+    monkeypatch.setenv("ALI_USERNAME_LOGIN_ENABLED", "1")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.delenv("RENDER", raising=False)
+    body = {
+        "name":"Tester", "username":"admin",
+        "password":"StrongExamplePassword45!", "accepted_privacy": True
+    }
+    assert client.post("/api/auth/username/register", json=body).status_code == 422
+    assert client.post("/api/auth/username/register", json={
+        **body, "username":"new_test_user", "accepted_privacy":False
+    }).status_code == 422
+    assert client.post("/api/auth/username/register", json={
+        **body, "username":"ünicode_name"
+    }).status_code == 422

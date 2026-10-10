@@ -280,10 +280,65 @@ def _photo_unavailable_result() -> dict:
     }
 
 
+
+def _typed_portion_calories(message: str, image_seen: bool = False) -> dict | None:
+    """Bounded coarse estimate from *typed food name and grams*, never image recognition.
+
+    Per-100g ranges are illustrative culinary references (not measured food facts).
+    Avoid claiming composition or calorie values for unrecognized photos.
+    """
+    text = " ".join(message.casefold().split())
+    amount = re.search(r"(?<!\d)(\d{2,4})\s*(?:g|gr|gramm|gram|г)(?!\w)", text)
+    if not amount:
+        return None
+    grams = int(amount.group(1))
+    if not 30 <= grams <= 1500:
+        return None
+    foods = (
+        (r"\b(?:palov|plov|osh)(?!xona)\b", "Palov",
+         (180, 240), "guruch, sabzi, piyoz, yog‘ va go‘sht bo‘lishi mumkin"),
+        (r"\b(?:manti|manty)\b", "Manti",
+         (170, 260), "xamir, go‘sht yoki sabzavotli ichlik bo‘lishi mumkin"),
+        (r"\b(?:somsa|samsa)\b", "Somsa",
+         (240, 360), "xamir, yog‘, piyoz va ichlik bo‘lishi mumkin"),
+        (r"\b(?:pizza|pitsa)\b", "Pitsa",
+         (210, 330), "xamir, pishloq, sous va ustki masalliqlar"),
+        (r"\b(?:burger|gamburger)\b", "Burger",
+         (220, 330), "non, go‘shtli kotlet, sous va sabzavotlar"),
+        (r"\b(?:shashlik|shashliq|kabob|kebab)\b", "Kabob",
+         (160, 300), "go‘sht, piyoz va yog‘ miqdori turlicha"),
+        (r"\b(?:shorva|sho.rva|sho‘rva|soup)\b", "Sho‘rva",
+         (45, 130), "bulon, sabzavot va go‘sht bo‘lishi mumkin"),
+        (r"\b(?:salat|salad)\b", "Salat",
+         (35, 180), "sabzavot, sous yoki moy miqdori o‘zgaruvchan"),
+        (r"\b(?:lagmon|lag‘mon|lag'mon)\b", "Lag‘mon",
+         (120, 220), "lag‘mon xamiri, sabzavot va go‘shtli sous"),
+    )
+    for pattern, title, band, components in foods:
+        if re.search(pattern, text):
+            low = round(band[0] * grams / 100)
+            high = round(band[1] * grams / 100)
+            photo_disclaimer = (
+                "Siz biriktirgan suratni AI tahlil qilmadi. " if image_seen else ""
+            )
+            return {
+                "reply": (photo_disclaimer +
+                    f"Siz yozgan {grams} g {title.lower()} uchun umumiy taxmin: "
+                    f"{low}–{high} kkal. Odatdagi tarkib: {components}. "
+                    "Aniq tarkib, porsiya vazni, yog‘ va pishirish usuli "
+                    "rasmdan yoki nomdan ishonchli aniqlanmaydi. "
+                    "Bu ovqatlanish uchun taxminiy ma’lumot, tibbiy o‘lchov emas."),
+                "mode": "basic", "image_analyzed": False,
+                "calorie_source": "typed_name_and_weight",
+            }
+    return None
+
+
 def _upstream_basic_result(message: str, image_url: str | None,
                            status: int | None = None, error_code: str = "") -> dict:
     """Nonsecret provider status; never invent a food-photo analysis."""
-    result = _photo_unavailable_result() if image_url else assistant_basic_result(message)
+    result = (_typed_portion_calories(message, bool(image_url)) or
+              (_photo_unavailable_result() if image_url else assistant_basic_result(message)))
     if status == 429:
         if error_code == "insufficient_quota":
             reason = ("OpenAI hisobida balans yoki API to‘lov kvotasi tugagan. "
@@ -327,6 +382,9 @@ async def assistant_chat(data: AssistantChatIn):
         }
     image_url = _prepare_food_image(data.image_base64) if data.image_base64 else None
     if image_url is None:
+        estimate = _typed_portion_calories(data.message)
+        if estimate:
+            return estimate
         basic_reply = basic_muhammadali_reply(data.message)
         if basic_reply is not None:
             return {"reply": basic_reply, "mode": "basic", "image_analyzed": False}
@@ -335,11 +393,13 @@ async def assistant_chat(data: AssistantChatIn):
     key = os.getenv("AI_API_KEY", "").strip()
     if not api_url or not key:
         log.warning("Muhammadali provider not configured: missing URL or API key")
-        return _photo_unavailable_result() if image_url else assistant_basic_result(data.message)
+        return (_typed_portion_calories(data.message, bool(image_url)) or
+                (_photo_unavailable_result() if image_url else assistant_basic_result(data.message)))
     url = urlparse(api_url)
     if url.scheme != "https" or not url.hostname or url.username or url.password or url.fragment:
         log.warning("Muhammadali provider URL invalid")
-        return _photo_unavailable_result() if image_url else assistant_basic_result(data.message)
+        return (_typed_portion_calories(data.message, bool(image_url)) or
+                (_photo_unavailable_result() if image_url else assistant_basic_result(data.message)))
     # A common deployment mistake is giving only the provider API base URL.
     # Do not rewrite unknown third-party providers or redirect credentials.
     if url.hostname.casefold() == "api.openai.com" and url.path.rstrip("/") in {"", "/v1"}:
@@ -410,4 +470,5 @@ async def assistant_chat(data: AssistantChatIn):
         return _upstream_basic_result(data.message, image_url, exc.response.status_code, code)
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
         log.warning("Muhammadali upstream unavailable category=%s", type(exc).__name__)
-        return _photo_unavailable_result() if image_url else assistant_basic_result(data.message)
+        return (_typed_portion_calories(data.message, bool(image_url)) or
+                (_photo_unavailable_result() if image_url else assistant_basic_result(data.message)))

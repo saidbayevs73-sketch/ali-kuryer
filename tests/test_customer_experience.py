@@ -309,3 +309,42 @@ def test_ai_rate_limit_error_explains_retry(monkeypatch):
     assert result["mode"]=="basic"
     assert result["ai_issue"]=="rate_limit"
     assert "limit" in result["reply"]
+
+
+def test_typed_palov_grams_provides_stated_not_photo_vision_calorie_estimate(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    response = client.post("/api/assistant/chat", json={
+        "message":"250 gramm palov kaloriyasi qancha?"
+    })
+    assert response.status_code == 200, response.text
+    data=response.json()
+    assert data["mode"] == "basic"
+    assert data["calorie_source"] == "typed_name_and_weight"
+    assert "450–600 kkal" in data["reply"]
+    assert data["image_analyzed"] is False
+
+
+def test_typed_food_with_unavailable_vision_discloses_no_photo_analysis(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    response = client.post("/api/assistant/chat", json={
+        "message": "Bu 200 gramm pizza, kaloriya qancha?",
+        "image_base64": _test_food_photo_base64()
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["calorie_source"] == "typed_name_and_weight"
+    assert data["image_analyzed"] is False
+    assert "suratni AI tahlil qilmadi" in data["reply"]
+    assert "420–660 kkal" in data["reply"]
+
+
+def test_no_weight_cannot_guess_calories_from_photo_without_ai(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    response = client.post("/api/assistant/chat", json={
+        "message": "Rasmdagi taom kaloriyasi qancha?",
+        "image_base64": _test_food_photo_base64()
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "calorie_source" not in data
+    assert data["image_analyzed"] is False

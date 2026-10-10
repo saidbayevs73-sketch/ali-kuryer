@@ -44,7 +44,8 @@ def customer_auth_options():
     telegram_available = telegram_login.service_ready()
     google_available = bool(os.getenv("GOOGLE_CLIENT_ID", "").strip())
     return {
-        "password_login": True,  # existing users only
+        "password_login": True,  # existing phone/password users
+        "username_signup": _username_signup_ready(),
         "sms_registration": sms_available,
         "sms_verification": sms_available,
         "telegram_login": telegram_available,
@@ -56,6 +57,114 @@ def customer_auth_options():
             "Mavjud hisobingiz bo‘lsa, parol bilan kiring. "
             "Yangi mijozlar uchun boshqa tasdiqlash usuli mavjud bo‘lsa, uni tanlang."
         ),
+    }
+
+
+
+class UsernameRegisterRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    username: str = Field(min_length=3, max_length=32)
+    password: str = Field(min_length=10, max_length=72)
+    accepted_privacy: bool
+
+
+class UsernameLoginRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=32)
+    password: str = Field(min_length=1, max_length=72)
+
+
+def _username_signup_ready() -> bool:
+    import os
+    from app.database import DATABASE_URL
+    # A free Render instance may lose its SQLite on restart.
+    production = os.getenv("RENDER", "").lower() in {"true", "1", "yes"} or (
+        os.getenv("ENVIRONMENT", "").lower() == "production"
+    )
+    permanent = not production or DATABASE_URL.startswith("postgresql")
+    return os.getenv("ALI_USERNAME_LOGIN_ENABLED") == "1" and permanent
+
+
+def _require_username_signup_ready() -> None:
+    if not _username_signup_ready():
+        raise HTTPException(503,
+            "Login nomi va parol bilan ro‘yxatdan o‘tish doimiy baza ulangandan "
+            "keyin ishga tushadi. Ma’lumotlaringiz yo‘qolmasligi uchun hozir yopiq.")
+
+
+def _normalize_customer_username(value: str) -> str:
+    import re
+    username = value.strip().lower()
+    if not re.fullmatch(r"[a-z][a-z0-9_.]{2,31}", username):
+        raise HTTPException(422, "Login nomi 3–32 ta lotin harfi, raqam, _ yoki . dan iborat bo‘lsin; harf bilan boshlansin")
+    if username in {"admin", "administrator", "support", "operator", "courier",
+                    "restaurant", "root", "staff", "alikuryer", "muhammadali"}:
+        raise HTTPException(422, "Bu login nomi xizmat uchun band")
+    return username
+
+
+@router.get("/username/status")
+def customer_username_status():
+    """Only a public readiness flag. No secrets, connection strings or users."""
+    return {
+        "available": _username_signup_ready(),
+        "message": ("Login nomi va parol bilan kabinet yaratish tayyor."
+                    if _username_signup_ready() else
+                    "Yangi kabinetni saqlash uchun doimiy baza va xavfsiz "
+                    "ro‘yxatdan o‘tish xizmati sozlanmoqda."),
+    }
+
+
+@router.post("/username/register", status_code=201)
+def register_customer_username(data: UsernameRegisterRequest,
+                               db: Session = Depends(get_db)):
+    """Customer account without falsely declaring any phone number verified."""
+    from sqlalchemy.exc import IntegrityError
+    _require_username_signup_ready()
+    if not data.accepted_privacy:
+        raise HTTPException(422, "Maxfiylik shartlarini qabul qiling")
+    username = _normalize_customer_username(data.username)
+    if len(data.password.encode("utf-8")) > 72:
+        raise HTTPException(422, "Parol 72 baytdan oshmasin")
+    if db.get(models.UsernameIdentity, username):
+        raise HTTPException(409, "Bu login nomi band. Boshqasini tanlang")
+    name = data.name.strip()
+    if len(name) < 2:
+        raise HTTPException(422, "Ismingizni kiriting")
+    user = models.User(name=name, phone=None,
+                       password_hash=security.hash_password(data.password),
+                       role="customer", is_active=True)
+    db.add(user)
+    db.flush()
+    db.add(models.UsernameIdentity(username=username, user_id=user.id))
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Bu login nomi band. Boshqasini tanlang")
+    return {
+        "message": "Mijoz kabineti yaratildi. Telefon raqami hali tasdiqlanmagan.",
+        "username": username,
+        "phone_verified": False,
+    }
+
+
+@router.post("/username/login")
+def login_customer_username(data: UsernameLoginRequest,
+                            db: Session = Depends(get_db)):
+    _require_username_signup_ready()
+    username = _normalize_customer_username(data.username)
+    binding = db.get(models.UsernameIdentity, username)
+    user = db.get(models.User, binding.user_id) if binding else None
+    if (not user or user.role != "customer" or not user.is_active
+            or not user.password_hash
+            or not security.verify_password(data.password, user.password_hash)):
+        raise HTTPException(401, "Login nomi yoki parol noto‘g‘ri")
+    return {
+        "access_token": security.create_access_token(
+            {"sub": str(user.id), "role": "customer"}
+        ),
+        "token_type": "bearer", "role": "customer",
+        "phone_verified": False if not user.phone else None,
     }
 
 
