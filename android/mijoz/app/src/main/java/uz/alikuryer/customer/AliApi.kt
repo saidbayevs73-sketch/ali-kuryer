@@ -125,6 +125,11 @@ object AliApi {
         request("POST", "/api/auth/register", body)
     }
 
+    suspend fun telegramAvailable(): Boolean {
+        val response = JSONObject(request("GET", "/api/auth/telegram/status"))
+        return response.optBoolean("available", false)
+    }
+
     suspend fun telegramStart(deviceSecret: String): String {
         val body = JSONObject().put("device_secret", deviceSecret)
         val response = JSONObject(request("POST", "/api/auth/telegram/start", body))
