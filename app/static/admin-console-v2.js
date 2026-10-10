@@ -44,6 +44,7 @@ function item(container, title, desc, badge = "") {
   copy.append(bold, small); node.append(copy);
   if (badge) { const pill = document.createElement("span"); pill.className = "pill"; pill.textContent = badge; node.append(pill); }
   container.append(node);
+  return node;
 }
 function render(target, rows, renderOne) {
   const el = $(target); el.replaceChildren();
@@ -55,7 +56,25 @@ function orderRow(el, x) {
   item(el, "Buyurtma №" + (o.id ?? "—"), String(o.customer_name || o.status || "Buyurtma") + " · " + (o.total ?? "—") + " so‘m", String(o.status || "Jarayonda"));
 }
 function restaurantRow(el, x) {
-  item(el, String(x.name || "Oshxona"), "ID: " + (x.id ?? "—"), x.is_approved === false ? "Tasdiqlanmagan" : "Ro‘yxatda");
+  const node = item(el, String(x.name || "Oshxona"), "ID: " + (x.id ?? "—"), x.is_approved === false ? "Tasdiqlanmagan" : "Ro‘yxatda");
+  if (x.is_approved === false && Number.isInteger(x.id) && x.id > 0) {
+    const button = document.createElement("button");
+    button.type = "button"; button.className = "btn secondary";
+    button.textContent = "Tasdiqlash";
+    button.addEventListener("click", async () => {
+      if (!window.confirm("Ushbu oshxonani Ali Kuryer tizimiga tasdiqlaysizmi?")) return;
+      button.disabled = true;
+      try {
+        await api("/api/v1/admin/restaurants/" + encodeURIComponent(String(x.id)) + "/approval",
+          {method: "POST", body: JSON.stringify({approved: true})});
+        await refresh();
+      } catch (err) {
+        message("content-message", err.message || "Oshxonani tasdiqlashda xato");
+        button.disabled = false;
+      }
+    });
+    node.append(button);
+  }
 }
 function partnerRow(el, x) {
   item(el, String(x.name || x.full_name || "Hamkor"), String(x.phone || "Aloqa ma’lumoti yo‘q"), String(x.kind || x.status || "Ariza"));
@@ -74,22 +93,33 @@ async function refresh() {
   };
   const results = await Promise.allSettled(Object.entries(endpoints).map(async ([key, path]) => [key, await api(path)]));
   let errors = [];
+  const failed = new Set();
   for (let index = 0; index < results.length; index++) {
     const entry = results[index];
     const key = Object.keys(endpoints)[index];
     if (entry.status === "fulfilled") cache[key] = listOf(entry.value[1]);
-    else {cache[key] = []; errors.push(key + ": " + (entry.reason.message || "xato"));}
+    else {cache[key] = []; failed.add(key); errors.push(key + ": " + (entry.reason.message || "xato"));}
   }
-  $("stat-orders").textContent = cache.orders.length;
-  $("stat-restaurants").textContent = cache.restaurants.length;
-  $("stat-partners").textContent = cache.partners.length;
-  $("stat-threads").textContent = cache.support.length;
+  for (const key of ["orders", "restaurants", "partners", "support"]) {
+    const node = $("stat-" + (key === "support" ? "threads" : key));
+    node.textContent = failed.has(key) ? "—" : String(cache[key].length);
+  }
   render("recent-orders", cache.orders.slice(0,5), orderRow);
   render("recent-partners", cache.partners.slice(0,5), partnerRow);
   render("order-list", cache.orders, orderRow);
   render("restaurant-list", cache.restaurants, restaurantRow);
   render("partner-list", cache.partners, partnerRow);
   render("support-list", cache.support, supportRow);
+  const displays = {orders:["recent-orders","order-list"], partners:["recent-partners","partner-list"],
+                    restaurants:["restaurant-list"],support:["support-list"]};
+  for (const key of failed) for (const target of displays[key]) {
+    const element = $(target);
+    element.replaceChildren();
+    const notice = document.createElement("p");
+    notice.className = "empty danger";
+    notice.textContent = "Serverdan ma’lumot olinmadi. Qayta urinib ko‘ring.";
+    element.append(notice);
+  }
   if (errors.length) message("content-message", "Ba’zi ma’lumotlarni olishning iloji bo‘lmadi: " + errors.join("; "));
 }
 function tab(name) {
