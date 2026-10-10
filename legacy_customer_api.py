@@ -19,34 +19,62 @@ ALLOWED_ORIGINS = {
 }
 
 
-def verify_central_admin(username, password):
-    """Verify legacy-admin credentials against the canonical FastAPI server.
+def canonical_admin_origin():
+    # Refuse noncanonical hosts; no chance of leaking owner credentials.
+    base = os.getenv("ALI_CANONICAL_AUTH_ORIGIN", "https://ali-kuryer.onrender.com").rstrip("/")
+    return base if base == "https://ali-kuryer.onrender.com" else None
 
-    Controlled rollout only: fail closed on timeout/error and never fall back
-    to the older independently configured legacy password in central mode.
-    No bearer token, password, or server response is logged or persisted.
-    """
+
+def canonical_admin_request(path, bearer=None, credentials=None):
+    """Call only trusted owner-auth endpoints; never log tokens or secrets."""
     from urllib.request import Request, urlopen
     from urllib.error import URLError
-    if username != "admin" or not password:
-        return False
-    # Do not turn an environment mistake into a credential leak to another host.
-    base = os.getenv("ALI_CANONICAL_AUTH_ORIGIN", "https://ali-kuryer.onrender.com").rstrip("/")
-    if base != "https://ali-kuryer.onrender.com":
-        return False
-    payload = json.dumps({"username": username, "password": password}).encode("utf-8")
-    request = Request(
-        base + "/api/auth/admin/login", data=payload, method="POST",
-        headers={"Content-Type": "application/json", "Accept": "application/json"}
-    )
+    base = canonical_admin_origin()
+    if not base:
+        return None
+    headers = {"Accept": "application/json"}
+    if credentials is not None:
+        headers["Content-Type"] = "application/json"
+        data = json.dumps(credentials).encode("utf-8")
+    else:
+        data = None
+        if not bearer:
+            return None
+        headers["Authorization"] = "Bearer " + bearer
+    request = Request(base + path, data=data, headers=headers,
+                      method="POST" if data is not None else "GET")
     try:
         with urlopen(request, timeout=8) as response:
             if response.status != 200:
-                return False
-            result = json.loads(response.read(4096))
-        return isinstance(result, dict) and result.get("role") == "admin" and bool(result.get("access_token"))
+                return None
+            body = json.loads(response.read(4096))
+        return body if isinstance(body, dict) else None
     except (URLError, OSError, ValueError, TypeError):
+        return None
+
+
+def authenticate_central_admin(username, password):
+    if username != "admin" or not password:
+        return None
+    result = canonical_admin_request(
+        "/api/auth/admin/login", credentials={"username": username, "password": password})
+    if result and result.get("role") == "admin":
+        token = result.get("access_token")
+        if isinstance(token, str) and 20 <= len(token) <= 4096:
+            return token
+    return None
+
+
+def verify_central_admin(username, password):
+    """Owner credential validation; no fallback to independent old password."""
+    return authenticate_central_admin(username, password) is not None
+
+
+def central_admin_token_valid(token):
+    if not isinstance(token, str) or not 20 <= len(token) <= 4096:
         return False
+    result = canonical_admin_request("/api/auth/me", bearer=token)
+    return bool(result and result.get("role") == "admin")
 
 
 def install(legacy):
@@ -55,6 +83,24 @@ def install(legacy):
     old_get, old_post = Handler.do_GET, Handler.do_POST
     old_init = legacy['init_db']
     old_end_headers = Handler.end_headers
+    old_session = legacy["session"]
+
+    def canonical_session(handler, role):
+        current = old_session(handler, role)
+        if role != "admin" or os.getenv("ALI_LEGACY_ADMIN_AUTH_MODE") != "central":
+            return current
+        # Enforce revocation on every privileged request, not only at login.
+        # When the admin changes password, FastAPI rejects old admin JWTs.
+        token = current.get("canonical_token") if current else None
+        if not token or not central_admin_token_valid(token):
+            if current:
+                for cookie_id, active in list(legacy["sessions"].items()):
+                    if active is current:
+                        legacy["sessions"].pop(cookie_id, None)
+            return None
+        return current
+
+    legacy["session"] = canonical_session
 
     def initialize():
         # Take a consistent SQLite snapshot before the first customer API migration.
@@ -284,7 +330,8 @@ def install(legacy):
             if count >= 10 and now - last < 300:
                 self.out(legacy["login_page"]("admin", "Ko‘p urinish. 5 daqiqadan keyin urinib ko‘ring."), 429)
                 return
-            if not verify_central_admin(username, password):
+            canonical_token = authenticate_central_admin(username, password)
+            if not canonical_token:
                 attempts[key] = (count + 1, now)
                 self.out(legacy["login_page"]("admin", "Login yoki parol noto‘g‘ri."), 401)
                 return
@@ -293,7 +340,8 @@ def install(legacy):
             ttl = min(legacy["SESSION_TTL"], 15 * 60)  # Short legacy cookie in central mode
             legacy["sessions"][token] = {
                 "role": "admin", "id": 0,
-                "expires": now + ttl, "csrf": secrets.token_urlsafe(32)
+                "expires": now + ttl, "csrf": secrets.token_urlsafe(32),
+                "canonical_token": canonical_token
             }
             cookie = "ak_admin=" + token + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + str(ttl)
             if os.getenv("COOKIE_SECURE") == "1":
