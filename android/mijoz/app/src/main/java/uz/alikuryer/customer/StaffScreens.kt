@@ -39,6 +39,13 @@ import org.json.JSONObject
 private fun JSONArray.objList(): List<JSONObject> =
     (0 until length()).mapNotNull { optJSONObject(it) }
 
+private fun strongOwnerPassword(value: String): Boolean =
+    value.length in 14..72 &&
+    value.any { it in 'A'..'Z' } &&
+    value.any { it in 'a'..'z' } &&
+    value.any { it in '0'..'9' } &&
+    value.any { !it.isLetterOrDigit() }
+
 private fun JSONObject.int(key: String) = optInt(key, 0)
 private fun JSONObject.str(key: String) = optString(key, "").takeUnless { it == "null" }.orEmpty()
 
@@ -651,7 +658,7 @@ internal fun AliStaffApp() {
                             singleLine = true)
                         Button(
                             enabled = !busy && oldAdminPassword.isNotBlank() &&
-                                newAdminPassword.length >= 14 &&
+                                strongOwnerPassword(newAdminPassword) &&
                                 repeatAdminPassword == newAdminPassword,
                             onClick = {
                                 scope.launch {
