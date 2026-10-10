@@ -62,7 +62,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().safeDrawingPadding(),
                     color = AliCanvas
                 ) {
-                    if (splash) AliSplash() else AliCustomerApp()
+                    if (splash) AliSplash() else if (BuildConfig.APP_ROLE == "customer") AliCustomerApp() else AliStaffApp()
                 }
             }
         }
@@ -79,7 +79,7 @@ private fun AliSplash() {
             Text("ALI KURYER", fontWeight = FontWeight.Black, fontSize = 28.sp,
                 color = AliBlack, letterSpacing = 1.4.sp)
             Spacer(Modifier.height(7.dp))
-            Text("MAZALI TAOMLAR. SIZGA YAQIN.", color = AliRed,
+            Text(if (BuildConfig.APP_ROLE == "customer") "MAZALI TAOMLAR. SIZGA YAQIN." else when (BuildConfig.APP_ROLE) { "courier" -> "KURYER BOSHQARUVI" ; "restaurant" -> "OSHXONA BOSHQARUVI" ; else -> "ADMIN BOSHQARUVI" }, color = AliRed,
                 fontSize = 11.sp, letterSpacing = 1.5.sp,
                 fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(30.dp))
