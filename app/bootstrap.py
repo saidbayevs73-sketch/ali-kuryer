@@ -56,9 +56,10 @@ def ensure_admin():
 
     phone = os.getenv("ADMIN_PHONE", "").strip()
     password = os.getenv("ADMIN_PASSWORD", "")
-    # Misconfiguration must not take the ordering site offline.
-    if not re.fullmatch(r"\+998[0-9]{9}", phone) or len(password) < 12:
-        print("Ali Kuryer admin bootstrap: configuration incomplete", flush=True)
+    # Only ADMIN_PHONE is required to recover an existing admin.
+    # An obsolete or weak ADMIN_PASSWORD must not block one-time recovery.
+    if not re.fullmatch(r"\+998[0-9]{9}", phone):
+        print("Ali Kuryer admin bootstrap: valid ADMIN_PHONE required", flush=True)
         return
 
     with SessionLocal() as session:
@@ -69,6 +70,15 @@ def ensure_admin():
                 maybe_reset_existing_admin(session, existing)
             else:
                 print("Ali Kuryer admin bootstrap: phone belongs to another role", flush=True)
+            return
+
+        # Strong initial password required only when creating an admin anew.
+        from app.auth import validate_strong_admin_password
+        from fastapi import HTTPException
+        try:
+            validate_strong_admin_password(password)
+        except HTTPException:
+            print("Ali Kuryer admin bootstrap: strong initial password required", flush=True)
             return
 
         admin = models.User(
