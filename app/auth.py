@@ -89,7 +89,7 @@ def _contact_signup_ready() -> bool:
     return (
         os.getenv("ALI_CONTACT_SIGNUP_ENABLED") == "1"
         and (not production or DATABASE_URL.startswith("postgresql"))
-        and bool(os.getenv("SECRET_KEY", "") or not production)
+        and (not production or len(os.getenv("SECRET_KEY", "").encode("utf-8")) >= 32)
     )
 
 
@@ -114,6 +114,9 @@ def register_contact_customer(data: ContactRegisterRequest, request: Request,
         raise HTTPException(422, "Maxfiylik shartlarini qabul qiling")
     if len(data.password.encode("utf-8")) > 72:
         raise HTTPException(422, "Parol 72 baytdan oshmasin")
+    if len(data.name.strip()) < 2:
+        raise HTTPException(422, "Ism kamida ikki belgidan iborat bo‘lsin")
+    security.require_secure_jwt_key()
     # No account is linked to an existing verified customer by phone alone.
     # User.phone remains NULL; verified identities keep their own ownership.
     user = models.User(
