@@ -28,10 +28,38 @@
     const botURL = /^https:\/\/t\.me\/[A-Za-z0-9_]+(?:\?.*)?$/.test(config.bot_url) ? config.bot_url : defaultBot;
     for (const anchor of document.querySelectorAll(".ali-help-link")) anchor.href = botURL;
     setupGoogle();
+    loadPlatformContacts();
     const status = $("#aliAiStatus");
     if (status) status.textContent = config.ai_available ?
       "Muhammadali — AI yordamchi faol. Karta va maxfiy ma’lumot yubormang." :
       "Muhammadali hozircha menyu bo‘yicha yordam beradi. Jonli AI ulanishi tayyorlanmoqda.";
+  }
+
+  async function loadPlatformContacts() {
+    // Public, non-secret contact details set in the private admin dashboard.
+    // This is best-effort: an absent settings backend must not break ordering.
+    try {
+      const data = await api("/api/public/platform-config");
+      const contacts = data.contacts || {};
+      const lines = [
+        contacts.support_phone,
+        contacts.support_email,
+        contacts.office_address
+      ].filter(Boolean);
+      if (lines.length) {
+        const help = $(".public-help");
+        if (help) {
+          const info = el("p", "ali-public-contacts", lines.join(" · "));
+          help.append(info);
+        }
+      }
+      const link = contacts.telegram_url || "";
+      if (/^https:\/\/t\.me\/[A-Za-z0-9_]{5,32}\/?$/.test(link)) {
+        config.bot_url = link;
+        for (const anchor of document.querySelectorAll(".ali-help-link"))
+          anchor.href = link;
+      }
+    } catch (_) { /* The old public site still works without this optional API. */ }
   }
 
   function buildPartners() {
