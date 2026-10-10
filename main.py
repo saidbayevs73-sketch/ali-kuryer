@@ -124,8 +124,8 @@ def owner_console():
             "Content-Security-Policy": (
                 "default-src 'self'; base-uri 'none'; object-src 'none'; "
                 "connect-src 'self'; img-src 'self' data:; "
-                "script-src 'self' 'unsafe-inline'; "
-                "style-src 'self' 'unsafe-inline'; "
+                "script-src 'self'; "
+                "style-src 'self'; "
                 "form-action 'self'; frame-ancestors 'none'"
             ),
         },
