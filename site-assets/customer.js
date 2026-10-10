@@ -29,9 +29,8 @@
     for (const anchor of document.querySelectorAll(".ali-help-link")) anchor.href = botURL;
     setupGoogle();
     const status = $("#aliAiStatus");
-    if (status) status.textContent = config.ai_available ?
-      "Muhammadali — AI yordamchi faol. Karta va maxfiy ma’lumot yubormang." :
-      "Muhammadali hozircha menyu bo‘yicha yordam beradi. Jonli AI ulanishi tayyorlanmoqda.";
+    if (status) status.textContent =
+      "Muhammadali taom, buyurtma va manzil bo‘yicha yordam beradi. AI xizmati vaqtincha uzilsa umumiy ma’lumot beriladi. Karta va kodlaringizni yubormang.";
   }
 
   function buildPartners() {
@@ -340,7 +339,7 @@
       const input=$("#aliInput");
       const q=String(question||input?.value||"").trim();
       if (!q) return;
-      if (!config.ai_available) {if(typeof original==="function")return original(q);return;}
+      // Always use server FAQ, even when the optional paid AI provider is offline.
       if(input)input.value="";
       const body=$("#chatBody");
       if(!body)return;
@@ -348,8 +347,8 @@
       const answerBox=el("div","message","Muhammadali javob yozmoqda…");body.appendChild(answerBox);body.scrollTop=body.scrollHeight;
       try {
         const answer=await api("/api/assistant/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q})});
-        answerBox.textContent="Muhammadali: "+answer.reply;
-      } catch(_) {answerBox.textContent="AI vaqtincha javob bermadi. Telegram yordamchi botimizga yozishingiz mumkin: "+config.bot_url;}
+        answerBox.textContent="Muhammadali"+(answer.mode==="basic"?" (ma’lumot rejimi)":"")+": "+answer.reply;
+      } catch(_) {answerBox.textContent="Muhammadali serveri bilan aloqa uzildi. Operator: "+config.bot_url;}
       body.scrollTop=body.scrollHeight;
     };
   }
