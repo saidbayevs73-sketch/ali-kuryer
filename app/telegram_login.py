@@ -53,6 +53,9 @@ def configured() -> bool:
 
 
 def service_ready() -> bool:
+    from app.control_center import enabled
+    if not enabled("customer_telegram_login"):
+        return False
     return configured() and not (
         os.getenv("RENDER", "").lower() in {"true", "1", "yes"}
         and not DATABASE_URL.startswith("postgresql")
@@ -72,6 +75,8 @@ def telegram_status():
 
 
 def require_ready() -> None:
+    from app.control_center import require_enabled
+    require_enabled("customer_telegram_login")
     if not configured():
         raise HTTPException(503, "Telegram kirish hozircha sozlanmagan")
     if os.getenv("RENDER", "").lower() in {"true", "1", "yes"} and not DATABASE_URL.startswith("postgresql"):
