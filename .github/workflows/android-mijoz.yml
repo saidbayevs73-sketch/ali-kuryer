@@ -1,15 +1,25 @@
-name: Android Mijoz APK
-
+name: Android Ali Kuryer 4 APK
 on:
   push:
     paths:
       - "android/mijoz/**"
       - ".github/workflows/android-mijoz.yml"
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - flavor: mijoz
+            task: Mijoz
+          - flavor: kuryer
+            task: Kuryer
+          - flavor: oshxona
+            task: Oshxona
+          - flavor: admin
+            task: Admin
     permissions:
       contents: read
     defaults:
@@ -20,9 +30,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
-      # GitHub's ubuntu-latest runner already has Android SDK cmdline-tools.
-      # android-actions/setup-android@v3 tries to install removed "tools" package.
+          java-version: "17"
       - name: Install Android platform and build tools
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
@@ -33,12 +41,12 @@ jobs:
           "$SDKMANAGER" --install "platforms;android-35" "build-tools;35.0.0"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
-      - name: Build debug APK
-        run: gradle --no-daemon app:assembleDebug
+          gradle-version: "8.9"
+      - name: Build APK
+        run: gradle --no-daemon app:assemble${{ matrix.task }}Debug
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: AliKuryer-Mijoz-Debug-APK
-          path: android/mijoz/app/build/outputs/apk/debug/app-debug.apk
+          name: AliKuryer-${{ matrix.flavor }}-APK
+          path: android/mijoz/app/build/outputs/apk/${{ matrix.flavor }}/debug/app-${{ matrix.flavor }}-debug.apk
           if-no-files-found: error
