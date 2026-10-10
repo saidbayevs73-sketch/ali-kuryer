@@ -144,3 +144,24 @@ class AssistantConversationLog(Base):
     question = Column(String(600), nullable=False)
     answer = Column(String(2200), nullable=False)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class SmsChallenge(Base):
+    """Hashed one-time SMS code, limited attempts; no plaintext OTP storage."""
+    __tablename__ = "sms_challenges"
+    phone = Column(String(30), primary_key=True)
+    code_digest = Column(String(64), nullable=True)
+    nonce = Column(String(64), nullable=True)
+    expires_at = Column(DateTime, nullable=True)
+    sent_at = Column(DateTime, nullable=True)
+    window_start = Column(DateTime, nullable=False)
+    sent_today = Column(Integer, nullable=False, default=0)
+    attempts = Column(Integer, nullable=False, default=0)
+
+
+class VerifiedPhone(Base):
+    """Persistent proof the customer successfully entered the SMS OTP."""
+    __tablename__ = "verified_phones"
+    phone = Column(String(30), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    verified_at = Column(DateTime, server_default=func.now(), nullable=False)
