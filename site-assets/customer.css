@@ -211,3 +211,48 @@ footer strong {color:#fff}
   .logo-word {font-size:17px}
   .logo-word small {font-size:8px;letter-spacing:.5px}
 }
+
+
+/* Auto system dark mode · unify Ali Kuryer customer website with Android */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme:dark;
+    --ali-accent:#E1A3AA;--ali-accent-hover:#ECC0C4;
+    --ali-ink:#F0EDE9;--ali-muted:#B7B5B9;
+    --ali-canvas:#19191D;--ali-surface:#25252B;
+    --ali-stroke:#39383E;--ali-rose:#48363C;
+    --ali-shadow:0 8px 30px rgba(0,0,0,.14);
+  }
+  body,main {background:var(--ali-canvas);color:var(--ali-ink)}
+  header {background:rgba(37,37,43,.97);color:var(--ali-ink)}
+  .logo,.logo small, .feature b, .card h3, h2 {color:var(--ali-ink)}
+  .btn-black {background:#303036;color:var(--ali-ink);border-color:var(--ali-stroke)}
+  .btn-black:hover {background:#393940}
+  .btn-red,.partner-action button,.partner-link,.auth-submit,
+  .assistant-button {background:var(--ali-accent);color:#321D21}
+  .btn-red:hover,.partner-action button:hover,.auth-submit:hover {background:var(--ali-accent-hover)}
+  .feature,.card,.search-box,.cart,.partner-action,
+  .customer-dialog,.app-form,.message,.chat,.quick button {background:var(--ali-surface);color:var(--ali-ink);border-color:var(--ali-stroke)}
+  .partner-callouts {background:#222226;color:var(--ali-ink)}
+  .public-help {background:#352A30;border-color:var(--ali-stroke)}
+  .public-help p,.customer-dialog p {color:var(--ali-muted)}
+  .public-help a {background:#F0EDE9;color:#25252B}
+  .app-form label,.customer-dialog label,.customer-dialog h2 {color:var(--ali-ink)}
+  .app-form input,.app-form select,.app-form textarea,.customer-dialog input,
+  .field,.chat-input input,.search-box input {
+    background:#2E2D34;color:var(--ali-ink);border-color:var(--ali-stroke);
+  }
+  .auth-switch {background:#303036}
+  .auth-switch button {color:var(--ali-ink)}
+  .auth-switch button.active {background:#4C3B42;color:#F0EDE9}
+  .auth-close {color:var(--ali-ink)}
+  .chat-header {background:#2E2D34}
+  .chat-input {border-color:var(--ali-stroke)}
+  .ali-ai-status {color:var(--ali-muted);border-color:var(--ali-stroke)}
+  .ali-mobile-nav {background:rgba(37,37,43,.98);border-color:var(--ali-stroke)}
+  .ali-mobile-nav button {color:var(--ali-muted)}
+  .ali-mobile-nav button[aria-current="page"] {color:var(--ali-accent);background:var(--ali-rose)}
+  .empty {background:var(--ali-surface);color:var(--ali-muted)}
+  .hero {background:linear-gradient(90deg,rgba(25,25,29,.96),rgba(25,25,29,.76) 55%,rgba(25,25,29,.35)),
+    url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=82") center/cover}
+}
