@@ -343,22 +343,143 @@
       if(header)header.appendChild(close);
       window.toggleAli=()=>{chat.style.display=chat.style.display==="flex"?"none":"flex";};
     }
-    const original=window.askAli;
+    // Ready prompts remain visible in the chat, even without AI.
+    const quick=$("#chatBody .quick");
+    const botLink=()=>/^https:\/\/t\.me\/[A-Za-z0-9_]{5,32}$/.test(config.bot_url)
+      ?config.bot_url:defaultBot;
+    if(quick){
+      for(const [label,question] of [
+        ["🍽 3 xil menyu","Menga 3 xil oilaviy kechki ovqat menyusi tavsiya qil."],
+        ["📦 Buyurtma holati","Buyurtmam holatini qanday kuzataman?"],
+        ["📍 Manzil","Yetkazish manzilini qanday belgilayman?"]
+      ]){
+        const button=el("button","",label);
+        button.type="button";
+        button.addEventListener("click",()=>window.askAli(question));
+        quick.appendChild(button);
+      }
+      const photoPrompt=el("button","","📷 Surat kaloriyasi");
+      photoPrompt.type="button";
+      photoPrompt.addEventListener("click",()=>{
+        const text=$("#aliInput");
+        if(text)text.value="Rasmdagi taomning taxminiy kaloriyasi qancha?";
+        $("#aliPhotoInput")?.click();
+      });
+      quick.appendChild(photoPrompt);
+      const operator=el("a","ali-help-link ali-quick-operator","👩‍💻 Operatorga ulanish");
+      operator.href=botLink();
+      operator.target="_blank";operator.rel="noopener noreferrer";
+      quick.appendChild(operator);
+    }
+    let attachedPhoto=null;
+    let sending=false;
+    const chatInput=$("#chat .chat-input");
+    if(chat && chatInput){
+      const toolbar=el("div","ali-photo-toolbar");
+      const uploadBtn=el("button","ali-photo-trigger","📷 Rasm qo‘shish");
+      uploadBtn.type="button";
+      const photoInput=el("input","ali-photo-file");
+      photoInput.id="aliPhotoInput";
+      photoInput.type="file";
+      photoInput.accept="image/jpeg,image/png,image/webp";
+      photoInput.setAttribute("aria-label","Taom rasmini tanlash");
+      photoInput.hidden=true;
+      uploadBtn.addEventListener("click",()=>photoInput.click());
+      const preview=el("div","ali-photo-preview");
+      preview.hidden=true;
+      const help=el("span","ali-photo-help",
+        "Surat AI xizmatiga tahlil uchun yuboriladi, saqlanmaydi. Kaloriya faqat taxminiy.");
+      toolbar.append(uploadBtn,photoInput,help,preview);
+      chat.insertBefore(toolbar,chatInput);
+      const clearPhoto=()=>{
+        attachedPhoto=null;
+        photoInput.value="";
+        preview.replaceChildren();
+        preview.hidden=true;
+      };
+      photoInput.addEventListener("change",()=>{
+        const file=photoInput.files?.[0];
+        if(!file){clearPhoto();return;}
+        if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>4_000_000){
+          clearPhoto();
+          window.alert("JPEG, PNG yoki WEBP rasm tanlang (4 MB dan kichik).");
+          return;
+        }
+        const reader=new FileReader();
+        reader.onerror=()=>{clearPhoto();window.alert("Rasmni o‘qib bo‘lmadi.");};
+        reader.onload=()=>{
+          if(typeof reader.result!=="string"||!reader.result.startsWith("data:image/")){
+            clearPhoto();return;
+          }
+          attachedPhoto=reader.result.slice(reader.result.indexOf(",")+1);
+          const thumb=el("img","ali-photo-thumb");
+          thumb.alt="Tanlangan taom surati";thumb.src=reader.result;
+          const remove=el("button","ali-photo-remove","✕ Olib tashlash");
+          remove.type="button";remove.addEventListener("click",clearPhoto);
+          preview.replaceChildren(thumb,el("span","","Surat tayyor"),remove);
+          preview.hidden=false;
+          if(!$("#aliInput")?.value.trim())$("#aliInput").value="Rasmdagi taomning taxminiy kaloriyasi qancha?";
+        };
+        reader.readAsDataURL(file);
+      });
+      window.aliClearPhoto=clearPhoto;
+    }
     window.askAli=async function(question) {
+      if(sending)return;
       const input=$("#aliInput");
       const q=String(question||input?.value||"").trim();
-      if (!q) return;
-      // Always use server FAQ, even when the optional paid AI provider is offline.
-      if(input)input.value="";
+      if (!q)return;
       const body=$("#chatBody");
       if(!body)return;
-      const userBox=el("div","message");userBox.appendChild(el("strong","","Siz: "));userBox.appendChild(document.createTextNode(q));body.appendChild(userBox);
-      const answerBox=el("div","message","Muhammadali javob yozmoqda…");body.appendChild(answerBox);body.scrollTop=body.scrollHeight;
+      const userBox=el("div","message");
+      userBox.appendChild(el("strong","","Siz: "));
+      userBox.appendChild(document.createTextNode(q));
+      if(attachedPhoto){
+        const img=el("span","ali-photo-sent","📷 Rasm ilova qilindi");
+        userBox.appendChild(img);
+      }
+      body.appendChild(userBox);
+      if(/operator|jonli yordam|odam bilan|inson bilan/i.test(q)){
+        const info=el("div","message","Sizni operator bilan bog‘lanish uchun Telegram yordam botiga yo‘naltiramiz.");
+        const link=el("a","ali-operator-open","Operator chatini ochish ↗");
+        link.href=botLink();link.target="_blank";link.rel="noopener noreferrer";
+        info.appendChild(link);body.appendChild(info);
+        body.scrollTop=body.scrollHeight;
+        // Open synchronously during the user's click; the visible link covers blocked popups.
+        window.open(botLink(),"_blank","noopener,noreferrer");
+        return;
+      }
+      const fileToSend=attachedPhoto;
+      if(input)input.value="";
+      const answerBox=el("div","message","Muhammadali javob yozmoqda…");
+      body.appendChild(answerBox);body.scrollTop=body.scrollHeight;
+      sending=true;
+      const sendBtn=$("#chat .chat-input button");
+      if(sendBtn)sendBtn.disabled=true;
       try {
-        const answer=await api("/api/assistant/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q})});
+        const payload={message:q};
+        if(fileToSend)payload.image_base64=fileToSend;
+        const answer=await api("/api/assistant/chat",{
+          method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload)
+        });
         answerBox.textContent="Muhammadali"+(answer.mode==="basic"?" (ma’lumot rejimi)":"")+": "+answer.reply;
-      } catch(_) {answerBox.textContent="Muhammadali serveri bilan aloqa uzildi. Operator: "+config.bot_url;}
-      body.scrollTop=body.scrollHeight;
+        if(answer.action==="open_operator"){
+          const link=el("a","ali-operator-open","Operator bilan yozish ↗");
+          link.href=/^https:\/\/t\.me\/[A-Za-z0-9_]{5,32}$/.test(answer.operator_url)
+            ?answer.operator_url:botLink();
+          link.target="_blank";link.rel="noopener noreferrer";
+          answerBox.appendChild(link);
+        }
+        window.aliClearPhoto?.();
+      } catch(error) {
+        answerBox.textContent=humanError(error)+" Operator: "+botLink();
+        // Keep the photo selected so the customer can retry without reuploading.
+      } finally {
+        sending=false;
+        if(sendBtn)sendBtn.disabled=false;
+        body.scrollTop=body.scrollHeight;
+      }
     };
   }
   function buildLegalLinks() {
