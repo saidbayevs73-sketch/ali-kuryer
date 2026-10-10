@@ -403,3 +403,22 @@ def test_production_rejects_weak_jwt_secret(monkeypatch):
     monkeypatch.setattr(security.settings, "SECRET_KEY", "Strong-test-configuration-secret-0123456789-ABCD")
     token = security.create_access_token({"sub": "test", "role": "customer"})
     assert security.decode_access_token(token)["role"] == "customer"
+
+
+def test_readiness_probe_checks_database_without_exposing_secrets(monkeypatch):
+    from main import app
+    from app import database
+    from app import security
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    monkeypatch.delenv("RENDER", raising=False)
+    monkeypatch.setattr(security.settings, "ENVIRONMENT", "test")
+    response = client.get("/api/ready")
+    assert response.status_code == 200, response.text
+    assert response.json()["ok"]
+    assert "SECRET_KEY" not in response.text
+
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setattr(database, "DATABASE_URL", "sqlite:////tmp/test-only.db")
+    unavailable = client.get("/api/ready")
+    assert unavailable.status_code == 503
+    assert "DATABASE_URL" not in unavailable.text
