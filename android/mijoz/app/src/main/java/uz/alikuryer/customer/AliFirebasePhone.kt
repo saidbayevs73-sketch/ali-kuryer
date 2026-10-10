@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.FirebaseException
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
@@ -145,7 +146,7 @@ internal fun AliFirebasePhonePanel(
                                 finishSignIn(credential)
                             }
 
-                            override fun onVerificationFailed(exception: Exception) {
+                            override fun onVerificationFailed(exception: FirebaseException) {
                                 // Never show internal tokens or user secrets.
                                 error = when (exception) {
                                     is FirebaseAuthInvalidCredentialsException ->
