@@ -46,6 +46,11 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Respect the user's Android auto-brightness / manual brightness setting.
+        // This app must never force the physical screen brightness to maximum.
+        window.attributes = window.attributes.apply {
+            screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
         setContent {
             val preferences = remember { getSharedPreferences("ali_kuryer_appearance", Context.MODE_PRIVATE) }
             var appearanceMode by remember {
@@ -57,15 +62,18 @@ class MainActivity : ComponentActivity() {
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
-            val canvas = if (isDark) Color(0xFF101114) else Color(0xFFF5F5F5)
-            val surfaceColor = if (isDark) Color(0xFF1B1D21) else Color.White
+            val canvas = if (isDark) Color(0xFF101114) else Color(0xFFF0F0F0)
+            val surfaceColor = if (isDark) Color(0xFF1B1D21) else Color(0xFFFAFAFA)
             val textColor = if (isDark) Color(0xFFF4F4F6) else Color(0xFF111111)
             SideEffect {
-                val barColor = if (isDark) android.graphics.Color.rgb(16, 17, 20)
-                               else android.graphics.Color.WHITE
-                val style = if (isDark) SystemBarStyle.dark(barColor)
-                            else SystemBarStyle.light(barColor, android.graphics.Color.BLACK)
-                this@MainActivity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+                val navColor = if (isDark) android.graphics.Color.rgb(16, 17, 20)
+                               else android.graphics.Color.rgb(240, 240, 240)
+                val navStyle = if (isDark) SystemBarStyle.dark(navColor)
+                               else SystemBarStyle.light(navColor, android.graphics.Color.BLACK)
+                this@MainActivity.enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.dark(android.graphics.Color.rgb(5, 5, 5)),
+                    navigationBarStyle = navStyle
+                )
             }
             CompositionLocalProvider(LocalAliDark provides isDark) {
                 MaterialTheme(
