@@ -47,7 +47,7 @@ def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
 def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.phone == data.phone.strip()).first()
 
-    if not user or not security.verify_password(data.password, user.password_hash):
+    if not user or not user.is_active or not user.password_hash or not security.verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Telefon yoki parol noto'g'ri")
 
     token = security.create_access_token({"sub": str(user.id), "role": user.role})
