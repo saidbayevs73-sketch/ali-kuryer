@@ -233,8 +233,9 @@ def test_admin_bootstrap_rejects_weak_password(monkeypatch):
 def test_admin_bootstrap_supports_reset_with_missing_old_password(monkeypatch):
     from app.bootstrap import ensure_admin
     from app.database import SessionLocal
-    from app.models import User
+    from app.models import User, AdminPasswordResetEvent
     from app.security import hash_password, verify_password
+    import hashlib
     phone = "+998901118877"
     next_password = "Recovery-Test-Pass#2026!X"
     request_id = "CI_One_Time_Recovery_Oct11_2026_Safe_Test"
@@ -245,6 +246,8 @@ def test_admin_bootstrap_supports_reset_with_missing_old_password(monkeypatch):
     monkeypatch.setenv("ALI_ADMIN_RESET_PASSWORD", next_password)
     with SessionLocal() as db:
         db.query(User).filter_by(phone=phone).delete()
+        db.query(AdminPasswordResetEvent).filter_by(
+            id=hashlib.sha256(request_id.encode("utf-8")).hexdigest()).delete()
         db.add(User(name="Recovery test", phone=phone, role="admin", is_active=True,
                     password_hash=hash_password("PreviousPassword-For-Test-2026!")))
         db.commit()
@@ -265,4 +268,6 @@ def test_admin_bootstrap_supports_reset_with_missing_old_password(monkeypatch):
     finally:
         with SessionLocal() as db:
             db.query(User).filter_by(phone=phone).delete()
+            db.query(AdminPasswordResetEvent).filter_by(
+                id=hashlib.sha256(request_id.encode("utf-8")).hexdigest()).delete()
             db.commit()
