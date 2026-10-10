@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "196902658109",
+    "project_id": "ali-kuryer",
+    "storage_bucket": "ali-kuryer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:196902658109:android:6bf763e4d470ea170a8a54",
+        "android_client_info": {
+          "package_name": "uz.alikuryer.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcgoKtT8hGIQc0zrGne9vIWMSThkjOQgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
