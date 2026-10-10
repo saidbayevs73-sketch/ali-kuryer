@@ -21,7 +21,9 @@ Birinchi API /api/auth/admin/login, login admin va DB password hashidan foydalan
 3. Password hash orqali login va parolni o‘zgartirish, tokenni faqat xotirada saqlash.
 4. Yangi admin hisobini zaif parol bilan ochishni bloklash.
 5. Eski bootstrap sirini bilmasdan egasi so‘rovi bilan bir martalik reset qilish.
-6. Testlar: 404 default, no-store, zaif parol rad etilishi va resetning takroran ishlamasligi.
+6. ALI_LEGACY_ADMIN_AUTH_MODE=central bo‘lganda eski web-admindagi login yangi API orqali tasdiqlanadi. Sozlama faqat asosiy APIning bazasi saqlanishi tekshirilgandan va staging sinovidan keyin yoqilsin; aks holda eski login alohida qoladi.
+7. Testlar: 404 default, no-store, zaif parol rad etilishi, resetning takroran ishlamasligi va markaziy admin roli tekshiruvi.
+8. Android versiyasi 1.6.2 (yangi parol talablarini foydalanuvchining o‘zida tekshirish).
 
 ## Productionga chiqarishdan oldingi shartlar
 - Legacy /var/data bazasini, rasm va ticketlarni, FastAPI/PG bazani zaxiralash va tiklashni alohida sinash.
