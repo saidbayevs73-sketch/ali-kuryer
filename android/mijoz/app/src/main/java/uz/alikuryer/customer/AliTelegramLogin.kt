@@ -62,7 +62,14 @@ internal fun AliTelegramLoginPanel(
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var info by remember { mutableStateOf("") }
+    var statusChecked by remember { mutableStateOf(false) }
+    var telegramReady by remember { mutableStateOf(false) }
     val ticket = AliTelegramBridge.ticket
+
+    LaunchedEffect(Unit) {
+        telegramReady = try { AliApi.telegramAvailable() } catch (_: Exception) { false }
+        statusChecked = true
+    }
 
     LaunchedEffect(ticket) {
         if (ticket.isBlank()) return@LaunchedEffect
@@ -93,8 +100,13 @@ internal fun AliTelegramLoginPanel(
             Text("Telegram orqali oson kirish", color = AliBlack,
                 fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
             Text(
-                "SMS va Google Billing kerak emas. Telegram hisobingizni tasdiqlang " +
-                    "hamda telefon raqamingizni Ali Kuryer bilan ulashishga rozilik bering.",
+                if (telegramReady) {
+                    "Telegram hisobingizni tasdiqlang va telefon raqamingizni ulashishga rozilik bering."
+                } else {
+                    "Telegram orqali kirish serverda hali to‘liq sozlanmagan. " +
+                    "Ro‘yxatdan o‘tish uchun pastdagi SMS tasdiqlashni tanlang. " +
+                    "Sizga ishlamaydigan tugmani bosishni taklif qilmaymiz."
+                },
                 color = AliMuted, fontSize = 12.sp
             )
             Button(
@@ -129,15 +141,22 @@ internal fun AliTelegramLoginPanel(
                         } finally { busy = false }
                     }
                 },
-                enabled = !busy,
+                enabled = !busy && statusChecked && telegramReady,
                 colors = ButtonDefaults.buttonColors(containerColor = AliRed),
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
                 Icon(Icons.Default.Send, null)
                 Spacer(Modifier.width(9.dp))
-                Text(if (busy) "Kuting..." else "Telegram orqali kirish",
-                    fontWeight = FontWeight.Bold)
+                Text(
+                    when {
+                        !statusChecked -> "Telegram xizmati tekshirilmoqda..."
+                        !telegramReady -> "Telegram kirish hozircha mavjud emas"
+                        busy -> "Kuting..."
+                        else -> "Telegram orqali kirish"
+                    },
+                    fontWeight = FontWeight.Bold
+                )
             }
             if (info.isNotBlank()) Text(info, color = AliMuted, fontSize = 12.sp)
             if (error.isNotBlank()) Text(error, color = AliRed, fontSize = 12.sp)
