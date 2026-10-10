@@ -66,6 +66,8 @@ fun AliCustomerWebsite() {
                         (uri.host == "ali-kuryer.onrender.com" ||
                          uri.host == "oauth.telegram.org")
                     if (trusted) return false
+                    // Never dispatch arbitrary intent:, javascript: or file: URLs.
+                    if (uri.scheme !in listOf("https", "mailto", "tel")) return true
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                     catch (_: ActivityNotFoundException) { /* avoid crashing */ }
                     return true
