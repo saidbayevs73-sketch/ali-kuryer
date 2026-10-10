@@ -12,8 +12,8 @@ android {
         applicationId = "uz.alikuryer.customer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "1.4.0"
+        versionCode = 7
+        versionName = "1.5.0"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
     }
 
@@ -65,5 +65,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.google.android.gms:play-services-auth-api-phone:18.3.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
