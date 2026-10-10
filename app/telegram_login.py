@@ -278,4 +278,5 @@ def finish_telegram_login(data: TelegramFinish, db: Session = Depends(get_db)):
         "access_token": security.create_access_token({"sub": str(user.id), "role": "customer"}),
         "role": "customer",
         "token_type": "bearer",
+        "phone": user.phone,
     }
