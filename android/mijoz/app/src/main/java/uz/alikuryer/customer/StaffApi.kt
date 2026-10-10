@@ -56,6 +56,21 @@ internal object StaffApi {
             JSONObject().put("current_password", current).put("new_password", updated))
     }
 
+    suspend fun getAdminUsername(token: String): String =
+        JSONObject(call("/api/auth/admin/account", token = token)).optString("username", "admin")
+
+    suspend fun changeAdminUsername(token: String, currentPassword: String, newUsername: String): String =
+        JSONObject(call("/api/auth/admin/change-username", "POST", token,
+            JSONObject().put("current_password", currentPassword)
+                .put("new_username", newUsername))).optString("username")
+
+    suspend fun adminSettings(token: String): JSONObject =
+        JSONObject(call("/api/admin/control-center", token = token)).getJSONObject("settings")
+
+    suspend fun updateAdminSettings(token: String, changes: JSONObject): JSONObject =
+        JSONObject(call("/api/admin/control-center", "POST", token,
+            JSONObject().put("changes", changes))).getJSONObject("settings")
+
     suspend fun getOrders(token: String): JSONArray = JSONArray(call("/api/v1/staff/orders", token = token))
     suspend fun offers(token: String): JSONArray = JSONArray(call("/api/v1/courier/offers", token = token))
     suspend fun accept(token: String, orderId: Int): JSONObject =
