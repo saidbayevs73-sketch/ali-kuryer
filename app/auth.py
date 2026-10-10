@@ -307,12 +307,29 @@ def validate_strong_admin_password(value: str) -> None:
             "Yangi parol kamida 14 belgidan iborat bo‘lsin: katta-kichik harf, raqam va belgi.")
 
 
+def require_durable_admin_password_store() -> None:
+    """Never claim that an admin password was saved on ephemeral Render SQLite.
+
+    An account reset/change must survive deploys and service restarts.
+    Local and CI test SQLite remain supported.
+    """
+    import os
+    from app.database import DATABASE_URL
+    deployed = os.getenv("ENVIRONMENT", "").lower() == "production" or (
+        os.getenv("RENDER", "").lower() in {"1", "true", "yes"})
+    if deployed and DATABASE_URL.startswith("sqlite"):
+        raise HTTPException(
+            503, "Admin parolini xavfsiz saqlash uchun doimiy PostgreSQL bazasi ulanishi kerak."
+        )
+
+
 @router.post("/admin/change-password")
 def change_admin_password(data: AdminChangePassword,
                           user=Depends(shared_get_current_user),
                           db: Session = Depends(get_db)):
     if user.role != "admin":
         raise HTTPException(403, "Faqat admin o‘z parolini o‘zgartira oladi")
+    require_durable_admin_password_store()
     # Resolve in the same session as the mutation.
     current = db.get(models.User, user.id)
     if not current or not current.is_active:
