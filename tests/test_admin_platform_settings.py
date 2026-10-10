@@ -104,3 +104,70 @@ def test_legacy_site_cors_origin_is_allowlisted():
     )
     assert response.status_code == 200
     assert response.headers["access-control-allow-origin"] == "https://ali-kuryer-1.onrender.com"
+
+
+def test_payment_support_issues_only_admin_can_resolve():
+    admin, customer = bootstrap_accounts()
+    from app import models
+    from app.database import SessionLocal
+    with SessionLocal() as db:
+        usr = db.query(models.User).filter_by(phone="+998909900002").first()
+        owner = db.query(models.User).filter_by(phone="+998909900001").first()
+        rest = models.Restaurant(name="Payment test restaurant", owner_id=owner.id, is_approved=True)
+        db.add(rest)
+        db.flush()
+        order = models.Order(
+            customer_id=usr.id, restaurant_id=rest.id, address="Namangan 10",
+            total=51000, status="pending", payment_method="cash",
+        )
+        db.add(order)
+        db.commit()
+        order_id = order.id
+    assert client.get("/api/admin/payment-issues", headers=customer).status_code == 403
+    assert client.post("/api/admin/payment-issues", headers=customer, json={
+        "provider":"payme","category":"payment_failed",
+        "description":"Murojaat tafsilotlari"
+    }).status_code == 403
+    data = {
+        "order_id": order_id,
+        "provider":"bank_card", "category":"duplicate_charge",
+        "description":"To‘lov ikki marta yechilgan bo‘lishi mumkin",
+    }
+    created = client.post("/api/customer/payment-issues", headers=customer, json=data)
+    assert created.status_code == 201, created.text
+    issue_id = created.json()["id"]
+    duplicate = client.post("/api/customer/payment-issues", headers=customer, json=data)
+    assert duplicate.json()["id"] == issue_id
+    admin_list = client.get("/api/admin/payment-issues", headers=admin)
+    assert any(item["id"] == issue_id for item in admin_list.json()["issues"])
+    assert client.patch("/api/admin/payment-issues/"+str(issue_id),
+        headers=customer, json={"status":"resolved","note":"Tekshirib chiqildi"}).status_code == 403
+    rejected = client.patch("/api/admin/payment-issues/"+str(issue_id),
+        headers=admin, json={"status":"resolved","note":"ok"})
+    assert rejected.status_code == 422
+    updated = client.patch("/api/admin/payment-issues/"+str(issue_id),
+        headers=admin, json={"status":"awaiting_provider",
+                              "note":"Bankdan to‘lov ma’lumotlari kutilmoqda",
+                              "assign_to_self":True})
+    assert updated.status_code == 200, updated.text
+    assert updated.json()["assigned_admin_id"]
+    event_log=client.get("/api/admin/payment-issues/"+str(issue_id)+"/audit",headers=admin)
+    assert event_log.status_code == 200
+    assert len(event_log.json()["events"]) == 2
+    assert client.get("/api/admin/payment-issues/"+str(issue_id)+"/audit",
+                      headers=customer).status_code == 403
+    with SessionLocal() as db:
+        fresh=db.get(models.Order,order_id)
+        assert fresh.payment_method=="cash"
+        assert fresh.status=="pending"
+        assert fresh.total==51000
+
+
+def test_reject_card_number_cvv_in_support_issue():
+    admin, _ = bootstrap_accounts()
+    for description in ("Kartam 4111 1111 1111 1111 dan pul yechildi",
+                        "CVV 123 muammosi", "api_key eskirgan"):
+        r=client.post("/api/admin/payment-issues",headers=admin,json={
+            "provider":"click","category":"other","description":description
+        })
+        assert r.status_code==422,r.text

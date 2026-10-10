@@ -7,6 +7,7 @@ payment methods remain disabled until audited provider integrations exist.
 import os
 import re
 from typing import Literal
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, ConfigDict, field_validator
@@ -225,3 +226,218 @@ def add_card_unavailable(user: models.User = Depends(get_current_user)):
     if not user.is_active or user.role != "customer":
         raise HTTPException(403, "Faqat mijoz hisobi")
     raise HTTPException(503, "Karta qo‘shish bankning xavfsiz sahifasi ulanganidan keyin yoqiladi")
+
+
+# Payment support issues. No transactions, charges, refunds, or merchant
+# settings are changed by these endpoints.
+_PROVIDERS = {"click", "payme", "bank_card", "cash", "other"}
+_CATEGORIES = {
+    "payment_failed", "duplicate_charge", "refund_request",
+    "provider_setup", "settlement", "other",
+}
+_ISSUE_STATUS = {"new", "investigating", "awaiting_provider", "resolved", "closed"}
+_CARD_NUMBER = re.compile(r"(?<!\d)(?:\d[ -]?){12,18}\d(?!\d)")
+_SENSITIVE_TERMS = re.compile(
+    r"\b(?:cvv|cvc|pin|parol|password|secret[_ -]?key|api[_ -]?key)\b",
+    re.IGNORECASE,
+)
+
+
+def safe_ticket_text(text):
+    text = str(text).strip()
+    if _CARD_NUMBER.search(text) or _SENSITIVE_TERMS.search(text):
+        raise ValueError("Karta raqami, CVV, PIN yoki maxfiy kalit kiritmang")
+    return text
+
+
+class PaymentIssueCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    provider: Literal["click", "payme", "bank_card", "cash", "other"]
+    category: Literal[
+        "payment_failed", "duplicate_charge", "refund_request",
+        "provider_setup", "settlement", "other",
+    ]
+    order_id: int | None = Field(default=None, gt=0)
+    description: str = Field(min_length=8, max_length=500)
+
+    @field_validator("description")
+    @classmethod
+    def check_description(cls, text):
+        return safe_ticket_text(text)
+
+
+class PaymentIssueUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    status: Literal["new", "investigating", "awaiting_provider", "resolved", "closed"]
+    note: str = Field(min_length=5, max_length=800)
+    assign_to_self: bool = False
+
+    @field_validator("note")
+    @classmethod
+    def check_note(cls, text):
+        return safe_ticket_text(text)
+
+
+def payment_issue_dict(issue, include_private=False):
+    data = {
+        "id": issue.id,
+        "order_id": issue.order_id,
+        "provider": issue.provider,
+        "category": issue.category,
+        "description": issue.description,
+        "status": issue.status,
+        "created_at": issue.created_at.isoformat() if issue.created_at else None,
+        "updated_at": issue.updated_at.isoformat() if issue.updated_at else None,
+    }
+    if include_private:
+        data["customer_id"] = issue.customer_id
+        data["assigned_admin_id"] = issue.assigned_admin_id
+        data["resolution_note"] = issue.resolution_note
+    return data
+
+
+@router.post("/api/customer/payment-issues", status_code=201)
+def report_payment_issue(
+    payload: PaymentIssueCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    if not user.is_active or user.role != "customer":
+        raise HTTPException(403, "Faqat mijoz hisobidan xabar yuboring")
+    require_durable_admin_writes()
+    if payload.order_id is None:
+        raise HTTPException(422, "Mijoz murojaati uchun buyurtma raqami talab qilinadi")
+    order = db.get(models.Order, payload.order_id)
+    if not order or order.customer_id != user.id:
+        raise HTTPException(404, "Buyurtma topilmadi")
+    # Avoid duplicate unresolved claims submitted by repeated taps.
+    duplicate = db.query(models.PaymentSupportIssue).filter(
+        models.PaymentSupportIssue.order_id == order.id,
+        models.PaymentSupportIssue.customer_id == user.id,
+        models.PaymentSupportIssue.category == payload.category,
+        models.PaymentSupportIssue.status.in_(("new", "investigating", "awaiting_provider")),
+    ).first()
+    if duplicate:
+        return payment_issue_dict(duplicate)
+    issue = models.PaymentSupportIssue(
+        provider=payload.provider, category=payload.category,
+        order_id=order.id, customer_id=user.id,
+        description=payload.description, status="new",
+    )
+    db.add(issue)
+    db.flush()
+    db.add(models.PaymentSupportAudit(
+        issue_id=issue.id, actor_id=user.id, old_status=None,
+        new_status="new", note="Mijoz murojaati",
+    ))
+    db.commit()
+    db.refresh(issue)
+    return payment_issue_dict(issue)
+
+
+@router.get("/api/customer/payment-issues")
+def my_payment_issues(
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user),
+):
+    if not user.is_active or user.role != "customer":
+        raise HTTPException(403, "Faqat mijoz hisobidan")
+    require_durable_admin_writes()
+    issues = db.query(models.PaymentSupportIssue).filter_by(
+        customer_id=user.id
+    ).order_by(models.PaymentSupportIssue.id.desc()).limit(50).all()
+    return {"issues": [payment_issue_dict(item) for item in issues]}
+
+
+@router.post("/api/admin/payment-issues", status_code=201)
+def create_admin_payment_issue(
+    payload: PaymentIssueCreate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_admin),
+):
+    require_durable_admin_writes()
+    if payload.order_id and not db.get(models.Order, payload.order_id):
+        raise HTTPException(404, "Buyurtma topilmadi")
+    issue = models.PaymentSupportIssue(
+        provider=payload.provider, category=payload.category,
+        order_id=payload.order_id, description=payload.description,
+        assigned_admin_id=user.id, status="new",
+    )
+    db.add(issue)
+    db.flush()
+    db.add(models.PaymentSupportAudit(
+        issue_id=issue.id, actor_id=user.id, old_status=None,
+        new_status="new", note="Administrator murojaati",
+    ))
+    db.commit()
+    db.refresh(issue)
+    return payment_issue_dict(issue, include_private=True)
+
+
+@router.get("/api/admin/payment-issues")
+def list_admin_payment_issues(
+    status: Literal["new", "investigating", "awaiting_provider", "resolved", "closed"] | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_admin),
+):
+    require_durable_admin_writes()
+    query = db.query(models.PaymentSupportIssue)
+    if status:
+        query = query.filter_by(status=status)
+    return {
+        "total": query.count(), "offset": offset, "limit": limit,
+        "issues": [
+            payment_issue_dict(item, include_private=True)
+            for item in query.order_by(models.PaymentSupportIssue.id.desc()).offset(offset).limit(limit)
+        ],
+    }
+
+
+@router.patch("/api/admin/payment-issues/{issue_id}")
+def update_admin_payment_issue(
+    issue_id: int, payload: PaymentIssueUpdate,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_admin),
+):
+    require_durable_admin_writes()
+    issue = db.query(models.PaymentSupportIssue).filter_by(id=issue_id).with_for_update().first()
+    if not issue:
+        raise HTTPException(404, "Murojaat topilmadi")
+    if payload.status == "resolved" and len(payload.note) < 10:
+        raise HTTPException(422, "Hal qilindi holati uchun sababni batafsil yozing")
+    # This is a SUPPORT TICKET status only. Never mark an order paid,
+    # call a payment provider, or imply a refund was actually sent.
+    prior = issue.status
+    issue.status = payload.status
+    issue.resolution_note = payload.note
+    if payload.assign_to_self:
+        issue.assigned_admin_id = user.id
+    db.add(models.PaymentSupportAudit(
+        issue_id=issue.id, actor_id=user.id,
+        old_status=prior, new_status=payload.status, note=payload.note,
+    ))
+    db.commit()
+    db.refresh(issue)
+    return payment_issue_dict(issue, include_private=True)
+
+
+@router.get("/api/admin/payment-issues/{issue_id}/audit")
+def payment_issue_audit(
+    issue_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(require_admin),
+):
+    require_durable_admin_writes()
+    if not db.get(models.PaymentSupportIssue, issue_id):
+        raise HTTPException(404, "Murojaat topilmadi")
+    events = db.query(models.PaymentSupportAudit).filter_by(issue_id=issue_id).order_by(
+        models.PaymentSupportAudit.id.asc()
+    ).all()
+    return {"events": [
+        {"actor_id": event.actor_id, "from": event.old_status,
+         "to": event.new_status, "note": event.note,
+         "at": event.occurred_at.isoformat() if event.occurred_at else None}
+        for event in events
+    ]}

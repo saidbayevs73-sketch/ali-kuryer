@@ -182,3 +182,31 @@ class PlatformSettings(Base):
     payment_preferences = Column(JSON, nullable=False, default=dict)
     updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class PaymentSupportIssue(Base):
+    """Administrative investigation, NOT a financial transaction or payment receipt."""
+    __tablename__ = "payment_support_issues"
+    id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=True, index=True)
+    customer_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    provider = Column(String(20), nullable=False)
+    category = Column(String(32), nullable=False)
+    description = Column(String(500), nullable=False)
+    status = Column(String(24), nullable=False, default="new")
+    assigned_admin_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    resolution_note = Column(String(800), nullable=False, default="")
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class PaymentSupportAudit(Base):
+    """Append-only audit of administrative ticket handling, no secrets or card data."""
+    __tablename__ = "payment_support_audit"
+    id = Column(Integer, primary_key=True)
+    issue_id = Column(Integer, ForeignKey("payment_support_issues.id"), nullable=False, index=True)
+    actor_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    old_status = Column(String(24), nullable=True)
+    new_status = Column(String(24), nullable=False)
+    note = Column(String(800), nullable=False, default="")
+    occurred_at = Column(DateTime, server_default=func.now(), nullable=False)

@@ -27,3 +27,17 @@ The public read-only API `GET /api/public/platform-config` returns only contact 
 4. Test old and new data parity before applying a production cutover.
 5. Only after confirmed safe conditions, opt in to private admin settings page.
 6. Integrate bank PSPs separately. Do not treat a requested-enabled toggle as payment activation.
+
+
+## Admin payment support investigations
+
+A separate payment issue queue allows:
+- Admin opens issue for Click, Payme, bank card, cash, or other issues.
+- Customer may open a payment issue only for an order belonging to their signed-in account; duplicate unresolved reports are suppressed.
+- Admin filters, assigns to self, sets investigation status, documents progress, and views append-only audit trail.
+- Ticket resolution is **NOT payment confirmation or refund**. This feature never changes order payment status, executes a transfer, contacts a provider API, or handles bank card details.
+- All writes/reads are admin-role checked, and production SQLite is blocked.
+- Card numbers, CVV, PIN and credentials are rejected from freeform notes.
+- For actual refunds, charge retries, Payme/Click verification, or settlement, complete separate audited PSP integration using bank/provider-signed APIs.
+
+**Release gate:** production database migration and rollback rehearsal must pass before enabling the private settings screen or accepting tickets.

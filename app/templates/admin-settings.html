@@ -15,8 +15,8 @@ input{width:100%;padding:12px;border-radius:9px;border:1px solid #c9cbd1;font:in
 input[type=checkbox]{width:auto;margin-right:8px}
 button{padding:12px 18px;background:#d9001a;color:white;border:0;border-radius:9px;cursor:pointer;font:inherit;font-weight:650}
 button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#202127}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.muted{font-size:13px;color:#626572}
-.provider{border:1px solid #e8e8ee;border-radius:11px;padding:14px;margin:14px 0}
+select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #c9cbd1;font:inherit;margin-top:6px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.muted{font-size:13px;color:#626572}
+.issue{border:1px solid #e8e8ef;border-radius:13px;padding:15px;margin:12px 0;background:#fafafb}.issue small{color:#666}.issueActions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.issueActions select{max-width:240px}.issueActions textarea{width:100%}.provider{border:1px solid #e8e8ee;border-radius:11px;padding:14px;margin:14px 0}
 .warn{background:#fff4e5;padding:13px;border-radius:10px;color:#6c4116}
 #app{display:none}table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{text-align:left;border-bottom:1px solid #e8e9ef;padding:9px;overflow-wrap:anywhere}
@@ -49,6 +49,38 @@ th,td{text-align:left;border-bottom:1px solid #e8e9ef;padding:9px;overflow-wrap:
 <button id="save">Sozlamalarni saqlash</button>
 <p id="save-msg" role="status"></p>
 </form></section>
+
+<section id="payment-issues-section">
+<h2>To‘lov muammolarini boshqarish</h2>
+<p class="muted">Administrator xatolik murojaatlarini qayd qiladi, provayderga yuboriladigan izohni yozadi, kuzatadi va muammoni ko‘rib chiqilgan deb belgilaydi. Bu tugmalar haqiqiy pul qaytarmaydi yoki buyurtmani to‘langan qilmaydi.</p>
+<form id="new-issue">
+<div class="grid">
+<label>Provayder<select id="issue-provider">
+<option value="click">Click</option><option value="payme">Payme</option>
+<option value="bank_card">Bank kartasi</option><option value="cash">Naqd</option>
+<option value="other">Boshqa</option></select></label>
+<label>Muammo turi<select id="issue-category">
+<option value="payment_failed">To‘lov xatosi</option>
+<option value="duplicate_charge">Ikki marta yechib olindi</option>
+<option value="refund_request">Pulni qaytarish so‘rovi</option>
+<option value="provider_setup">To‘lov provayderi sozlamalari</option>
+<option value="settlement">Hisob-kitob muammosi</option>
+<option value="other">Boshqa</option></select></label>
+<label>Buyurtma ID (ixtiyoriy)<input id="issue-order" type="number" min="1" placeholder="Masalan: 1024"></label>
+</div>
+<label>Muammo tavsifi<textarea id="issue-description" required minlength="8" maxlength="500" rows="3" placeholder="Muammoni yozing. Karta raqami, CVV yoki maxfiy API kaliti kiritmang."></textarea></label>
+<button type="submit" id="create-issue">Murojaat yaratish</button>
+<p id="create-issue-msg" role="status"></p>
+</form>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0">
+<label for="issue-status-filter">Holat</label>
+<select id="issue-status-filter"><option value="">Barchasi</option><option value="new">Yangi</option><option value="investigating">Tekshirilmoqda</option><option value="awaiting_provider">Provayder javobi kutilmoqda</option><option value="resolved">Ko‘rib chiqildi</option><option value="closed">Yopildi</option></select>
+<button type="button" id="refresh-issues" class="secondary">Yangilash</button>
+</div>
+<div id="payment-issues"></div>
+<button type="button" class="secondary" id="more-issues">Keyingi murojaatlar</button>
+<p id="issues-msg" role="status"></p>
+</section>
 <section><h2>Ro‘yxatdan o‘tgan mijozlar</h2>
 <p class="muted">Faqat admin ko‘radi. Anonim mehmonlar bu ro‘yxatga kirmaydi. Telefon va shaxsiy ma’lumotlarni hech kimga yubormang.</p>
 <p id="customer-total"></p><div style="overflow:auto"><table>
@@ -61,7 +93,7 @@ th,td{text-align:left;border-bottom:1px solid #e8e9ef;padding:9px;overflow-wrap:
 </main>
 <script>
 "use strict";
-let token="",offset=0,total=0;
+let token="",offset=0,total=0,issueOffset=0,issueTotal=0;
 const names={click:"Click",payme:"Payme",bank_card:"Bank kartasi"};
 const byId=id=>document.getElementById(id);
 async function api(path,method="GET",data) {
@@ -106,13 +138,92 @@ async function loadCustomers(){
   offset+=record.customers.length;byId("customer-total").textContent="Jami ro‘yxatdan o‘tgan mijozlar: "+total;
   byId("load-more").disabled=offset>=total;byId("customers-msg").textContent="";
 }
+
+const issueStatuses={new:"Yangi",investigating:"Tekshirilmoqda",awaiting_provider:"Provayder javobi kutilmoqda",resolved:"Ko‘rib chiqildi",closed:"Yopildi"};
+const issueProviders={click:"Click",payme:"Payme",bank_card:"Bank kartasi",cash:"Naqd",other:"Boshqa"};
+async function loadPaymentIssues(reset=false){
+  if(reset){issueOffset=0;byId("payment-issues").replaceChildren();}
+  const filter=byId("issue-status-filter").value;
+  const url="/api/admin/payment-issues?limit=20&offset="+issueOffset+(filter?"&status="+encodeURIComponent(filter):"");
+  const page=await api(url);
+  issueTotal=page.total;
+  for(const issue of page.issues){
+    const box=make("div");box.className="issue";
+    box.append(make("strong","Murojaat №"+issue.id+" · "+(issueProviders[issue.provider]||"Boshqa")+
+      " · "+(issueStatuses[issue.status]||issue.status)));
+    box.append(make("p",issue.description));
+    box.append(make("small","Buyurtma: "+(issue.order_id||"Ko‘rsatilmagan")+
+      " · Mas’ul admin ID: "+(issue.assigned_admin_id||"Belgilanmagan")));
+    const controls=make("div");controls.className="issueActions";
+    const state=make("select");
+    for(const [id,title] of Object.entries(issueStatuses)){
+      const option=make("option",title);option.value=id;state.append(option);
+    }
+    state.value=issue.status;
+    const note=make("textarea");note.rows=2;note.maxLength=800;
+    note.placeholder="Ko‘rilgan choralar va natija (karta ma’lumotlarisiz)";
+    note.value=issue.resolution_note||"";
+    const assign=make("label");assign.style.margin="0";
+    const checkbox=make("input");checkbox.type="checkbox";
+    assign.append(checkbox,document.createTextNode("Menga biriktirish"));
+    const submit=make("button","Saqlash");submit.type="button";
+    const auditButton=make("button","Tarixni ko‘rish");auditButton.className="secondary";auditButton.type="button";
+    const info=make("p");info.setAttribute("role","status");
+    const audit=make("div");
+    submit.onclick=async()=>{
+      submit.disabled=true;info.textContent="Saqlanmoqda...";
+      try{
+        await api("/api/admin/payment-issues/"+issue.id,"PATCH",{
+          status:state.value,note:note.value.trim(),assign_to_self:checkbox.checked
+        });
+        info.textContent="Murojaat yangilandi. Bu pul o'tkazmasi emas.";
+        await loadPaymentIssues(true);
+      }catch(e){info.textContent=e.message}finally{submit.disabled=false}
+    };
+    auditButton.onclick=async()=>{
+      try{
+        const data=await api("/api/admin/payment-issues/"+issue.id+"/audit");
+        audit.replaceChildren();
+        for(const event of data.events){
+          audit.append(make("p",String(event.at||"")+" · "+(issueStatuses[event.to]||event.to)+": "+event.note));
+        }
+      }catch(e){info.textContent=e.message}
+    };
+    controls.append(state,assign,submit,auditButton,note,info,audit);
+    box.append(controls);byId("payment-issues").append(box);
+  }
+  issueOffset+=page.issues.length;
+  byId("more-issues").disabled=issueOffset>=issueTotal;
+  byId("issues-msg").textContent="Jami murojaatlar: "+issueTotal;
+}
+byId("new-issue").addEventListener("submit",async e=>{
+  e.preventDefault();
+  byId("create-issue").disabled=true;
+  byId("create-issue-msg").textContent="Yaratilmoqda...";
+  try{
+    await api("/api/admin/payment-issues","POST",{
+      provider:byId("issue-provider").value,
+      category:byId("issue-category").value,
+      description:byId("issue-description").value.trim(),
+      order_id:byId("issue-order").value?Number(byId("issue-order").value):null
+    });
+    e.currentTarget.reset();
+    byId("create-issue-msg").textContent="Murojaat yaratildi. Provayderga avtomatik pul so‘rovi yuborilmadi.";
+    await loadPaymentIssues(true);
+  }catch(e){byId("create-issue-msg").textContent=e.message}
+  finally{byId("create-issue").disabled=false}
+});
+byId("refresh-issues").addEventListener("click",()=>loadPaymentIssues(true).catch(e=>byId("issues-msg").textContent=e.message));
+byId("more-issues").addEventListener("click",()=>loadPaymentIssues().catch(e=>byId("issues-msg").textContent=e.message));
+byId("issue-status-filter").addEventListener("change",()=>loadPaymentIssues(true).catch(e=>byId("issues-msg").textContent=e.message));
+
 byId("login-form").addEventListener("submit",async e=>{
   e.preventDefault();byId("login-msg").textContent="";
   try {
     const answer=await api("/api/auth/login","POST",{phone:byId("phone").value.trim(),password:byId("password").value});
     if(answer.role!=="admin")throw Error("Bu hisob administrator emas");
     token=answer.access_token;byId("password").value="";
-    await loadSettings();offset=0;byId("customers").replaceChildren();await loadCustomers();
+    await loadSettings();offset=0;byId("customers").replaceChildren();await loadCustomers();await loadPaymentIssues(true);
     byId("login").style.display="none";byId("app").style.display="block";
   }catch(ex){token="";byId("login-msg").textContent=ex.message}
 });
