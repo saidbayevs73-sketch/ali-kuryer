@@ -21,6 +21,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth, telegram_login
 from app.routers import support_bot
+from app import control_center  # Registers persistent settings tables before create_all
 from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -76,6 +77,7 @@ app.include_router(restaurant.router)
 app.include_router(orders.router)
 app.include_router(commerce.router)
 app.include_router(admin.router)
+app.include_router(control_center.router)
 app.include_router(courier.router)
 app.include_router(support_bot.router)
 
@@ -86,6 +88,14 @@ def home():
     if not index.is_file():
         raise HTTPException(status_code=503, detail="Bosh sahifa topilmadi")
     return FileResponse(str(index), media_type="text/html")
+
+
+@app.get("/super-admin", include_in_schema=False)
+def super_admin_panel():
+    page = ASSET_DIR / "super-admin.html"
+    if not page.is_file():
+        raise HTTPException(404, "Super Admin sahifasi topilmadi")
+    return FileResponse(str(page), media_type="text/html", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/health")
