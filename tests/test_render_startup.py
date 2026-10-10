@@ -343,3 +343,22 @@ def test_legacy_central_session_requires_live_admin_verification(monkeypatch):
     monkeypatch.setattr(legacy_customer_api, "central_admin_token_valid", lambda value: False)
     assert scope["session"](None, "admin") is None
     assert scope["sessions"] == {}
+
+
+def test_admin_password_change_fails_closed_on_ephemeral_production_db(monkeypatch):
+    from fastapi import HTTPException
+    from app import auth
+    from app import database
+    monkeypatch.setattr(database, "DATABASE_URL", "sqlite:////tmp/test-only.db")
+    monkeypatch.setenv("RENDER", "true")
+    try:
+        auth.require_durable_admin_password_store()
+    except HTTPException as error:
+        assert error.status_code == 503
+        assert "PostgreSQL" in error.detail
+    else:
+        assert False, "Ephemeral database must not allow password rotation"
+
+    monkeypatch.setenv("RENDER", "false")
+    monkeypatch.setenv("ENVIRONMENT", "test")
+    auth.require_durable_admin_password_store()
