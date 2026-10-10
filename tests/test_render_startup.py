@@ -271,3 +271,44 @@ def test_admin_bootstrap_supports_reset_with_missing_old_password(monkeypatch):
             db.query(AdminPasswordResetEvent).filter_by(
                 id=hashlib.sha256(request_id.encode("utf-8")).hexdigest()).delete()
             db.commit()
+
+
+def test_legacy_central_admin_verification_rejects_weak_and_wrong_host(monkeypatch):
+    from legacy_customer_api import verify_central_admin
+    monkeypatch.setenv("ALI_CANONICAL_AUTH_ORIGIN", "http://example.org")
+    assert verify_central_admin("admin", "some-password") is False
+    monkeypatch.setenv("ALI_CANONICAL_AUTH_ORIGIN", "https://ali-kuryer.onrender.com")
+    assert verify_central_admin("other", "some-password") is False
+    assert verify_central_admin("admin", "") is False
+
+
+def test_legacy_central_admin_verifier_checks_role_and_token(monkeypatch):
+    import json
+    import urllib.request
+    from legacy_customer_api import verify_central_admin
+    monkeypatch.setenv("ALI_CANONICAL_AUTH_ORIGIN", "https://ali-kuryer.onrender.com")
+
+    class FakeResponse:
+        def __init__(self, body):
+            self.body = body
+            self.status = 200
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc, tb):
+            pass
+        def read(self, limit=4096):
+            return json.dumps(self.body).encode("utf-8")
+
+    sent = []
+    def open_fake(request, timeout):
+        assert request.full_url == "https://ali-kuryer.onrender.com/api/auth/admin/login"
+        assert timeout <= 8
+        sent.append(json.loads(request.data.decode("utf-8")))
+        return FakeResponse({"role": "customer", "access_token": "customer-token"})
+    monkeypatch.setattr(urllib.request, "urlopen", open_fake)
+    assert verify_central_admin("admin", "strong-example-password") is False
+    def open_admin(request, timeout):
+        return FakeResponse({"role": "admin", "access_token": "signed-server-token"})
+    monkeypatch.setattr(urllib.request, "urlopen", open_admin)
+    assert verify_central_admin("admin", "strong-example-password") is True
+    assert sent == [{"username": "admin", "password": "strong-example-password"}]
