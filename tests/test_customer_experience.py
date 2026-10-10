@@ -7,6 +7,13 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ.pop("AI_API_KEY", None)
 os.environ.pop("GOOGLE_CLIENT_ID", None)
 
+import pytest
+
+@pytest.fixture(autouse=True)
+def legacy_photo_tests(monkeypatch):
+    # Existing vision tests explicitly exercise an opt-in legacy feature.
+    monkeypatch.setenv("ALI_ASSISTANT_PHOTO_ENABLED", "1")
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -348,3 +355,17 @@ def test_no_weight_cannot_guess_calories_from_photo_without_ai(monkeypatch):
     data = response.json()
     assert "calorie_source" not in data
     assert data["image_analyzed"] is False
+
+
+def test_customer_photo_upload_is_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("ALI_ASSISTANT_PHOTO_ENABLED", raising=False)
+    result = client.post("/api/assistant/chat", json={
+        "message": "Taom suratini ko‘rib bering", "image_base64": _test_food_photo_base64()
+    })
+    assert result.status_code == 422
+    assert "matnli" in result.json()["detail"]
+    script = client.get("/site-assets/customer.js").text
+    assert "aliPhotoInput" not in script
+    assert "image_base64" not in script
+    assert "SMS-kod olish" not in script
+    assert "otp_code" not in script
