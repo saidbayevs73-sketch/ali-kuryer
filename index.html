@@ -453,7 +453,11 @@ footer strong{
 }
 </style>
 <link rel="stylesheet" href="/site-assets/customer.css?v=20261010-calm3">
-<script defer src="/site-assets/customer.js?v=20261010-calm3"></script>
+<script defer src="/site-assets/customer.js?v=20261010-market1"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<link rel="stylesheet" href="/site-assets/storefront.css?v=20261010-market1">
+<script defer src="/site-assets/storefront.js?v=20261010-market1"></script>
 </head>
 
 <body>
@@ -842,10 +846,10 @@ let confirmedLocation=null;
 let restaurants=[];
 let foods=[];
 
-let cart=
-JSON.parse(
-localStorage.getItem("ali_cart") || "[]"
-);
+let cart=[];
+try { const stored=JSON.parse(localStorage.getItem("ali_cart")||"[]");
+if(Array.isArray(stored)) cart=stored.filter(x=>x&&Number.isInteger(x.id)&&Number.isInteger(x.qty)&&x.qty>0&&x.qty<=30&&Number.isFinite(Number(x.price)));
+} catch(e) {}
 
 
 function money(value){

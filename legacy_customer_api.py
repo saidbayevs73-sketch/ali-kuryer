@@ -1,5 +1,7 @@
 """Customer JSON API for the existing SQLite server; no FastAPI schema swap."""
 import json
+import hashlib
+import customer_order_service as customer_orders
 import math
 import mimetypes
 import os
@@ -105,6 +107,7 @@ def install(legacy):
             print('ALI_LEGACY_MIGRATION_READINESS check_failed ' +
                   type(audit_error).__name__, flush=True)
         with legacy['conn']() as db:
+            customer_orders.initialize(db)
             db.execute('''CREATE TABLE IF NOT EXISTS web_order_details (
                 order_id INTEGER PRIMARY KEY REFERENCES orders(id),
                 recipient_name TEXT NOT NULL, latitude REAL NOT NULL,
@@ -172,6 +175,7 @@ def install(legacy):
             return
         public_files = {
             '/site-assets/customer.js', '/site-assets/customer.css',
+            '/site-assets/storefront.js', '/site-assets/storefront.css',
             '/legal/offer.html', '/legal/privacy.html',
         }
         if path in public_files:
@@ -225,6 +229,35 @@ def install(legacy):
         if staff_blocked(self):
             self.out('Topilmadi', 404)
             return
+        if path in {'/api/order-quote', '/api/customer-orders/lookup'}:
+            origin = self.headers.get('Origin', '')
+            if origin and origin not in ALLOWED_ORIGINS:
+                respond(self, {'error': 'Origin ruxsat etilmagan'}, 403)
+                return
+            try:
+                size = int(self.headers.get('Content-Length', '0'))
+                if not 1 <= size <= 16000:
+                    raise ValueError('So‘rov hajmi noto‘g‘ri')
+                data = json.loads(self.rfile.read(size))
+                if not isinstance(data, dict):
+                    raise ValueError('So‘rov noto‘g‘ri')
+                with legacy['conn']() as db:
+                    if path == '/api/order-quote':
+                        _, _, result = customer_orders.quote(db, data.get('items'), legacy['is_open'])
+                    else:
+                        tokens = data.get('tokens')
+                        if not isinstance(tokens, list) or len(tokens) > 50:
+                            raise ValueError('Ko‘pi bilan 50 ta buyurtma')
+                        result = []
+                        for token in tokens:
+                            order = customer_orders.public_order(db, token)
+                            if order:
+                                order['tracking_token'] = token
+                                result.append(order)
+                respond(self, result)
+            except (ValueError, TypeError, UnicodeError) as exc:
+                respond(self, {'error': str(exc)}, 400)
+            return
         if path != '/api/orders':
             old_post(self)
             return
@@ -268,27 +301,24 @@ def install(legacy):
             token = secrets.token_urlsafe(32)
             with legacy['conn']() as db:
                 db.execute('BEGIN IMMEDIATE')
-                fresh, restaurant_id, total = [], None, 0
-                seen = set()
-                for item in items:
-                    if not isinstance(item, dict):
-                        raise ValueError('Savatni tekshiring')
-                    iid, qty = item.get('id'), item.get('qty')
-                    if type(iid) is not int or type(qty) is not int or not 1 <= qty <= 30 or iid in seen:
-                        raise ValueError('Taom yoki miqdor noto‘g‘ri')
-                    seen.add(iid)
-                    food = db.execute("SELECT * FROM menu_items WHERE id=? AND status='approved'", (iid,)).fetchone()
-                    if not food or food['price'] <= 0:
-                        raise ValueError('Savatdagi taom mavjud emas')
-                    if restaurant_id is None:
-                        restaurant_id = food['restaurant_id']
-                    if restaurant_id != food['restaurant_id']:
-                        raise ValueError('Bitta oshxonadan buyurtma bering')
-                    fresh.append((food, qty))
-                    total += food['price'] * qty
-                restaurant = db.execute('SELECT * FROM restaurants WHERE id=?', (restaurant_id,)).fetchone()
-                if not restaurant or restaurant['status'] != 'active' or not legacy['is_open'](restaurant):
-                    raise ValueError('Oshxona hozir yopiq')
+                request_key = data.get('request_key', '')
+                if request_key and (not isinstance(request_key, str) or not re.fullmatch(r'[A-Za-z0-9_-]{20,80}', request_key)):
+                    raise ValueError('Buyurtma kaliti noto‘g‘ri')
+                payload_hash = hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
+                previous = db.execute('SELECT * FROM web_order_receipts WHERE request_key=?', (request_key,)).fetchone() if request_key else None
+                if previous:
+                    if previous['payload_hash'] != payload_hash:
+                        respond(self, {'error': 'Buyurtma kaliti boshqa savat uchun ishlatilgan'}, 409)
+                        return
+                    order = db.execute('SELECT * FROM orders WHERE id=?', (previous['order_id'],)).fetchone()
+                    respond(self, {'order_id': order['id'], 'total': order['total'],
+                                   'status': order['status'], 'tracking_token': order['tracking_token']})
+                    return
+                fresh, restaurant_id, amounts = customer_orders.quote(db, items, legacy['is_open'])
+                total = amounts['total']
+                if 'expected_total' in data and data['expected_total'] != total:
+                    respond(self, {'error': 'Narx yangilandi. Savatdagi summani qayta tasdiqlang'}, 409)
+                    return
                 customer_id = db.execute('INSERT INTO customers(first_name,phone) VALUES(?,?)', (name, phone)).lastrowid
                 oid = db.execute('''INSERT INTO orders(customer_id,restaurant_id,total,status,phone,address,payment,tracking_token)
                     VALUES(?,?,?,'Qabul qilindi',?,?,'Naqd',?)''',
@@ -298,10 +328,12 @@ def install(legacy):
                                (oid, food['id'], food['name'], food['price'], qty))
                 db.execute('INSERT INTO web_order_details(order_id,recipient_name,latitude,longitude,street,house,note) VALUES(?,?,?,?,?,?,?)',
                            (oid, name, lat, lng, street, house, note))
+                db.execute('INSERT INTO web_order_receipts(request_key,payload_hash,order_id,subtotal,delivery_fee) VALUES(?,?,?,?,?)',
+                           (request_key or secrets.token_urlsafe(32), payload_hash, oid, amounts['subtotal'], amounts['delivery_fee']))
                 legacy['audit'](db, 'customer', customer_id, 'Web buyurtma', 'orders', oid, after={'total': total})
             respond(self, {'order_id': oid, 'total': total, 'status': 'Qabul qilindi', 'tracking_token': token}, 201)
-        except (ValueError, TypeError, UnicodeError):
-            respond(self, {'error': 'Buyurtma ma’lumotlarini tekshiring: telefon, GPS, savat va naqd to‘lov'}, 400)
+        except (ValueError, TypeError, UnicodeError) as exc:
+            respond(self, {'error': str(exc) or 'Buyurtma ma’lumotlarini tekshiring'}, 400)
 
     Handler.end_headers = headers
     Handler.do_GET, Handler.do_POST, Handler.do_OPTIONS = get, post, options

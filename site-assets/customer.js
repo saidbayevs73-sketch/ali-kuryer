@@ -41,7 +41,7 @@
     section.innerHTML = `
       <div class="partner-inner">
         <h2>Ali Kuryer bilan hamkorlik qiling</h2>
-        <p class="partner-intro">Oshxonangizni platformaga qo‘shing yoki kuryer sifatida ishlash uchun ariza qoldiring. Bu yerda xodimlar kabineti ochiq joylashtirilmaydi.</p>
+        <p class="partner-intro">Oshxonangizni platformaga qo‘shing yoki kuryer sifatida ishlash uchun ariza qoldiring.</p>
         <div class="partner-actions">
           <article class="partner-action">
             <div aria-hidden="true" style="font-size:35px">🏪</div>
@@ -522,6 +522,7 @@
     $(".auth-close",orderDialog).addEventListener("click",()=>orderDialog.close());
   }
   async function openCustomerOrders() {
+    if(window.openAliOrders){return window.openAliOrders()}
     if(!me){showLogin();return}
     const dialog=$("#aliOrderDialog"),box=$("#aliOrderList");
     if(!dialog||!box)return;

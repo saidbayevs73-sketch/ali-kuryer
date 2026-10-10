@@ -62,6 +62,7 @@ app.add_middleware(
         "https://www.ali-kuryer.uz",
         "https://saidbayevs73-sketch.github.io",
         "https://ali-kuryer.onrender.com",
+        "https://ali-kuryer-1.onrender.com",
     ],
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
