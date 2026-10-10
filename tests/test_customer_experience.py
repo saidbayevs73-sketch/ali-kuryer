@@ -37,11 +37,60 @@ def test_ai_greeting_works_without_provider_and_is_labeled_basic():
     assert response.json()["mode"] == "basic"
 
 
-def test_ai_requires_private_provider_configuration_for_open_questions():
+def test_ai_has_honest_useful_fallback_without_provider():
     response = client.post("/api/assistant/chat", json={
         "message": "Bugun qaysi restoranlar yetkazib berayapti?"
     })
-    assert response.status_code == 503
+    assert response.status_code == 200
+    assert response.json()["mode"] == "basic"
+    assert "real" in response.json()["reply"] or "oshxonalar" in response.json()["reply"]
+
+
+def test_ai_fallback_for_common_customer_questions(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    monkeypatch.delenv("AI_API_URL", raising=False)
+    for question, expected in (
+        ("Buyurtma holati qayerda?", "Buyurtmalar"),
+        ("Telefonimda GPS manzilni qanday qo‘yaman?", "GPS"),
+        ("Visa karta orqali to‘lov qilish", "CVV"),
+        ("Operator bilan aloqa", "Telegram"),
+    ):
+        result = client.post("/api/assistant/chat", json={"message": question})
+        assert result.status_code == 200
+        assert result.json()["mode"] == "basic"
+        assert expected in result.json()["reply"]
+
+
+def test_ai_provider_401_does_not_leave_customer_without_help(monkeypatch):
+    import httpx
+    from app.routers import customer_experience
+    monkeypatch.setenv("AI_API_KEY", "invalid-test-only")
+    monkeypatch.setenv("AI_API_URL", "https://api.openai.com/v1/chat/completions")
+    async def reject(self, *args, **kwargs):
+        req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+        return httpx.Response(401, request=req, json={"error": "Unauthorized"})
+    monkeypatch.setattr(httpx.AsyncClient, "post", reject)
+    result = client.post("/api/assistant/chat", json={
+        "message": "Buyurtmani qanday kuzataman?"
+    })
+    assert result.status_code == 200
+    assert result.json()["mode"] == "basic"
+    assert "Buyurtmalar" in result.json()["reply"]
+
+
+def test_ai_provider_answer_stays_ai_when_successful(monkeypatch):
+    import httpx
+    monkeypatch.setenv("AI_API_KEY", "test-key")
+    monkeypatch.setenv("AI_API_URL", "https://api.openai.com/v1/chat/completions")
+    async def succeed(self, *args, **kwargs):
+        req = httpx.Request("POST", "https://api.openai.com/v1/chat/completions")
+        return httpx.Response(200, request=req,
+            json={"choices": [{"message": {"content": "Yordam beraman."}}]})
+    monkeypatch.setattr(httpx.AsyncClient, "post", succeed)
+    response = client.post("/api/assistant/chat", json={"message": "Salatdan maslahat ber"})
+    assert response.status_code == 200
+    assert response.json()["reply"] == "Yordam beraman."
+    assert response.json()["mode"] == "ai"
 
 
 def test_partner_requires_consent_and_protects_admin_listing():

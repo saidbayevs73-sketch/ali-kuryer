@@ -144,6 +144,53 @@ def basic_muhammadali_reply(message: str) -> str | None:
     return None
 
 
+def helpful_muhammadali_fallback(message: str) -> str:
+    """Deterministic support information if the AI provider has an outage.
+
+    This must not pretend to be a generative model. It must never claim
+    particular businesses, prices, payment settlements, or order statuses.
+    """
+    text = " ".join(message.casefold().strip().split())
+    if any(word in text for word in ("buyurtma", "zakaz", "order", "qanday buyur", "taom ol")):
+        if any(word in text for word in ("qayer", "holat", "yetib", "kuzat", "kelad", "status")):
+            return ("Buyurtmangizni ilovadagi «Buyurtmalar» bo‘limidan tekshiring. "
+                    "Hozir men sizning buyurtmangiz holatini ko‘ra olmayman. "
+                    "Muammo bo‘lsa operatorga yozing: https://t.me/AliKuryerYordamBot")
+        return ("Taomni tanlash uchun bosh sahifadagi oshxonani oching, menyudan savatga qo‘shing, "
+                "yetkazish manzili va telefoningizni tasdiqlang. "
+                "Agar buyurtma tugmasi ishlamasa, xizmat vaqtincha cheklangan bo‘lishi mumkin; "
+                "operator: https://t.me/AliKuryerYordamBot")
+    if any(word in text for word in ("manzil", "gps", "xarita", "joylashuv", "lokatsiya", "adres")):
+        return ("Bosh sahifadagi «Yetkazish manzili» bo‘limini ochib, manzilni kiriting "
+                "yoki GPS yordamida belgilang. Jo‘natishdan avval xaritadagi nuqtani tekshiring.")
+    if any(word in text for word in ("to'lov", "to‘lov", "tolov", "karta", "click", "payme", "visa", "pul")):
+        return ("To‘lov imkoniyatlari buyurtma rasmiylashtirish oynasida ko‘rsatiladi. "
+                "Karta raqami, CVV, PIN yoki SMS kodni chatga yubormang. "
+                "To‘lov bilan bog‘liq masalada operatorga murojaat qiling: "
+                "https://t.me/AliKuryerYordamBot")
+    if any(word in text for word in ("kuryer bo", "kurer bo", "ishlamoq", "ishga", "hamkor", "oshxona", "restoran qo")):
+        return ("Kuryer yoki restoran hamkorligi uchun Ali Kuryer veb-saytidagi "
+                "«Hamkorlik» bo‘limida ariza yuboring. "
+                "Savollar bo‘lsa: https://t.me/AliKuryerYordamBot")
+    if any(word in text for word in ("operator", "aloqa", "qo'ng", "qo‘ng", "yordam", "support", "murojaat")):
+        return ("Operatorga murojaat qilish uchun ilovadagi «Operator bilan bog‘lanish» "
+                "bo‘limini oching yoki Telegram orqali yozing: https://t.me/AliKuryerYordamBot")
+    if any(word in text for word in ("ovqat", "taom", "menyu", "pizza", "burger", "osh", "lavash", "narx", "restoran", "oshxona")):
+        return ("Taomlar va narxlarni bosh sahifadagi oshxonalar menyusidan tekshiring. "
+                "Men real vaqtdagi mavjudlik yoki narxni tasdiqlay olmayman. "
+                "Kerakli taomni qidiruvga yozishingiz mumkin.")
+    return ("Muhammadali sun’iy intellekt xizmatiga ulanishda vaqtinchalik muammo bor. "
+            "Hozir buyurtma, manzil, taom, to‘lov va operatorga bog‘lanish haqida "
+            "umumiy ma’lumot bera olaman. Savolingizni shu mavzulardan biri "
+            "bo‘yicha yozing yoki operatorga murojaat qiling: "
+            "https://t.me/AliKuryerYordamBot")
+
+
+def assistant_basic_result(message: str) -> dict:
+    return {"reply": helpful_muhammadali_fallback(message),
+            "mode": "basic"}
+
+
 @router.post("/api/assistant/chat")
 async def assistant_chat(data: AssistantChatIn):
     """OpenAI-compatible upstream. Respond honestly when not configured."""
@@ -155,11 +202,11 @@ async def assistant_chat(data: AssistantChatIn):
     key = os.getenv("AI_API_KEY", "").strip()
     if not api_url or not key:
         log.warning("Muhammadali provider not configured: missing URL or API key")
-        raise HTTPException(status_code=503, detail="Muhammadali AI xizmatiga ulanish sozlanmagan")
+        return assistant_basic_result(data.message)
     url = urlparse(api_url)
     if url.scheme != "https" or not url.hostname or url.username or url.password or url.fragment:
         log.warning("Muhammadali provider URL invalid")
-        raise HTTPException(status_code=503, detail="Muhammadali AI manzili noto‘g‘ri sozlangan")
+        return assistant_basic_result(data.message)
     # A common deployment mistake is giving only the provider API base URL.
     # Do not rewrite unknown third-party providers or redirect credentials.
     if url.hostname.casefold() == "api.openai.com" and url.path.rstrip("/") in {"", "/v1"}:
@@ -199,14 +246,9 @@ async def assistant_chat(data: AssistantChatIn):
             raise ValueError("empty response")
         return {"reply": answer[:2200], "mode": "ai"}
     except httpx.HTTPStatusError as exc:
-        code = exc.response.status_code
-        if code in (401, 403):
-            detail = "Muhammadali AI kaliti tasdiqlanmadi. Operatorga yozing."
-        elif code == 429:
-            detail = "Muhammadali AI xizmatining so‘rov limiti tugagan. Keyinroq urinib ko‘ring."
-        else:
-            detail = "Muhammadali AI serveri vaqtincha javob bermadi."
-        raise HTTPException(status_code=503, detail=detail) from None
+        # Do not disclose tokens, provider output, or customer prompts in logs.
+        log.warning("Muhammadali upstream rejected request (HTTP %s)", exc.response.status_code)
+        return assistant_basic_result(data.message)
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
-        log.warning("Muhammadali upstream failed category=%s", type(exc).__name__)
-        raise HTTPException(status_code=503, detail="Muhammadali AI serveriga ulanishda xatolik.") from None
+        log.warning("Muhammadali upstream unavailable category=%s", type(exc).__name__)
+        return assistant_basic_result(data.message)
