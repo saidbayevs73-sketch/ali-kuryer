@@ -1124,9 +1124,13 @@ private fun AliCustomerApp() {
                                 scope.launch {
                                     try { chat.add(false to AliApi.chat(question, session?.token,
                                         session != null && retainAiHistory)) }
-                                    catch (_: Exception) {
-                                        chat.add(false to "Yordamchi hozir javob bera olmadi. " +
-                                            "Operatorga Telegram orqali yozishingiz mumkin.")
+                                    catch (e: Exception) {
+                                        val detail = (e as? IllegalStateException)?.message
+                                        chat.add(false to (
+                                            (detail?.takeIf { it.isNotBlank() }
+                                                ?: "Internet yoki AI xizmati bilan aloqa uzildi.") +
+                                            " Operator bilan ilovadagi onlayn chat orqali bog‘lanishingiz mumkin."
+                                        ))
                                     }
                                 }
                             }
