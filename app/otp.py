@@ -33,6 +33,8 @@ def is_production():
 
 
 def require_otp_ready():
+    from app.control_center import require_enabled
+    require_enabled("customer_sms")
     if is_production() and not DATABASE_URL.startswith("postgresql"):
         raise HTTPException(503, "SMS tasdiqlash uchun doimiy PostgreSQL bazasi hali ulanmagan")
     if not settings.SECRET_KEY or len(settings.SECRET_KEY) < 24:
