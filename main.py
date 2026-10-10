@@ -80,6 +80,29 @@ app.include_router(courier.router)
 app.include_router(support_bot.router)
 
 
+@app.get("/api/ready")
+def readiness_probe():
+    """Check real DB connectivity, not just whether the web process runs.
+
+    Public response reveals no credentials, identities, or SQL details.
+    Existing /api/health stays a lightweight liveness probe.
+    """
+    from sqlalchemy import text
+    from app.database import DATABASE_URL
+    from app.security import require_secure_jwt_key
+    deployed = settings.ENVIRONMENT.lower() == "production" or (
+        os.getenv("RENDER", "").lower() in {"1", "true", "yes"})
+    if deployed and DATABASE_URL.startswith("sqlite"):
+        raise HTTPException(503, detail="Xizmat hali doimiy bazaga ulanmagan")
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1")).scalar()
+    except Exception:
+        raise HTTPException(503, detail="Baza vaqtincha mavjud emas")
+    require_secure_jwt_key()
+    return {"ok": True, "service": "Ali Kuryer API", "storage": "ready"}
+
+
 @app.get("/", include_in_schema=False)
 def home():
     index = ROOT_DIR / "index.html"
