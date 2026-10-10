@@ -196,3 +196,73 @@ def test_restaurant_photo_and_nearest_courier_tracking():
     assert claim.json()["courier_location"] is not None
     assert client.post(f"/api/v1/courier/orders/{oid}/accept",
                        headers=h(courier_id, "courier")).status_code == 409
+
+
+def test_owner_console_disabled_by_default_and_private_when_enabled(monkeypatch):
+    monkeypatch.delenv("ENABLE_ADMIN_CONSOLE", raising=False)
+    assert client.get("/owner-console").status_code == 404
+    monkeypatch.setenv("ENABLE_ADMIN_CONSOLE", "1")
+    response = client.get("/owner-console")
+    assert response.status_code == 200
+    assert "Boshqaruv markazi" in response.text
+    assert 'no-store' in response.headers.get("cache-control", "")
+    assert 'noindex' in response.headers.get("x-robots-tag", "")
+    assert "frame-ancestors 'none'" in response.headers.get("content-security-policy", "")
+    assert 'ADMIN_PASSWORD' not in response.text
+    assert 'access_token' in response.text  # only generic JavaScript field name
+
+
+def test_admin_bootstrap_rejects_weak_password(monkeypatch):
+    from app.bootstrap import ensure_admin
+    from app.database import SessionLocal
+    from app.models import User
+    phone = "+998901118876"
+    monkeypatch.setenv("ALI_ADMIN_BOOTSTRAP_ENABLED", "1")
+    monkeypatch.setenv("ADMIN_PHONE", phone)
+    monkeypatch.setenv("ADMIN_PASSWORD", "admin")
+    monkeypatch.delenv("ALI_ADMIN_RESET_REQUEST_ID", raising=False)
+    monkeypatch.delenv("ALI_ADMIN_RESET_PASSWORD", raising=False)
+    with SessionLocal() as db:
+        db.query(User).filter_by(phone=phone).delete()
+        db.commit()
+    ensure_admin()
+    with SessionLocal() as db:
+        assert db.query(User).filter_by(phone=phone).first() is None
+
+
+def test_admin_bootstrap_supports_reset_with_missing_old_password(monkeypatch):
+    from app.bootstrap import ensure_admin
+    from app.database import SessionLocal
+    from app.models import User
+    from app.security import hash_password, verify_password
+    phone = "+998901118877"
+    next_password = "Recovery-Test-Pass#2026!X"
+    request_id = "CI_One_Time_Recovery_Oct11_2026_Safe_Test"
+    monkeypatch.setenv("ALI_ADMIN_BOOTSTRAP_ENABLED", "1")
+    monkeypatch.setenv("ADMIN_PHONE", phone)
+    monkeypatch.delenv("ADMIN_PASSWORD", raising=False)
+    monkeypatch.setenv("ALI_ADMIN_RESET_REQUEST_ID", request_id)
+    monkeypatch.setenv("ALI_ADMIN_RESET_PASSWORD", next_password)
+    with SessionLocal() as db:
+        db.query(User).filter_by(phone=phone).delete()
+        db.add(User(name="Recovery test", phone=phone, role="admin", is_active=True,
+                    password_hash=hash_password("PreviousPassword-For-Test-2026!")))
+        db.commit()
+    try:
+        ensure_admin()
+        with SessionLocal() as db:
+            u = db.query(User).filter_by(phone=phone).first()
+            assert u is not None and verify_password(next_password, u.password_hash)
+        # A repeated request ID must not reset an admin who changed the password.
+        with SessionLocal() as db:
+            u = db.query(User).filter_by(phone=phone).first()
+            u.password_hash = hash_password("Another-Strong-Password-2026!")
+            db.commit()
+        ensure_admin()
+        with SessionLocal() as db:
+            u = db.query(User).filter_by(phone=phone).first()
+            assert verify_password("Another-Strong-Password-2026!", u.password_hash)
+    finally:
+        with SessionLocal() as db:
+            db.query(User).filter_by(phone=phone).delete()
+            db.commit()
