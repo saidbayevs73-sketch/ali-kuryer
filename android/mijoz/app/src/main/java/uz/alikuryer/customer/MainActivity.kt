@@ -56,9 +56,9 @@ class MainActivity : ComponentActivity() {
                 "dark" -> true
                 else -> isSystemInDarkTheme()
             }
-            val canvas = if (isDark) Color(0xFF101114) else Color(0xFFF7F7F9)
+            val canvas = if (isDark) Color(0xFF101114) else Color(0xFFF5F5F5)
             val surfaceColor = if (isDark) Color(0xFF1B1D21) else Color.White
-            val textColor = if (isDark) Color(0xFFF4F4F6) else Color(0xFF17171B)
+            val textColor = if (isDark) Color(0xFFF4F4F6) else Color(0xFF111111)
             SideEffect {
                 val barColor = if (isDark) android.graphics.Color.rgb(16, 17, 20)
                                else android.graphics.Color.WHITE
@@ -434,7 +434,7 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
     Scaffold(
         containerColor = AliCanvas,
         topBar = {
-            Surface(color = AliSurface, shadowElevation = 1.dp) {
+            Surface(color = Color(0xFF050505), shadowElevation = 1.dp) {
                 Column(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().height(74.dp)
                         .padding(horizontal = 16.dp),
@@ -449,12 +449,12 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                     "order_status" -> "orders"
                                     else -> "home"
                                 }
-                            }) { Icon(Icons.Default.ArrowBack, "Orqaga", tint = AliBlack) }
+                            }) { Icon(Icons.Default.ArrowBack, "Orqaga", tint = Color.White) }
                             Spacer(Modifier.width(4.dp))
                         }
-                        AliWordmark(Modifier.weight(1f), subtitle = page == "home")
+                        AliWordmark(Modifier.weight(1f), subtitle = page == "home", darkHeader = true)
                         IconButton(onClick = { page = "profile" }) {
-                            Icon(Icons.Default.AccountCircle, "Profil", tint = AliBlack,
+                            Icon(Icons.Default.AccountCircle, "Profil", tint = Color.White,
                                 modifier = Modifier.size(29.dp))
                         }
                     }
@@ -468,10 +468,10 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                 modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(7.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("YETKAZISH MANZILI", color = AliMuted,
+                                Text("YETKAZISH MANZILI", color = Color.LightGray,
                                     fontWeight = FontWeight.Bold, fontSize = 10.sp)
                                 Text(address.ifBlank { "Yetkazish manzilini kiriting" },
-                                    fontSize = 14.sp, color = AliBlack,
+                                    fontSize = 14.sp, color = Color.White,
                                     fontWeight = FontWeight.Bold, maxLines = 1,
                                     overflow = TextOverflow.Ellipsis)
                             }
@@ -541,7 +541,7 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                     item {
                         Surface(onClick = { openSearch() }, shape = RoundedCornerShape(17.dp),
                             color = AliSurface, border = BorderStroke(1.dp, AliBorder)) {
-                            Row(Modifier.fillMaxWidth().height(54.dp)
+                            Row(Modifier.fillMaxWidth().height(62.dp)
                                 .padding(horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Search, null, tint = AliRed)
@@ -557,6 +557,7 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                             selectRestaurant(restaurants.first())
                         } else { message = "Hozircha oshxonalar mavjud emas" }
                     }) }
+                    item { AliServiceHighlights() }
                     item {
                         AliSectionTitle("Nima buyurtma qilamiz?", "Sevimli taomingizni tanlang")
                         Spacer(Modifier.height(13.dp))
@@ -575,7 +576,7 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                 Box(Modifier.size(50.dp).clip(RoundedCornerShape(15.dp))
                                     .then(Modifier),
                                     contentAlignment = Alignment.Center) {
-                                    Text("🤖", fontSize = 36.sp)
+                                    Icon(Icons.Default.AutoAwesome, null, tint = AliRed, modifier = Modifier.size(33.dp))
                                 }
                                 Spacer(Modifier.width(10.dp))
                                 Column(Modifier.weight(1f)) {
@@ -668,7 +669,20 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                     color = AliSurface, border = BorderStroke(1.dp, AliBorder)) {
                                     Row(Modifier.fillMaxWidth().padding(15.dp),
                                         verticalAlignment = Alignment.CenterVertically) {
-                                        Text("🍱", fontSize = 31.sp)
+                                        Box(Modifier.size(85.dp)
+                                            .clip(RoundedCornerShape(13.dp))
+                                            .background(AliCanvas),
+                                            contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.Restaurant, null, tint = AliMuted)
+                                            coil.compose.AsyncImage(
+                                                model = hit.food.imageUrl
+                                                    ?: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=400&q=85",
+                                                contentDescription = if (hit.food.imageUrl == null)
+                                                    "Namunaviy taom fotosurati" else hit.food.name,
+                                                modifier = Modifier.fillMaxSize(),
+                                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                            )
+                                        }
                                         Spacer(Modifier.width(12.dp))
                                         Column(Modifier.weight(1f)) {
                                             Text(hit.food.name, fontWeight = FontWeight.Bold)
@@ -712,7 +726,8 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                         Text(selected?.address.orEmpty(), color = Color.LightGray,
                                             fontSize = 12.sp, maxLines = 2)
                                     }
-                                    Text("🍽️", fontSize = 47.sp)
+                                    Icon(Icons.Default.RestaurantMenu, null, tint = Color.White,
+                                         modifier = Modifier.size(44.dp))
                                 }
                             }
                         }

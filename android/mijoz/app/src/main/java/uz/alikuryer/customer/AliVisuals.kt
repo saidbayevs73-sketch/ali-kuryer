@@ -26,19 +26,19 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import java.util.Locale
 
-internal val AliRed = Color(0xFFE02032)
+internal val AliRed = Color(0xFFE50914)
 /** All customer screens inherit the selected color mode. */
 internal val LocalAliDark = compositionLocalOf { false }
 internal val AliBlack: Color
-    @Composable get() = if (LocalAliDark.current) Color(0xFFF4F4F6) else Color(0xFF17171B)
+    @Composable get() = if (LocalAliDark.current) Color(0xFFF4F4F6) else Color(0xFF111111)
 internal val AliMuted: Color
     @Composable get() = if (LocalAliDark.current) Color(0xFFAFB2BB) else Color(0xFF787981)
 internal val AliCanvas: Color
-    @Composable get() = if (LocalAliDark.current) Color(0xFF101114) else Color(0xFFF7F7F9)
+    @Composable get() = if (LocalAliDark.current) Color(0xFF101114) else Color(0xFFF5F5F5)
 internal val AliSurface: Color
     @Composable get() = if (LocalAliDark.current) Color(0xFF1B1D21) else Color.White
 internal val AliBorder: Color
-    @Composable get() = if (LocalAliDark.current) Color(0xFF343740) else Color(0xFFEAEAF0)
+    @Composable get() = if (LocalAliDark.current) Color(0xFF343740) else Color(0xFFE8E8E8)
 
 internal fun priceText(value: Long): String =
     "%,d".format(Locale.US, value).replace(",", " ") + " so‘m"
@@ -54,7 +54,7 @@ internal fun AliMark(modifier: Modifier = Modifier, size: Int = 43) {
 }
 
 @Composable
-internal fun AliWordmark(modifier: Modifier = Modifier, subtitle: Boolean = true) {
+internal fun AliWordmark(modifier: Modifier = Modifier, subtitle: Boolean = true, darkHeader: Boolean = false) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         AliMark(size = 45)
         Spacer(Modifier.width(10.dp))
@@ -62,11 +62,11 @@ internal fun AliWordmark(modifier: Modifier = Modifier, subtitle: Boolean = true
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("ALI", color = AliRed, fontWeight = FontWeight.Black,
                     fontSize = 21.sp, letterSpacing = (-0.8).sp)
-                Text(" KURYER", color = AliBlack, fontWeight = FontWeight.Black,
+                Text(" KURYER", color = if (darkHeader) Color.White else AliBlack, fontWeight = FontWeight.Black,
                     fontSize = 21.sp, letterSpacing = (-0.8).sp)
             }
             if (subtitle) Text("TEZ • QULAY • O‘ZIMIZNIKI",
-                color = AliMuted, fontSize = 9.sp,
+                color = if (darkHeader) Color.LightGray else AliMuted, fontSize = 9.sp,
                 fontWeight = FontWeight.SemiBold, letterSpacing = 1.1.sp)
         }
     }
@@ -77,8 +77,8 @@ internal fun AliSectionTitle(title: String, caption: String? = null, trailing: S
                              onTrailing: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = AliBlack, fontSize = 21.sp, fontWeight = FontWeight.ExtraBold)
-            if (!caption.isNullOrBlank()) Text(caption, color = AliMuted, fontSize = 12.sp)
+            Text(title, color = AliBlack, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            if (!caption.isNullOrBlank()) Text(caption, color = AliMuted, fontSize = 14.sp)
         }
         if (trailing != null && onTrailing != null) {
             TextButton(onClick = onTrailing) { Text(trailing, color = AliRed,
@@ -89,41 +89,61 @@ internal fun AliSectionTitle(title: String, caption: String? = null, trailing: S
 
 @Composable
 internal fun AliPromoHero(onExplore: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(174.dp)
-        .clip(RoundedCornerShape(25.dp))
-        .background(Brush.linearGradient(listOf(Color(0xFF17171B), Color(0xFF3A1C24), AliRed)))) {
+    Box(Modifier.fillMaxWidth().height(290.dp)
+        .clip(RoundedCornerShape(22.dp)).background(Color(0xFF101010))) {
         AsyncImage(
-            model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1100&q=85",
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            alpha = 0.25f
+            model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1400&q=88",
+            contentDescription = "Haqiqiy taomlar fotosurati",
+            modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop
         )
-        Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("BIR BOSISHDA", color = Color(0xFFFFB9BF), fontSize = 11.sp,
-                    letterSpacing = 1.4.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(7.dp))
-                Text("Mazali taomlar\neshigingizgacha", color = Color.White,
-                    fontSize = 21.sp, fontWeight = FontWeight.Black, lineHeight = 25.sp)
-                Spacer(Modifier.height(12.dp))
-                Surface(
-                    onClick = onExplore, shape = RoundedCornerShape(12.dp),
-                    color = Color.White
-                ) {
-                    Text("Oshxonalarni ko‘rish  →", color = Color(0xFF17171B),
-                        fontWeight = FontWeight.Bold, fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp))
-                }
+        Box(Modifier.fillMaxSize().background(
+            Brush.horizontalGradient(listOf(Color(0xE9000000), Color(0xAA000000), Color(0x08000000)))
+        ))
+        Column(Modifier.fillMaxHeight().widthIn(max = 290.dp)
+            .padding(start = 21.dp, top = 27.dp, end = 5.dp, bottom = 22.dp),
+            verticalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text("ALI KURYER", color = Color(0xFFFF606A),
+                    fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
+                Spacer(Modifier.height(13.dp))
+                Text("Sevimli taomingiz\neshigingizgacha.",
+                    color = Color.White, fontSize = 30.sp,
+                    lineHeight = 34.sp, fontWeight = FontWeight.Black)
+                Spacer(Modifier.height(10.dp))
+                Text("Haqiqiy oshxonalar. Mazali taomlar. Tez yetkazish.",
+                    fontSize = 13.sp, lineHeight = 18.sp, color = Color(0xFFF0F0F0))
             }
-            Box(Modifier.size(112.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.10f)),
-                contentAlignment = Alignment.Center) {
-                Box(Modifier.size(91.dp).clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center) {
-                    Text("🍔", fontSize = 61.sp)
+            Button(onClick = onExplore, shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AliRed),
+                modifier = Modifier.heightIn(min = 48.dp)) {
+                Icon(Icons.Default.RestaurantMenu, null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(7.dp))
+                Text("Oshxonalarni ko‘rish", fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+internal fun AliServiceHighlights() {
+    Surface(color = Color(0xFF080808), shape = RoundedCornerShape(18.dp)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp, horizontal = 7.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly) {
+            val highlights = listOf(
+                Triple("Tez yetkazish", "Buyurtmani kuzating", Icons.Default.LocalShipping),
+                Triple("GPS manzil", "Aniq yetkazish", Icons.Default.LocationOn),
+                Triple("Haqiqiy menyu", "Oshxona taomlari", Icons.Default.Restaurant)
+            )
+            highlights.forEach { (title, detail, image) ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(image, null, tint = Color(0xFFFF3443),
+                        modifier = Modifier.size(22.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(title, color = Color.White, fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(detail, color = Color(0xFFBDBDBD), fontSize = 9.sp,
+                        maxLines = 1)
                 }
             }
         }
@@ -150,145 +170,133 @@ internal val quickCategories = listOf(
 
 @Composable
 internal fun AliCategoryTile(item: QuickCategory, onClick: () -> Unit) {
-    Column(Modifier.width(80.dp).clickable(onClick = onClick),
+    Column(Modifier.width(108.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(color = AliSurface, border = BorderStroke(1.dp, AliBorder),
-            shape = RoundedCornerShape(20.dp)) {
-            Box(Modifier.size(70.dp), contentAlignment = Alignment.Center) {
-                Text(item.icon, fontSize = 31.sp)
-                AsyncImage(
-                    model = item.photo,
-                    contentDescription = item.name,
-                    modifier = Modifier.size(70.dp),
-                    contentScale = ContentScale.Crop
-                )
+            shape = RoundedCornerShape(16.dp)) {
+            Box(Modifier.size(width = 108.dp, height = 100.dp)
+                .background(AliCanvas), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Restaurant, null, tint = AliMuted)
+                AsyncImage(model = item.photo, contentDescription = item.name,
+                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             }
         }
         Spacer(Modifier.height(7.dp))
-        Text(item.name, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+        Text(item.name, fontSize = 14.sp, fontWeight = FontWeight.Bold,
             color = AliBlack, maxLines = 1)
     }
 }
 
 @Composable
 internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
-    Card(onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(23.dp),
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(21.dp),
         border = BorderStroke(1.dp, AliBorder),
         colors = CardDefaults.cardColors(containerColor = AliSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Column {
-            Box(Modifier.fillMaxWidth().height(125.dp)
-                .background(Brush.horizontalGradient(listOf(Color(0xFF221F25),
-                    Color(0xFF5B2931), Color(0xFFA9333B))))) {
-                val coverUrl = when (restaurant.id % 3) {
-                    0 -> "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=960&q=70"
-                    1 -> "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=960&q=70"
-                    else -> "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=960&q=70"
-                }
-                AsyncImage(
-                    model = coverUrl,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    alpha = 0.22f
-                )
-                Row(Modifier.fillMaxSize().padding(17.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(71.dp).clip(RoundedCornerShape(20.dp))
-                        .background(Color.White.copy(alpha = 0.95f)),
-                        contentAlignment = Alignment.Center) {
-                        if (restaurant.logoUrl != null) {
-                            AsyncImage(model = restaurant.logoUrl,
-                                contentDescription = "Oshxona logotipi",
-                                modifier = Modifier.size(65.dp))
-                        } else {
-                            Text("🍽️", fontSize = 35.sp)
-                        }
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text(restaurant.name, color = Color.White,
-                            fontWeight = FontWeight.ExtraBold, fontSize = 20.sp,
-                            maxLines = 2, overflow = TextOverflow.Ellipsis)
-                        Spacer(Modifier.height(6.dp))
-                        Text("TAOMLAR MENYUSI", color = Color.White.copy(alpha = .8f),
-                            fontWeight = FontWeight.SemiBold, fontSize = 10.sp,
-                            letterSpacing = 1.sp)
-                    }
+            val cover = when (restaurant.id % 3) {
+                0 -> "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1100&q=85"
+                1 -> "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1100&q=85"
+                else -> "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1100&q=85"
+            }
+            Box(Modifier.fillMaxWidth().height(205.dp)
+                .background(Color(0xFF292929))) {
+                AsyncImage(model = cover,
+                    contentDescription = "Restoran muhiti, namunaviy fotosurat",
+                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Surface(modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                    color = Color(0xC0000000),
+                    shape = RoundedCornerShape(8.dp)) {
+                    Text("Namunaviy surat", color = Color.White, fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
                 }
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 15.dp),
+            Row(Modifier.fillMaxWidth().padding(17.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, null, tint = AliRed,
-                    modifier = Modifier.size(17.dp))
-                Spacer(Modifier.width(5.dp))
-                Text(restaurant.address.ifBlank { "Menyuni ko‘rish" },
-                    modifier = Modifier.weight(1f),
-                    color = AliMuted, maxLines = 1, fontSize = 12.sp,
-                    overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.width(7.dp))
-                Text("Menyu", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = AliRed)
-                Icon(Icons.Default.ChevronRight, null, tint = AliRed,
-                    modifier = Modifier.size(20.dp))
+                if (!restaurant.logoUrl.isNullOrBlank()) {
+                    AsyncImage(model = restaurant.logoUrl,
+                        contentDescription = restaurant.name + " logotipi",
+                        modifier = Modifier.size(55.dp)
+                            .clip(RoundedCornerShape(11.dp)),
+                        contentScale = ContentScale.Fit)
+                    Spacer(Modifier.width(10.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(restaurant.name, fontSize = 21.sp,
+                        fontWeight = FontWeight.ExtraBold, color = AliBlack,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(6.dp))
+                    Text(restaurant.address.ifBlank { "Taomlar va menyu" },
+                        fontSize = 13.sp, maxLines = 2,
+                        color = AliMuted, overflow = TextOverflow.Ellipsis)
+                }
+                Spacer(Modifier.width(8.dp))
+                Surface(shape = RoundedCornerShape(10.dp), color = AliRed) {
+                    Icon(Icons.Default.ChevronRight, "Menyuni ochish",
+                        tint = Color.White,
+                        modifier = Modifier.size(40.dp).padding(7.dp))
+                }
             }
         }
     }
 }
 
 @Composable
-internal fun AliFoodTile(food: Food, count: Int, onPlus: () -> Unit,
-                         onMinus: () -> Unit) {
-    Surface(modifier = Modifier.fillMaxWidth(),
-        color = AliSurface, shape = RoundedCornerShape(20.dp),
+internal fun AliFoodTile(food: Food, count: Int,
+                         onPlus: () -> Unit, onMinus: () -> Unit) {
+    Surface(modifier = Modifier.fillMaxWidth(), color = AliSurface,
+        shape = RoundedCornerShape(21.dp),
         border = BorderStroke(1.dp, AliBorder)) {
-        Row(Modifier.fillMaxWidth().padding(12.dp),
+        Row(Modifier.fillMaxWidth().padding(10.dp),
             verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(102.dp).clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFFFF0EE)),
-                contentAlignment = Alignment.Center) {
-                if (food.imageUrl != null) {
-                    AsyncImage(model = food.imageUrl,
-                        contentDescription = food.name,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+            val sample = food.imageUrl.isNullOrBlank()
+            Box(Modifier.size(width = 142.dp, height = 146.dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(AliCanvas), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Restaurant, null, tint = AliMuted)
+                AsyncImage(
+                    model = food.imageUrl ?: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=85",
+                    contentDescription = if (sample) "Namunaviy taom fotosurati" else food.name,
+                    modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                if (sample) Surface(modifier = Modifier.align(Alignment.BottomStart)
+                    .padding(6.dp), shape = RoundedCornerShape(6.dp),
+                    color = Color(0xD0000000)) {
+                    Text("Namuna", color = Color.White, fontSize = 9.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(food.name, color = AliBlack, fontSize = 17.sp,
+                    lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold,
+                    maxLines = 3, overflow = TextOverflow.Ellipsis)
+                if (food.category.isNotBlank())
+                    Text(food.category, fontSize = 12.sp, color = AliMuted, maxLines = 1)
+                Text(priceText(food.price), color = AliBlack,
+                    fontSize = 17.sp, lineHeight = 20.sp,
+                    fontWeight = FontWeight.Black)
+                if (count > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onMinus, modifier = Modifier.size(35.dp)) {
+                            Icon(Icons.Default.Remove, "Kamaytirish", tint = AliBlack)
+                        }
+                        Text(count.toString(), fontWeight = FontWeight.ExtraBold)
+                        FilledIconButton(onClick = onPlus, modifier = Modifier.size(37.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = AliRed, contentColor = Color.White)) {
+                            Icon(Icons.Default.Add, "Qo‘shish")
+                        }
+                    }
                 } else {
-                    Text("🍲", fontSize = 47.sp)
-                }
-            }
-            Spacer(Modifier.width(13.dp))
-            Column(Modifier.weight(1f)) {
-                Text(food.name, fontWeight = FontWeight.Bold, color = AliBlack,
-                    fontSize = 15.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                if (food.category.isNotBlank()) {
-                    Text(food.category, color = AliMuted, fontSize = 11.sp,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Spacer(Modifier.height(12.dp))
-                Text(priceText(food.price), fontWeight = FontWeight.ExtraBold,
-                    color = AliBlack, fontSize = 15.sp)
-            }
-            Spacer(Modifier.width(5.dp))
-            if (count > 0) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    FilledIconButton(onClick = onPlus, modifier = Modifier.size(34.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = AliRed, contentColor = Color.White)) {
-                        Icon(Icons.Default.Add, "Qo‘shish", modifier = Modifier.size(18.dp))
+                    Button(onClick = onPlus, shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AliRed)) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(17.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Qo‘shish", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
-                    Text(count.toString(), fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(5.dp))
-                    IconButton(onClick = onMinus, modifier = Modifier.size(30.dp)) {
-                        Icon(Icons.Default.Remove, "Kamaytirish",
-                            tint = AliBlack, modifier = Modifier.size(18.dp))
-                    }
-                }
-            } else {
-                FilledIconButton(onClick = onPlus, modifier = Modifier.size(40.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = AliRed, contentColor = Color.White)) {
-                    Icon(Icons.Default.Add, "Savatga qo‘shish")
                 }
             }
         }
