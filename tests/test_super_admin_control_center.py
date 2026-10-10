@@ -133,3 +133,44 @@ def test_admin_panel_is_mobile_html_with_no_embedded_password(roles):
     assert 'name="viewport"' in page.text
     assert 'autocomplete="current-password"' in page.text
     assert "ADMIN_PASSWORD=" not in page.text
+
+
+def test_admin_chooses_new_login_only_after_password_confirmation(roles, monkeypatch):
+    with SessionLocal() as db:
+        admin = db.query(models.User).filter_by(role="admin").filter(
+            models.User.name == "Config test admin").first()
+        assert admin is not None
+        monkeypatch.setenv("ADMIN_PHONE", admin.phone)
+        # Always start the temporary regression account at the default alias.
+        db.query(models.AdminLoginPreference).filter_by(user_id=admin.id).delete()
+        db.commit()
+
+    old = client.post("/api/auth/admin/login", json={
+        "username": "admin", "password": "SecureRegression!123"
+    })
+    assert old.status_code == 200, old.text
+
+    missing_password = client.post("/api/auth/admin/change-username", headers=roles["admin"],
+                                   json={"new_username": "alikuryer_owner", "current_password": "wrong"})
+    assert missing_password.status_code == 401
+
+    nonadmin = client.post("/api/auth/admin/change-username", headers=roles["customer"],
+                           json={"new_username": "alikuryer_owner", "current_password": "anything"})
+    assert nonadmin.status_code == 403
+
+    changed = client.post("/api/auth/admin/change-username", headers=roles["admin"],
+                          json={"new_username": "alikuryer_owner", "current_password": "SecureRegression!123"})
+    assert changed.status_code == 200, changed.text
+    assert changed.json()["username"] == "alikuryer_owner"
+    assert client.get("/api/auth/admin/account", headers=roles["admin"]).json()["username"] == "alikuryer_owner"
+    assert client.post("/api/auth/admin/login", json={
+        "username": "admin", "password": "SecureRegression!123"
+    }).status_code == 401
+    assert client.post("/api/auth/admin/login", json={
+        "username": "alikuryer_owner", "password": "SecureRegression!123"
+    }).status_code == 200
+
+    # Restore old test alias; never touch a real production administrator.
+    reset = client.post("/api/auth/admin/change-username", headers=roles["admin"],
+                        json={"new_username": "admin", "current_password": "SecureRegression!123"})
+    assert reset.status_code == 200
