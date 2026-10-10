@@ -105,3 +105,39 @@ def test_sms_provider_missing_fails_closed(monkeypatch):
     req = client.post("/api/auth/otp/request", json={"phone": "+998901110045"})
     assert req.status_code == 503
     assert "kod" not in req.json()
+
+
+
+def test_customer_auth_options_are_honest_without_sms_or_telegram(monkeypatch):
+    from fastapi import HTTPException
+    from app import otp, telegram_login
+    monkeypatch.setattr(otp, "require_otp_ready",
+                        lambda: (_ for _ in ()).throw(HTTPException(503, "unconfigured")))
+    monkeypatch.setattr(telegram_login, "service_ready", lambda: False)
+    monkeypatch.delenv("GOOGLE_CLIENT_ID", raising=False)
+    result = client.get("/api/auth/options")
+    assert result.status_code == 200
+    data = result.json()
+    assert data["sms_registration"] is False
+    assert data["sms_verification"] is False
+    assert data["telegram_login"] is False
+    assert data["google_login"] is False
+    assert data["password_login"] is True
+    assert "SMS" in data["message"]
+    assert "unconfigured" not in result.text
+    assert "SECRET_KEY" not in result.text
+    assert "CLIENT_SECRET" not in result.text
+
+
+def test_customer_auth_options_report_configuration_readiness(monkeypatch):
+    from app import otp, telegram_login
+    monkeypatch.setattr(otp, "require_otp_ready", lambda: None)
+    monkeypatch.setattr(telegram_login, "service_ready", lambda: True)
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "test-public-client-id.apps.googleusercontent.com")
+    result = client.get("/api/auth/options")
+    assert result.status_code == 200
+    data = result.json()
+    assert data["sms_registration"] is True
+    assert data["telegram_login"] is True
+    assert data["google_login"] is True
+    assert "test-public-client-id" not in result.text
