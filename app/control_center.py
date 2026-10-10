@@ -158,6 +158,28 @@ def update_controls(body: ConfigChanges,
     incoming = {key: validate_change(key, val) for key, val in body.changes.items()}
     original = read_settings(db)
     merged = {**original, **incoming}
+    # Preserve access for *existing* customers, not just new OTP registrations.
+    # The Eskiz OTP endpoint signs up/verifies phones but is not a general
+    # passwordless login mechanism; enabling it alone cannot replace login.
+    if not merged["customer_password_login"]:
+        persistent = DATABASE_URL.startswith("postgresql") or not (
+            os.getenv("ENVIRONMENT") == "production" or
+            os.getenv("RENDER", "").lower() in ("true", "1", "yes")
+        )
+        other_ready = (
+            (merged["customer_username_login"] and persistent
+             and os.getenv("ALI_USERNAME_LOGIN_ENABLED") == "1")
+            or (merged["customer_google_login"] and bool(os.getenv("GOOGLE_CLIENT_ID")))
+            or (merged["customer_telegram_login"] and persistent
+                and os.getenv("TELEGRAM_LOGIN_ENABLED") == "1"
+                and bool(os.getenv("TELEGRAM_LOGIN_CLIENT_ID"))
+                and bool(os.getenv("TELEGRAM_LOGIN_CLIENT_SECRET")))
+            or (merged["customer_firebase_phone"] and DATABASE_URL.startswith("postgresql")
+                and os.getenv("FIREBASE_PHONE_ENABLED") == "1"
+                and os.getenv("FIREBASE_PROJECT_ID") == "ali-kuryer")
+        )
+        if not other_ready:
+            raise HTTPException(422, "Telefon+parolni o‘chirishdan oldin boshqa ishlaydigan mijoz kirish usulini sozlang")
     # Do not remove every supported customer sign-in method by accident.
     if not any(merged[k] for k in (
         "customer_password_login", "customer_username_login",
