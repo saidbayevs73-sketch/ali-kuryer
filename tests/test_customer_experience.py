@@ -302,7 +302,7 @@ def test_ai_rate_limit_error_explains_retry(monkeypatch):
             json={"error":{"code":"rate_limit_exceeded"}})
     monkeypatch.setattr(httpx.AsyncClient,"post",rejected)
     response=client.post("/api/assistant/chat",json={
-        "message":"Bugun kechqurun ovqat uchun maslahat kerak, nimalarni tayyorlasam bo‘ladi?"
+        "message":"Menga bir yangi noodatiy ijodiy g‘oya haqida batafsil tushuntiring."
     })
     assert response.status_code==200
     result=response.json()
