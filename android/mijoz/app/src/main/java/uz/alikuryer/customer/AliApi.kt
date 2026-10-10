@@ -124,6 +124,18 @@ object AliApi {
         request("POST", "/api/auth/register", body)
     }
 
+    suspend fun firebasePhoneLogin(idToken: String, name: String): Session {
+        val body = JSONObject().put("id_token", idToken)
+            .put("name", name.take(150))
+        val response = JSONObject(request("POST", "/api/auth/firebase/phone-login", body))
+        if (response.optString("role") != "customer") {
+            throw IllegalStateException("Firebase tasdiqlagan hisob mijoz bo‘lishi kerak")
+        }
+        val token = response.optString("access_token", "")
+        if (token.isBlank()) throw IllegalStateException("Server kirish tokenini bermadi")
+        return Session(token, "customer")
+    }
+
     suspend fun login(phone: String, password: String): Session {
         val body = JSONObject().put("phone", phone).put("password", password)
         val json = JSONObject(request("POST", "/api/auth/login", body))
