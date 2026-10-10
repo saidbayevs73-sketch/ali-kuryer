@@ -9,14 +9,62 @@
   const symbols={burger:'🍔',pizza:'🍕',milliy:'🍲',salat:'🥗',ichimlik:'🥤',boshqa:'🍽'};
   function category(f){const n=(f.category||f.name||'').toLowerCase();return /burger/.test(n)?'burger':/pizza|pepperoni|margherita/.test(n)?'pizza':/palov|osh|chuchvara|milliy/.test(n)?'milliy':/salat|achichuk/.test(n)?'salat':/ichimlik|cola|sharbat/.test(n)?'ichimlik':'boshqa'}
   const labels={burger:'Burgerlar',pizza:'Pitsalar',milliy:'Milliy taomlar',salat:'Salatlar',ichimlik:'Ichimliklar',boshqa:'Boshqa taomlar'};
-  const image=(url)=>{try{const u=new URL(url);return u.protocol==='https:'?safe(u.href):''}catch{return ''}};
+  // Accept safe HTTPS image links and first-party media uploads; never arbitrary schemes.
+  const image=(url)=>{try{
+    const u=new URL(url,location.origin);
+    if(u.protocol!=='https:' || (u.origin!==location.origin && !/^https:\/\//.test(String(url))))return '';
+    return safe(u.href);
+  }catch{return ''}};
+  const photoURL=(id,w=900)=>'https://images.unsplash.com/'+id+'?auto=format&fit=crop&w='+w+'&q=85';
+  const photoIds={
+    all:'photo-1546069901-ba9599a7e63c',
+    burger:'photo-1568901346375-23c9450c58cd',
+    pizza:'photo-1513104890138-7c749659a591',
+    milliy:'photo-1512058564366-18510be2db19',
+    salat:'photo-1512621776951-a57141f2eefd',
+    ichimlik:'photo-1544145945-f90425340c7e',
+    boshqa:'photo-1504674900247-0877df9cc836'
+  };
+  const photoCategory=(c,w=650)=>photoURL(photoIds[c]||photoIds.boshqa,w);
+  const foodPhoto=(f)=>{
+    const actual=image(f.image_url);
+    if(actual)return {url:actual,sample:false};
+    const name=((f.name||'')+' '+(f.category||'')).toLowerCase();
+    const patterns=[
+      [/palov|plov|osh(?:\\s|$)|pilaf/,photoIds.milliy],
+      [/pizza|pitsa|pepperoni|margherita/,photoIds.pizza],
+      [/burger|gamburger/,photoIds.burger],
+      [/lavash|shaurma|shawarma|doner/, 'photo-1529006557810-274b9b2fc783'],
+      [/shashlik|shashliq|kebab|kabob/, 'photo-1529193591184-b1d58069ecdd'],
+      [/somsa|samsa|samosa/, 'photo-1601050690597-df0568f70950'],
+      [/manti|chuchvara|pelmen|dumpling/, 'photo-1563245372-f21724e3856d'],
+      [/salat|achchiq|sabzavot/,photoIds.salat],
+      [/sho.rva|shorva|sup|soup/, 'photo-1547592180-85f173990554'],
+      [/tovuq|chicken|qanot/, 'photo-1562967914-608f82629710'],
+      [/fri|fries|kartoshka/, 'photo-1573080496219-bb080dd4f877'],
+      [/tort|shirin|cake|dessert/, 'photo-1551024506-0bccd828d307'],
+      [/kofe|coffee/, 'photo-1509042239860-f550ce710b93']
+    ];
+    const choice=patterns.find(x=>x[0].test(name));
+    return {url:photoURL(choice?choice[1]:photoIds[category(f)]||photoIds.boshqa),sample:true};
+  };
+  const restaurantPhoto=(r,i)=>{
+    const food=foods.find(f=>f.restaurant_id===r.id && f.image_url);
+    if(food){const actual=image(food.image_url);if(actual)return {url:actual,sample:false,alt:'Oshxona menyusidagi haqiqiy taom'}}
+    const categoryHint=category(foods.find(f=>f.restaurant_id===r.id)||{});
+    const id=categoryHint==='boshqa'
+      ?['photo-1517248135467-4c7edcad34c4','photo-1555396273-367ea4eb4db5','photo-1552566626-52f8b828add9'][i%3]
+      :photoIds[categoryHint]||photoIds.all;
+    return {url:photoURL(id,1100),sample:true,alt:'Namunaviy restoran va taom surati'};
+  };
   const post=(path,data)=>requestJSON(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
   function toast(message){$('storeNotice').textContent=message;$('storeNotice').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('storeNotice').hidden=true,6000)}
   document.body.classList.add('marketplace');
   document.body.insertAdjacentHTML('beforeend','<div id="storeNotice" class="store-notice" role="status" hidden></div><div id="cartShade" class="cart-shade" hidden></div>');
   $('cartShade').onclick=()=>closeCart();
   const ordersButton=document.createElement('button');ordersButton.className='btn btn-black desktop-orders';ordersButton.textContent='Buyurtmalar';ordersButton.onclick=()=>window.openAliOrders();document.querySelector('.header-buttons').prepend(ordersButton);
-  document.querySelector('.hero-content').innerHTML='<span class="eyebrow">ALI KURYER • TAOM YETKAZISH</span><h1>Bugun nima<br><span>tanovul qilamiz?</span></h1><p>Oshxonani tanlang. Taomlarni savatga qo‘shing.<br>Buyurtmangiz holatini shu yerda kuzating.</p><button class="btn btn-red" onclick="document.getElementById(\'restaurants\').scrollIntoView({behavior:\'smooth\'})">Menyuni ko‘rish ↗</button><div class="hero-art" aria-hidden="true"><span>🍔</span><span>🍕</span><span>🥗</span><b>Yaxshi taom.<br>Yaxshi kayfiyat.</b></div>';
+  document.querySelector('.hero-content').innerHTML='<span class="eyebrow">ALI KURYER · TAOM YETKAZISH</span><h1>Haqiqiy taomlar.<br><span>Yoqimli lahzalar.</span></h1><p>O‘zingiz yoqtirgan oshxonani tanlang, tabiiy taom suratlarini ko‘ring va menyudan oson buyurtma bering.</p><div class="hero-actions"><button class="btn btn-red" id="heroExplore">Taomlarni ko‘rish ↗</button><button class="btn btn-black" onclick="document.getElementById(\\'search\\').focus()">Taom qidirish</button></div><span class="hero-photo-label">Tabiiy taom fotografiyasi · Namuna</span>';
+  document.getElementById('heroExplore').onclick=()=>document.getElementById('restaurants').scrollIntoView({behavior:'smooth'});
   document.querySelector('.features').innerHTML='<div class="feature"><b>01 · Tanlang</b>Oshxonalar va taomlar</div><div class="feature"><b>02 · Buyurtma bering</b>Summa oldindan ko‘rsatiladi</div><div class="feature"><b>03 · Kuzating</b>Oshxonadan eshigingizgacha</div>';
   document.querySelector('.search-box').insertAdjacentHTML('afterend','<nav id="categories" class="categories" aria-label="Taom kategoriyalari"></nav><div class="catalog-tools"><button id="allRestaurants" class="filter-chip">Barcha oshxonalar</button><button id="favoriteFilter" class="filter-chip">♡ Sevimlilar</button><select id="menuSort" aria-label="Taomlarni saralash"><option value="default">Menyu tartibi</option><option value="cheap">Avval arzonlari</option><option value="expensive">Avval qimmatlari</option></select></div>');
   $('allRestaurants').onclick=()=>{selectedRestaurant=null;render()};
@@ -26,15 +74,50 @@
     if(!window.aliCatalogLoaded){$('restaurantGrid').innerHTML='<p class="empty">Oshxonalar yuklanmoqda…</p>';$('foodGrid').innerHTML='<p class="empty">Menyu yuklanmoqda…</p>';return}
     const q=$('search').value.trim().toLowerCase();
     const cats=[...new Set(foods.map(category))];
-    $('categories').innerHTML=['',...cats].map(c=>`<button class="category-chip ${selectedCategory===c?'active':''}" data-category="${c}" aria-pressed="${selectedCategory===c}"><span>${symbols[c]||'✦'}</span>${labels[c]||'Hammasi'}</button>`).join('');
+    $('categories').innerHTML=['',...cats].map(c=>`<button class="category-chip ${selectedCategory===c?'active':''}" data-category="${c}" aria-pressed="${selectedCategory===c}"><span class="category-photo"><img src="${photoCategory(c,300)}" alt="" loading="lazy"></span><span class="category-label">${c?labels[c]||'Boshqa taomlar':'Barchasi'}</span></button>`).join('');
     $('categories').querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedCategory=b.dataset.category;render()});
     $('favoriteFilter').classList.toggle('active',favoriteOnly);
     $('allRestaurants').textContent=selectedRestaurant?(restaurants.find(r=>r.id===selectedRestaurant)?.name||'Oshxona')+' · Barchasi ×':'Barcha oshxonalar';
-    $('restaurantGrid').innerHTML=restaurants.filter(r=>!q||`${r.name} ${r.address}`.toLowerCase().includes(q)||foods.some(f=>f.restaurant_id===r.id&&f.name.toLowerCase().includes(q))).map((r,i)=>`<button class="restaurant-tile tone-${i%3} ${selectedRestaurant===r.id?'selected':''}" data-restaurant="${r.id}"><div class="restaurant-cover"><span>${symbols[category(foods.find(f=>f.restaurant_id===r.id)||{})]}</span><span class="open-badge ${r.accepting_orders?'':'closed'}">${r.accepting_orders?'Buyurtma qabul qilmoqda':'Hozir yopiq'}</span></div><div class="restaurant-info"><h3>${safe(r.name)}</h3><p>${safe(r.address||'Manzil kiritilmagan')}</p><b>Menyuni ko‘rish ↗</b></div></button>`).join('')||'<p class="empty">Mos oshxona topilmadi.</p>';
+    $('restaurantGrid').innerHTML=restaurants
+      .filter(r=>!q||`${r.name} ${r.address}`.toLowerCase().includes(q)||foods.some(f=>f.restaurant_id===r.id&&f.name.toLowerCase().includes(q)))
+      .map((r,i)=>{
+        const photo=restaurantPhoto(r,i);
+        return `<button class="restaurant-tile ${selectedRestaurant===r.id?'selected':''}" data-restaurant="${r.id}">
+          <div class="restaurant-cover">
+            <img src="${photo.url}" alt="${safe(photo.alt)}" loading="lazy" decoding="async">
+            ${photo.sample?'<span class="sample-badge">Namunaviy surat</span>':''}
+            <span class="open-badge ${r.accepting_orders?'':'closed'}">${r.accepting_orders?'Buyurtma qabul qilmoqda':'Hozir yopiq'}</span>
+          </div>
+          <div class="restaurant-info">
+            <h3>${safe(r.name)}</h3>
+            <p>${safe(r.address||'Manzil kiritilmagan')}</p>
+            <b>Menyuni ko‘rish <span aria-hidden="true">↗</span></b>
+          </div>
+        </button>`
+      }).join('')||'<p class="empty">Mos oshxona topilmadi.</p>';
     $('restaurantGrid').querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedRestaurant=Number(b.dataset.restaurant);render();$('foodGrid').scrollIntoView({behavior:'smooth',block:'start'})});
     let list=foods.filter(f=>(!selectedRestaurant||f.restaurant_id===selectedRestaurant)&&(!selectedCategory||category(f)===selectedCategory)&&(!favoriteOnly||favorites.includes(f.id))&&(!q||`${f.name} ${f.description||''} ${restaurants.find(r=>r.id===f.restaurant_id)?.name||''}`.toLowerCase().includes(q)));
     if($('menuSort').value!=='default')list.sort((a,b)=>($('menuSort').value==='cheap'?1:-1)*(a.price-b.price));
-    $('foodGrid').innerHTML=list.map(f=>{const r=restaurants.find(r=>r.id===f.restaurant_id),src=image(f.image_url);return `<article class="food-tile"><div class="food-cover">${src?`<img src="${src}" alt="${safe(f.name)}" loading="lazy">`:`<span class="food-symbol" aria-hidden="true">${symbols[category(f)]}</span><small>Taom rasmi hali qo‘shilmagan</small>`}<button class="favorite-button" data-favorite="${f.id}" aria-label="${safe(f.name)}: sevimlilarga" aria-pressed="${favorites.includes(f.id)}">${favorites.includes(f.id)?'♥':'♡'}</button></div><div class="food-info"><small>${safe(r?.name)}</small><h3>${safe(f.name)}</h3><p>${safe(f.description||f.ingredients||'')}${f.weight?' · '+safe(f.weight):''}</p><div class="food-bottom"><strong>${money(f.price)}</strong><button class="add-food" data-food="${f.id}" ${r?.accepting_orders?'':'disabled'} aria-label="${safe(f.name)} savatga qo‘shish">${r?.accepting_orders?'+':'Yopiq'}</button></div></div></article>`}).join('')||'<div class="empty">Bu tanlovda taom topilmadi. Boshqa kategoriya yoki qidiruvni sinab ko‘ring.</div>';
+    $('foodGrid').innerHTML=list.map(f=>{
+      const r=restaurants.find(r=>r.id===f.restaurant_id);
+      const photo=foodPhoto(f);
+      return `<article class="food-tile">
+        <div class="food-cover">
+          <img src="${photo.url}" alt="${safe(f.name)}" loading="lazy" decoding="async">
+          ${photo.sample?'<span class="sample-badge">Namunaviy surat</span>':''}
+          <button class="favorite-button" data-favorite="${f.id}" aria-label="${safe(f.name)}: sevimlilarga" aria-pressed="${favorites.includes(f.id)}">${favorites.includes(f.id)?'♥':'♡'}</button>
+        </div>
+        <div class="food-info">
+          <small>${safe(r?.name||'Oshxona')}</small>
+          <h3>${safe(f.name)}</h3>
+          <p>${safe(f.description||f.ingredients||'')}${f.weight?' · '+safe(f.weight):''}</p>
+          <div class="food-bottom">
+            <strong>${money(f.price)}</strong>
+            <button class="add-food" data-food="${f.id}" ${r?.accepting_orders?'':'disabled'} aria-label="${safe(f.name)} savatga qo‘shish">${r?.accepting_orders?'Qo‘shish +':'Yopiq'}</button>
+          </div>
+        </div>
+      </article>`
+    }).join('')||'<div class="empty">Bu tanlovda taom topilmadi. Boshqa kategoriya yoki qidiruvni sinab ko‘ring.</div>';
     $('foodGrid').querySelectorAll('[data-favorite]').forEach(b=>b.onclick=()=>{const id=+b.dataset.favorite;favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];write('ali_favorites',favorites);render()});
     $('foodGrid').querySelectorAll('[data-food]').forEach(b=>b.onclick=()=>{const f=foods.find(x=>x.id===+b.dataset.food);addCart(f.id,f.name,f.price,f.restaurant_id)});
   };
