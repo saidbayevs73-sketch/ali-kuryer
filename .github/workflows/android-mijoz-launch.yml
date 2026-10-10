@@ -33,7 +33,7 @@ jobs:
         with:
           gradle-version: "8.9"
       - name: Build debug APK
-        run: cd android/mijoz && gradle --no-daemon app:assembleDebug
+        run: cd android/mijoz && gradle --no-daemon app:assembleMijozDebug app:assembleKuryerDebug app:assembleOshxonaDebug app:assembleAdminDebug
       - name: Enable KVM access
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -49,34 +49,42 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
           script: |
-            adb install -r android/mijoz/app/build/outputs/apk/debug/app-debug.apk
-            adb logcat -c
-            adb shell am start -n uz.alikuryer.customer/.MainActivity
-            sleep 9
-            adb exec-out screencap -p > /tmp/ali-kuryer-home.png
-            adb shell dumpsys activity activities | grep -E 'topResumedActivity|mResumedActivity' || true
-            adb logcat -d -s AndroidRuntime:E > /tmp/ali-kuryer-androidruntime.log
-            cat /tmp/ali-kuryer-androidruntime.log
-            if grep -E 'FATAL EXCEPTION|Unable to start activity|Process: uz.alikuryer.customer' /tmp/ali-kuryer-androidruntime.log; then
-              echo 'APP CRASHED'
-              exit 1
-            fi
-            if ! adb shell pidof uz.alikuryer.customer; then
-              echo 'APP PROCESS NOT RUNNING'
-              exit 1
-            fi
-            echo 'APP LAUNCH SUCCESS'
+            set -e
+            for flavor in mijoz kuryer oshxona admin; do
+              case "$flavor" in
+                mijoz) package="uz.alikuryer.customer" ;;
+                kuryer) package="uz.alikuryer.courier" ;;
+                oshxona) package="uz.alikuryer.restaurant" ;;
+                admin) package="uz.alikuryer.admin" ;;
+              esac
+              adb install -r "android/mijoz/app/build/outputs/apk/$flavor/debug/app-$flavor-debug.apk"
+              adb logcat -c
+              adb shell am start -n "$package/uz.alikuryer.customer.MainActivity"
+              sleep 6
+              adb exec-out screencap -p > "/tmp/ali-kuryer-$flavor.png"
+              adb logcat -d -s AndroidRuntime:E > "/tmp/ali-kuryer-$flavor-runtime.log"
+              if grep -E "FATAL EXCEPTION|Unable to start activity|Process: $package" "/tmp/ali-kuryer-$flavor-runtime.log"; then
+                echo "$flavor CRASHED"
+                exit 1
+              fi
+              if ! adb shell pidof "$package"; then
+                echo "$flavor IS NOT RUNNING"
+                exit 1
+              fi
+              echo "$flavor APP LAUNCH SUCCESS"
+              adb shell am force-stop "$package"
+            done
       - name: Upload Android runtime log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ali-kuryer-startup-log
-          path: /tmp/ali-kuryer-androidruntime.log
+          path: /tmp/ali-kuryer-*-runtime.log
           if-no-files-found: ignore
       - name: Upload screenshot for Android 15 UI review
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ali-kuryer-android15-screen
-          path: /tmp/ali-kuryer-home.png
+          path: /tmp/ali-kuryer-*.png
           if-no-files-found: ignore
