@@ -176,7 +176,7 @@ def validate_firebase_phone_token(firebase_token: str) -> tuple[str, str]:
     ):
         raise HTTPException(401, "Firebase telefon orqali tasdiqlamagan")
     phone = claims.get("phone_number", "")
-    if not isinstance(phone, str) or not re.fullmatch(r"\\+998\\d{9}", phone):
+    if not isinstance(phone, str) or not re.fullmatch(r"\+998\d{9}", phone):
         raise HTTPException(403, "Faqat O‘zbekiston telefon raqami qabul qilinadi")
     # OTP proof must correspond to a recent actual phone sign-in, not a very old
     # session's refresh token. Legitimate users can simply request a new SMS.
