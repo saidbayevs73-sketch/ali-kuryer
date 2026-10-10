@@ -30,8 +30,17 @@ def test_config_exposes_no_server_secret():
     assert response.json()["bot_url"].startswith("https://t.me/")
 
 
-def test_ai_requires_private_provider_configuration():
-    response = client.post("/api/assistant/chat", json={"message":"Assalomu alaykum"})
+def test_ai_greeting_works_without_provider_and_is_labeled_basic():
+    response = client.post("/api/assistant/chat", json={"message": "salom"})
+    assert response.status_code == 200
+    assert "Assalomu alaykum" in response.json()["reply"]
+    assert response.json()["mode"] == "basic"
+
+
+def test_ai_requires_private_provider_configuration_for_open_questions():
+    response = client.post("/api/assistant/chat", json={
+        "message": "Bugun qaysi restoranlar yetkazib berayapti?"
+    })
     assert response.status_code == 503
 
 
