@@ -34,9 +34,9 @@ internal val AliBlack: Color
 internal val AliMuted: Color
     @Composable get() = if (LocalAliDark.current) Color(0xFFAFB2BB) else Color(0xFF787981)
 internal val AliCanvas: Color
-    @Composable get() = if (LocalAliDark.current) Color(0xFF101114) else Color(0xFFF5F5F5)
+    @Composable get() = if (LocalAliDark.current) Color(0xFF101114) else Color(0xFFF0F0F0)
 internal val AliSurface: Color
-    @Composable get() = if (LocalAliDark.current) Color(0xFF1B1D21) else Color.White
+    @Composable get() = if (LocalAliDark.current) Color(0xFF1B1D21) else Color(0xFFFAFAFA)
 internal val AliBorder: Color
     @Composable get() = if (LocalAliDark.current) Color(0xFF343740) else Color(0xFFE8E8E8)
 
