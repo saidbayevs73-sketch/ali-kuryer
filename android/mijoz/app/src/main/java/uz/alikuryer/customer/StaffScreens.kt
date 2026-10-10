@@ -48,11 +48,20 @@ internal fun AliStaffApp() {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var token by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf(if (role == "admin") "admin" else "") }
+    var phone by remember {
+        mutableStateOf(if (role == "admin")
+            ctx.getSharedPreferences("ali_admin", Context.MODE_PRIVATE)
+                .getString("login_alias", "admin") ?: "admin"
+        else "")
+    }
     var password by remember { mutableStateOf("") }
     var oldAdminPassword by remember { mutableStateOf("") }
     var newAdminPassword by remember { mutableStateOf("") }
     var repeatAdminPassword by remember { mutableStateOf("") }
+    var newAdminUsername by remember { mutableStateOf("") }
+    var usernameCurrentPassword by remember { mutableStateOf("") }
+    var adminOptions by remember { mutableStateOf<JSONObject?>(null) }
+    var adminSiteNotice by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var tab by remember { mutableStateOf("home") }
@@ -236,6 +245,10 @@ internal fun AliStaffApp() {
                     busy = true; error = ""
                     try {
                         token = StaffApi.login(phone.trim(), password, role)
+                        if (role == "admin") {
+                            ctx.getSharedPreferences("ali_admin", Context.MODE_PRIVATE)
+                                .edit().putString("login_alias", phone.trim().lowercase()).apply()
+                        }
                         password = ""; tab = "home"
                     } catch (e: Exception) { error = e.message ?: "Kirishda xatolik" }
                     finally { busy = false }
@@ -243,6 +256,18 @@ internal fun AliStaffApp() {
             }
         )
         return
+    }
+
+    LaunchedEffect(token, tab) {
+        if (role == "admin" && token.isNotBlank() && tab == "settings") {
+            try {
+                adminOptions = StaffApi.adminSettings(token)
+                adminSiteNotice = adminOptions?.optString("site_notice", "").orEmpty()
+                error = ""
+            } catch (e: Exception) {
+                error = e.message ?: "Super Admin sozlamalari olinmadi"
+            }
+        }
     }
 
     val tabs = when (role) {
@@ -629,9 +654,116 @@ internal fun AliStaffApp() {
             if (role == "admin" && tab == "settings") {
                 item {
                     StaffCard {
+                        Text("Super Admin — ilovalar boshqaruvi",
+                            fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text("Mijoz, kuryer va oshxona kirish usullarini telefondan boshqaring. " +
+                            "Sozlamalar serverda saqlanadi.",
+                            color = AliMuted, fontSize = 12.sp)
+                        val managed = listOf(
+                            "customer_password_login" to "Mijoz: telefon va parol",
+                            "customer_username_login" to "Mijoz: login nomi va parol",
+                            "customer_sms" to "Mijoz: SMS kod",
+                            "customer_google_login" to "Mijoz: Google",
+                            "customer_telegram_login" to "Mijoz: Telegram",
+                            "customer_firebase_phone" to "Mijoz: Firebase telefon",
+                            "courier_login" to "Kuryer kirishi",
+                            "restaurant_login" to "Oshxona kirishi"
+                        )
+                        if (adminOptions == null) {
+                            Text("Sozlamalar yuklanmoqda yoki server hali yangilanmagan",
+                                color = AliMuted, fontSize = 12.sp)
+                        } else {
+                            managed.forEach { (key, label) ->
+                                Row(verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()) {
+                                    Text(label, modifier = Modifier.weight(1f), fontSize = 13.sp)
+                                    Switch(
+                                        checked = adminOptions?.optBoolean(key, true) ?: true,
+                                        enabled = !busy,
+                                        onCheckedChange = { checked ->
+                                            val existingToken = token
+                                            scope.launch {
+                                                busy = true
+                                                try {
+                                                    adminOptions = StaffApi.updateAdminSettings(
+                                                        existingToken, JSONObject().put(key, checked)
+                                                    )
+                                                    error = "Sozlama saqlandi"
+                                                } catch (e: Exception) {
+                                                    error = e.message ?: "Saqlab bo‘lmadi"
+                                                } finally { busy = false }
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        OutlinedTextField(
+                            adminSiteNotice, { adminSiteNotice = it.take(250) },
+                            label = { Text("Saytdagi e’lon") },
+                            modifier = Modifier.fillMaxWidth(), maxLines = 3
+                        )
+                        Button(onClick = {
+                            scope.launch {
+                                busy = true
+                                try {
+                                    adminOptions = StaffApi.updateAdminSettings(
+                                        token, JSONObject().put("site_notice", adminSiteNotice)
+                                    )
+                                    error = "Sayt e’loni saqlandi"
+                                } catch (e: Exception) {
+                                    error = e.message ?: "E’lon saqlanmadi"
+                                } finally { busy = false }
+                            }
+                        }, enabled = !busy && adminOptions != null) {
+                            Text("Sayt e’lonini saqlash")
+                        }
+                    }
+                }
+                item {
+                    StaffCard {
+                        Text("Admin login nomini o‘zingiz tanlang",
+                            fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text("Yangi login uchun joriy parolni tasdiqlang. " +
+                            "Login o‘zgargach yangi nom bilan qayta kirasiz.",
+                            color = AliMuted, fontSize = 12.sp)
+                        OutlinedTextField(newAdminUsername, { newAdminUsername = it.take(32) },
+                            label = { Text("Yangi login nomi") },
+                            modifier = Modifier.fillMaxWidth(), singleLine = true)
+                        OutlinedTextField(usernameCurrentPassword,
+                            { usernameCurrentPassword = it },
+                            label = { Text("Joriy parolingiz") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true)
+                        Button(enabled = !busy && newAdminUsername.length >= 4 &&
+                            usernameCurrentPassword.isNotBlank(), onClick = {
+                            scope.launch {
+                                busy = true; error = ""
+                                try {
+                                    val updated = StaffApi.changeAdminUsername(
+                                        token, usernameCurrentPassword, newAdminUsername)
+                                    ctx.getSharedPreferences("ali_admin", Context.MODE_PRIVATE)
+                                        .edit().putString("login_alias", updated).apply()
+                                    phone = updated
+                                    newAdminUsername = ""
+                                    usernameCurrentPassword = ""
+                                    oldAdminPassword = ""
+                                    newAdminPassword = ""
+                                    repeatAdminPassword = ""
+                                    token = ""; tab = "home"
+                                } catch (e: Exception) {
+                                    error = e.message ?: "Loginni o‘zgartirib bo‘lmadi"
+                                } finally { busy = false }
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) { Text("Yangi loginni saqlash") }
+                    }
+                }
+                item {
+                    StaffCard {
                         Text("Admin parolini almashtirish",
                             fontSize = 19.sp, fontWeight = FontWeight.Bold)
-                        Text("Login nomi: admin. Amaldagi parolingizni kiriting, " +
+                        Text("Yangi parolni faqat amaldagi parolni kiritib o‘zgartiring. " +
                             "so‘ng yangi xavfsiz parol o‘rnating.",
                             color = AliMuted, fontSize = 12.sp)
                         OutlinedTextField(oldAdminPassword, { oldAdminPassword = it },
@@ -727,7 +859,7 @@ private fun StaffLogin(role: String, phone: String, password: String,
             }
         }
         Spacer(Modifier.height(18.dp))
-        Text(if (role == "admin") "Login: admin • Kuchli parol bilan himoyalangan" else
+        Text(if (role == "admin") "Kuchli parol bilan himoyalangan • Loginni ichkaridan o‘zgartirish mumkin" else
             "Xavfsiz kirish • Har bir rol uchun alohida ruxsat",
             color = AliMuted, fontSize = 12.sp)
     }
