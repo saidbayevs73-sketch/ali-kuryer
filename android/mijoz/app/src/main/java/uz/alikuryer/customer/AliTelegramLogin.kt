@@ -86,12 +86,12 @@ internal fun AliTelegramLoginPanel(
         }
     }
 
-    Surface(color = androidx.compose.ui.graphics.Color.White,
+    Surface(color = AliSurface,
         shape = RoundedCornerShape(17.dp)) {
         Column(Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Telegram orqali oson kirish", fontWeight = FontWeight.ExtraBold,
-                fontSize = 18.sp)
+            Text("Telegram orqali oson kirish", color = AliBlack,
+                fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
             Text(
                 "SMS va Google Billing kerak emas. Telegram hisobingizni tasdiqlang " +
                     "hamda telefon raqamingizni Ali Kuryer bilan ulashishga rozilik bering.",
