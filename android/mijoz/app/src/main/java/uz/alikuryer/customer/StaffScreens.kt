@@ -917,6 +917,8 @@ private fun StaffLogin(role: String, phone: String, password: String,
                        busy: Boolean, error: String, onPhone: (String) -> Unit,
                        onPassword: (String) -> Unit, quickUnlockSaved: Boolean,
                        onQuickUnlock: () -> Unit, onLogin: () -> Unit) {
+    val ctx = LocalContext.current
+    var showRecovery by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier.fillMaxSize().padding(25.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -959,6 +961,43 @@ private fun StaffLogin(role: String, phone: String, password: String,
                 shape = RoundedCornerShape(13.dp)) {
                 Text(if (busy) "Tekshirilmoqda..." else "Kirish",
                     fontWeight = FontWeight.ExtraBold)
+            }
+            if (role == "admin") {
+                TextButton(
+                    onClick = { showRecovery = !showRecovery },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text(if (showRecovery) "Tiklash yo‘riqnomasini yopish"
+                         else "Admin parolini unutdingizmi?") }
+                if (showRecovery) {
+                    Text(
+                        "Admin hisobining eski parolini ko‘rsatib bo‘lmaydi. " +
+                        "Tiklash faqat o‘zingizning Render hisobingizdan amalga oshiriladi.",
+                        color = AliMuted, fontSize = 12.sp
+                    )
+                    Text(
+                        "1. Renderda «ali-kuryer» xizmatini oching; «ali-kuryer-1» emas.\n" +
+                        "2. Environment ichida ADMIN_PHONE qiymatini tekshiring.\n" +
+                        "3. ALI_ADMIN_BOOTSTRAP_ENABLED = 1 bo‘lsin.\n" +
+                        "4. Yangi parolni ALI_ADMIN_RESET_PASSWORD ga yozing.\n" +
+                        "5. ALI_ADMIN_RESET_REQUEST_ID uchun yangi, tasodifiy 20+ belgili ID kiriting.\n" +
+                        "6. Saqlab, deploy tugagach yangi parol bilan kiring.",
+                        color = AliMuted, fontSize = 12.sp
+                    )
+                    OutlinedButton(
+                        onClick = {
+                            ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                                "https://dashboard.render.com/web/srv-db0ls8qd0e5s73c70490"
+                            )))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.OpenInNew, null)
+                        Spacer(Modifier.width(6.dp))
+                        Text("To‘g‘ri Render xizmatini ochish")
+                    }
+                    Text("Parolni hech kimga yubormang; faqat Render Environment’da kiriting.",
+                        color = AliMuted, fontSize = 11.sp)
+                }
             }
         }
         Spacer(Modifier.height(18.dp))
