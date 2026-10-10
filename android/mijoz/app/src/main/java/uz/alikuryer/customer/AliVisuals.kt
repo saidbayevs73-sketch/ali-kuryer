@@ -25,11 +25,24 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import java.util.Locale
 
-internal val AliRed = Color(0xFFB54852)
-internal val AliBlack = Color(0xFF27272B)
-internal val AliMuted = Color(0xFF6D7179)
-internal val AliCanvas = Color(0xFFF6F5F2)
-internal val AliBorder = Color(0xFFE7E4DF)
+// Ali Kuryer palette shared with site-assets/customer.css.
+// Automatically follows the Android light/dark appearance setting.
+internal val AliRed: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFE1A3AA) else Color(0xFFB54852)
+internal val AliBlack: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFF0EDE9) else Color(0xFF27272B)
+internal val AliMuted: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFB7B5B9) else Color(0xFF6D7179)
+internal val AliCanvas: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF19191D) else Color(0xFFF6F5F2)
+internal val AliBorder: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF39383E) else Color(0xFFE7E4DF)
+internal val AliSurface: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF25252B) else Color.White
+internal val AliRose: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF48363C) else Color(0xFFF6E9E9)
+internal val AliWelcome: Color
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF313036) else Color(0xFFEDE8E3)
 
 internal fun priceText(value: Long): String =
     "%,d".format(Locale.US, value).replace(",", " ") + " so‘m"
@@ -143,7 +156,7 @@ internal val quickCategories = listOf(
 internal fun AliCategoryTile(item: QuickCategory, onClick: () -> Unit) {
     Column(Modifier.width(80.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(color = Color.White, border = BorderStroke(1.dp, AliBorder),
+        Surface(color = AliSurface, border = BorderStroke(1.dp, AliBorder),
             shape = RoundedCornerShape(20.dp)) {
             Box(Modifier.size(70.dp), contentAlignment = Alignment.Center) {
                 Text(item.icon, fontSize = 31.sp)
@@ -167,7 +180,7 @@ internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(23.dp),
         border = BorderStroke(1.dp, AliBorder),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = AliSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column {
             Box(Modifier.fillMaxWidth().height(125.dp)
@@ -232,7 +245,7 @@ internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
 internal fun AliFoodTile(food: Food, count: Int, onPlus: () -> Unit,
                          onMinus: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(),
-        color = Color.White, shape = RoundedCornerShape(20.dp),
+        color = AliSurface, shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, AliBorder)) {
         Row(Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically) {
