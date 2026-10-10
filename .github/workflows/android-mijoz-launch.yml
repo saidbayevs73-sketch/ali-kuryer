@@ -48,32 +48,7 @@ jobs:
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: |
-            set -e
-            for flavor in mijoz kuryer oshxona admin; do
-              case "$flavor" in
-                mijoz) package="uz.alikuryer.customer" ;;
-                kuryer) package="uz.alikuryer.courier" ;;
-                oshxona) package="uz.alikuryer.restaurant" ;;
-                admin) package="uz.alikuryer.admin" ;;
-              esac
-              adb install -r "android/mijoz/app/build/outputs/apk/$flavor/debug/app-$flavor-debug.apk"
-              adb logcat -c
-              adb shell am start -n "$package/uz.alikuryer.customer.MainActivity"
-              sleep 6
-              adb exec-out screencap -p > "/tmp/ali-kuryer-$flavor.png"
-              adb logcat -d -s AndroidRuntime:E > "/tmp/ali-kuryer-$flavor-runtime.log"
-              if grep -E "FATAL EXCEPTION|Unable to start activity|Process: $package" "/tmp/ali-kuryer-$flavor-runtime.log"; then
-                echo "$flavor CRASHED"
-                exit 1
-              fi
-              if ! adb shell pidof "$package"; then
-                echo "$flavor IS NOT RUNNING"
-                exit 1
-              fi
-              echo "$flavor APP LAUNCH SUCCESS"
-              adb shell am force-stop "$package"
-            done
+          script: bash android/mijoz/scripts/smoke-all-apks.sh
       - name: Upload Android runtime log
         if: always()
         uses: actions/upload-artifact@v4
