@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-  <path android:fillColor="#17171B" android:pathData="M24,8 L84,8 Q100,8 100,24 L100,84 Q100,100 84,100 L24,100 Q8,100 8,84 L8,24 Q8,8 24,8 Z"/>
-  <path android:fillColor="#FFFFFF" android:pathData="M27,29 L50,29 L50,50 L27,50 Z M58,29 L81,29 L81,50 L58,50 Z M27,58 L50,58 L50,81 L27,81 Z M58,58 L81,58 L81,81 L58,81 Z"/>
-  <path android:fillColor="#E02032" android:pathData="M30,39 L36,46 L47,31 L51,35 L37,54 L26,43 Z M61,68 L67,75 L78,60 L82,64 L68,83 L57,72 Z"/>
-</vector>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ali_role_logo"
+    android:insetLeft="11dp"
+    android:insetRight="11dp"
+    android:insetTop="11dp"
+    android:insetBottom="11dp" />
