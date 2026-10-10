@@ -1,5 +1,6 @@
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from app.admin_login_guard import owner_login_guard
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
@@ -272,12 +273,22 @@ class AdminUsernameLogin(BaseModel):
 
 
 @router.post("/admin/login")
-def admin_username_login(data: AdminUsernameLogin,
+def admin_username_login(data: AdminUsernameLogin, request: Request,
                          db: Session = Depends(get_db)):
-    """Server-enforced admin role, fixed owner-facing alias; no phone field in app."""
+    """Owner-only role, no shared default password; limit brute-force guesses.
+
+    Key on the ASGI client address, never on user-controlled proxy headers.
+    """
     import os
     import re
+    peer = request.client.host if request.client else "unknown"
+    if owner_login_guard.blocked(peer):
+        raise HTTPException(
+            status_code=429, detail="Ko‘p noto‘g‘ri urinish. 5 daqiqadan keyin qayta urinib ko‘ring.",
+            headers={"Retry-After": "300"},
+        )
     if data.username.strip().lower() != "admin":
+        owner_login_guard.fail(peer)
         raise HTTPException(401, "Login yoki parol noto‘g‘ri")
     owner_phone = os.getenv("ADMIN_PHONE", "").strip()
     if not re.fullmatch(r"\+998[0-9]{9}", owner_phone):
@@ -285,7 +296,9 @@ def admin_username_login(data: AdminUsernameLogin,
     user = db.query(models.User).filter_by(phone=owner_phone).first()
     if not user or user.role != "admin" or not user.is_active or not user.password_hash or (
             not security.verify_password(data.password, user.password_hash)):
+        owner_login_guard.fail(peer)
         raise HTTPException(401, "Login yoki parol noto‘g‘ri")
+    owner_login_guard.success(peer)
     return {
         "access_token": security.admin_access_token(user),
         "token_type": "bearer", "role": "admin",
