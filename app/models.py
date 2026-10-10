@@ -16,6 +16,15 @@ class User(Base):
     created_at = Column(DateTime, server_default=func.now())
 
 
+class UsernameIdentity(Base):
+    """Unique user-chosen login name: no asserted phone ownership without OTP."""
+    __tablename__ = "username_identities"
+
+    username = Column(String(32), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class Restaurant(Base):
     __tablename__ = "restaurants"
 
