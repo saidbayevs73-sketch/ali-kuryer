@@ -262,11 +262,19 @@ def install(legacy):
         if path == "/admin/login" and os.getenv("ALI_LEGACY_ADMIN_AUTH_MODE") == "central":
             # Opt-in compatibility for the old admin web panel. The source of
             # truth is the API admin account, never a second legacy password.
-            size = int(self.headers.get("Content-Length", "0"))
+            try:
+                size = int(self.headers.get("Content-Length", "0"))
+            except (ValueError, TypeError):
+                self.out("So‘rov hajmi noto‘g‘ri", 400)
+                return
             if not 1 <= size <= 4096:
                 self.out("So‘rov hajmi noto‘g‘ri", 413)
                 return
-            params = parse_qs(self.rfile.read(size).decode("utf-8"), keep_blank_values=True)
+            try:
+                params = parse_qs(self.rfile.read(size).decode("utf-8"), keep_blank_values=True)
+            except UnicodeDecodeError:
+                self.out("Login ma’lumotlari noto‘g‘ri", 400)
+                return
             username = params.get("login", [""])[0].strip()
             password = params.get("password", [""])[0]
             attempts = legacy["login_attempts"]
@@ -282,7 +290,7 @@ def install(legacy):
                 return
             attempts.pop(key, None)
             token = secrets.token_urlsafe(32)
-            ttl = legacy["SESSION_TTL"]
+            ttl = min(legacy["SESSION_TTL"], 15 * 60)  # Short legacy cookie in central mode
             legacy["sessions"][token] = {
                 "role": "admin", "id": 0,
                 "expires": now + ttl, "csrf": secrets.token_urlsafe(32)
