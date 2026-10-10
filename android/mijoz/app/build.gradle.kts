@@ -12,8 +12,8 @@ android {
         applicationId = "uz.alikuryer.customer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "1.6.2"
+        versionCode = 11
+        versionName = "1.6.3"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
     }
 
