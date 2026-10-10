@@ -114,7 +114,7 @@
     section.after(help);
   }
 
-  const state = {register:false, smsReady:false, smsChecked:false, usernameReady:false, usernameSelected:false, usernameRegister:false};
+  const state = {register:false, contactReady:false, usernameReady:false, usernameSelected:false, usernameRegister:false};
   function buildLogin() {
     const header = $("header .header-buttons");
     if (header) {
@@ -135,16 +135,10 @@
         <div id="registerNameWrap" hidden><label>Ism va familiya<input name="name" autocomplete="name" minlength="2" maxlength="100"></label></div>
         <label>Telefon raqam<input name="phone" type="tel" required placeholder="+998901234567" autocomplete="tel"></label>
         <label>Parol<input name="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password"></label>
-        <div id="authOtpWrap" hidden>
-          <p id="aliSmsAvailability" class="muted" role="status" aria-live="polite">
-            SMS xizmati tekshirilmoqda. Tasdiqlash ishlamasa kod yuborilgan deb hisoblamang.
-          </p>
-          <p class="muted" style="margin:6px 0"><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot"
-            target="_blank" rel="noopener noreferrer">Ro‘yxatdan o‘tishda yordam: operatorga yozish ↗</a></p>
-          <button type="button" id="authSmsSend" class="btn btn-black" disabled>📩 SMS-kod olish</button>
-          <label>SMS tasdiqlash kodi<input name="otp_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000"></label>
-          <p class="muted">SMS kodi kelmasa, 60 soniyadan keyin qayta so‘rang.</p>
-        </div>
+        <p id="aliContactRegistrationHint" class="muted" hidden>
+          Telegram ishlamasa, ism, telefon va parol orqali SMS-kodsiz ro‘yxatdan o‘ting.
+          Telefon faqat aloqa uchun saqlanadi, tasdiqlangan hisoblanmaydi.
+        </p>
         <label class="checkline" id="authConsent" hidden><input type="checkbox" name="consent"> <span><a href="/legal/privacy.html" target="_blank" rel="noopener">Maxfiylik shartlari</a> bilan tanishdim.</span></label>
         <button type="submit" class="auth-submit">Kirish</button>
         <p class="status" role="status" aria-live="polite"></p>
@@ -180,7 +174,7 @@
              Maxfiylik shartlari</a>ga roziman.</span>
           </label>
           <p class="muted">Bu kirish telefon raqami tasdiqlanganini anglatmaydi.
-            Telefonni Telegram yoki SMS orqali alohida tasdiqlash kerak.</p>
+            Telefon raqami tasdiqlanmaguncha faqat aloqa uchun ishlatiladi.</p>
           <button type="submit" class="auth-submit">Login nomi bilan kirish</button>
           <p class="status" role="status" aria-live="polite"></p>
           <button type="button" id="aliUsernameBack" class="ali-username-back">
@@ -198,28 +192,25 @@
     $(".auth-close",d).addEventListener("click",()=>d.close());
     for(const button of d.querySelectorAll("[data-auth]")) button.addEventListener("click",()=>setAuthMode(button.dataset.auth==="register"));
     $("#customerAuthForm").addEventListener("submit", submitAuth);
-    $("#authSmsSend").addEventListener("click", requestRegisterSms);
     $("#aliTelegramLogin").addEventListener("click", startTelegramLogin);
     $("#aliUsernameOpen").addEventListener("click",()=>openUsernameMode());
     $("#aliUsernameBack").addEventListener("click",()=>closeUsernameMode());
     $("#aliUsernameSignIn").addEventListener("click",()=>setUsernameRegister(false));
     $("#aliUsernameSignUp").addEventListener("click",()=>setUsernameRegister(true));
     $("#aliUsernameForm").addEventListener("submit",submitUsernameAccount);
+    // Telegram is the first recommended verification option.
+    d.querySelector(".auth-switch").before(d.querySelector("#telegramLoginArea"));
     loadAuthOptions();
   }
 
   async function loadAuthOptions() {
-    let ready=false, usernameReady=false;
+    let contactReady=false, usernameReady=false;
     try {
       const options=await api("/api/auth/options");
-      ready=options?.sms_registration === true;
+      contactReady=options?.contact_signup === true;
       usernameReady=options?.username_signup === true;
-    }catch(_){
-      // An unavailable readiness endpoint must not make SMS appear to work.
-      ready=false;
-    }
-    state.smsReady=ready;
-    state.smsChecked=true;
+    }catch(_){}
+    state.contactReady=contactReady;
     state.usernameReady=usernameReady;
     const area=$("#aliUsernameArea"),open=$("#aliUsernameOpen");
     if(area)area.hidden=false;
@@ -232,10 +223,7 @@
     const notice=$("#aliUsernameUnavailable");
     if(notice)notice.hidden=usernameReady;
     setAuthMode(state.register);
-    const send=$("#customerProfile .customer-sms-verify button");
-    if(send)send.disabled=!ready;
   }
-
 
   function setUsernameRegister(register){
     state.usernameRegister=register;
@@ -311,29 +299,23 @@
   }
 
   function setAuthMode(register) {
-    state.register = register;
-    $("#registerNameWrap").hidden = !register;
-    $("#authConsent").hidden = !register;
-    $("#authOtpWrap").hidden = !register;
-    $("#customerAuthForm [name=otp_code]").required = register;
-    $("#customerAuthForm [name=name]").required = register;
-    $("#customerAuthForm [name=consent]").required = register;
-    $("#customerAuthForm [name=password]").autocomplete = register?"new-password":"current-password";
+    state.register=register;
+    $("#registerNameWrap").hidden=!register;
+    $("#authConsent").hidden=!register;
+    $("#aliContactRegistrationHint").hidden=!register;
+    $("#customerAuthForm [name=name]").required=register;
+    $("#customerAuthForm [name=consent]").required=register;
+    $("#customerAuthForm [name=password]").autocomplete=register?"new-password":"current-password";
+    $("#customerAuthForm [name=password]").minLength=register?10:1;
     const submit=$("#customerAuthForm .auth-submit");
-    submit.textContent = register ? "Ro‘yxatdan o‘tish" : "Kirish";
-    submit.disabled = Boolean(register && !state.smsReady);
-    const smsButton=$("#authSmsSend");
-    if(smsButton)smsButton.disabled=!state.smsReady;
-    const smsInfo=$("#aliSmsAvailability");
-    if(smsInfo)smsInfo.textContent=state.smsReady
-      ? "Telefoningizga 6 xonali SMS kodi yuboriladi. Kod 5 daqiqa amal qiladi."
-      : state.smsChecked
-        ? "Hozir SMS tasdiqlash faol emas. Avval ro‘yxatdan o‘tgan bo‘lsangiz «Kirish»ni tanlang. Boshqa kirish usullari yuqoridagi oynada ko‘rsatiladi."
-        : "SMS tasdiqlash holati tekshirilmoqda...";
-    $("#customerAuthForm .status").textContent = register && !state.smsReady
-      ? "Yangi mijoz ro‘yxati SMS sozlanmaguncha to‘xtatilgan. Telefon kodi yuborilmagan."
+    submit.textContent=register?"SMS kodsiz ro‘yxatdan o‘tish":"Kirish";
+    submit.disabled=Boolean(register && !state.contactReady);
+    $("#customerAuthForm .status").textContent=register&&!state.contactReady
+      ? "Ro‘yxatdan o‘tish uchun doimiy ma’lumotlar bazasi sozlanishi kerak. Hozircha mavjud hisobingiz bilan kiring."
       : "";
-    for (const b of document.querySelectorAll("[data-auth]")) b.classList.toggle("active",(b.dataset.auth==="register")===register);
+    for(const b of document.querySelectorAll("[data-auth]")){
+      b.classList.toggle("active",(b.dataset.auth==="register")===register);
+    }
   }
   function showLogin() {
     const d=$("#customerDialog");
@@ -373,54 +355,9 @@
       const logout=el("button","auth-submit","Chiqish");
       logout.type="button";
       logout.addEventListener("click",()=>{sessionStorage.removeItem("ali_customer_token");me=null;$("#customerLoginBtn").textContent="👤 Kirish";d.close();});
-      // Previously registered accounts and Google users can verify ownership.
-      const verification=el("div","customer-sms-verify");
-      const vStatus=el("p","status","Telefon tasdiqlanishini tekshiramiz...");
-      const vPhone=document.createElement("input");
-      vPhone.type="tel";vPhone.placeholder="+998901234567";vPhone.value=me.phone||"";
-      vPhone.setAttribute("aria-label","Tasdiqlanadigan telefon");
-      const vCode=document.createElement("input");
-      vCode.inputMode="numeric";vCode.maxLength=6;
-      vCode.autocomplete="one-time-code";
-      vCode.placeholder="6 xonali SMS kodi";
-      vCode.setAttribute("aria-label","SMS tasdiqlash kodi");
-      const send=el("button","btn btn-black","SMS-kod olish");
-      send.type="button";send.disabled=!state.smsReady;
-      const confirm=el("button","btn btn-black","Raqamni tasdiqlash");confirm.type="button";
-      const h={"Authorization":"Bearer "+sessionStorage.getItem("ali_customer_token")};
-      function verifiedScreen() {verification.replaceChildren(el("p","","✅ Telefon raqamingiz tasdiqlangan."));}
-      verification.append(vStatus,vPhone,send,vCode,confirm);
-      if(!state.smsReady){send.hidden=true;vCode.hidden=true;confirm.hidden=true;}
-      profile.appendChild(verification);
-      api("/api/auth/phone/status",{headers:h}).then(data=>{
-        if(data.verified) verifiedScreen();
-        else vStatus.textContent=state.smsReady
-          ? "⚠ Telefon raqamini SMS orqali tasdiqlang."
-          : "SMS tasdiqlash hozircha mavjud emas. Kod so‘ramang.";
-      }).catch(()=>{vStatus.textContent="Telefon holatini tekshirib bo‘lmadi."});
-      send.onclick=async()=>{
-        send.disabled=true;
-        try {
-          await api("/api/auth/phone/request",{
-            method:"POST",headers:{"Content-Type":"application/json",...h},
-            body:JSON.stringify({phone:vPhone.value.trim()})
-          });
-          vStatus.textContent="SMS so‘raldi. Kodni kiriting.";
-        }catch(e){vStatus.textContent=humanError(e)}
-        finally{send.disabled=false}
-      };
-      confirm.onclick=async()=>{
-        confirm.disabled=true;
-        try{
-          await api("/api/auth/phone/confirm",{
-            method:"POST",headers:{"Content-Type":"application/json",...h},
-            body:JSON.stringify({phone:vPhone.value.trim(),otp_code:vCode.value.trim()})
-          });
-          me.phone=vPhone.value.trim();
-          verifiedScreen();
-        }catch(e){vStatus.textContent=humanError(e)}
-        finally{confirm.disabled=false}
-      };
+      profile.appendChild(el("p","muted",
+        me.phone_verified?"✅ Telefon Telegram yoki avvalgi tasdiqlash orqali tasdiqlangan."
+                         :"Telefon faqat aloqa uchun, tasdiqlanmagan. SMS kod talab etilmaydi."));
       profile.appendChild(logout);
     } else {
       $("#aliUsernameArea").hidden=false;
@@ -435,34 +372,6 @@
     }
     d.showModal();
   }
-  async function requestRegisterSms() {
-    if(!state.smsReady){
-      const msg=$("#customerAuthForm .status");
-      if(msg)msg.textContent="SMS tasdiqlash hozircha mavjud emas. Kod yuborilmadi.";
-      return;
-    }
-    const input=$("#customerAuthForm [name=phone]");
-    const phone=String(input?.value||"").replace(/[\s-]/g,"");
-    const message=$("#customerAuthForm .status");
-    if(!/^\+998\d{9}$/.test(phone)){
-      message.textContent="Telefonni +998901234567 shaklida kiriting.";
-      return;
-    }
-    const button=$("#authSmsSend");
-    button.disabled=true;
-    message.textContent="SMS so‘ralmoqda...";
-    try {
-      await api("/api/auth/otp/request",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({phone})
-      });
-      message.textContent="SMS kodini tekshiring. 5 daqiqa ichida kiriting.";
-    } catch(err) {
-      message.textContent=humanError(err);
-    } finally {
-      button.disabled=false;
-    }
-  }
 
   async function submitAuth(event) {
     event.preventDefault();
@@ -475,16 +384,32 @@
     const button=$("button[type=submit]",form);
     button.disabled=true;msg.textContent="Tekshirilmoqda...";
     try {
-      if (state.register && !state.smsReady) {
-        throw new Error("SMS tasdiqlash hali ishga tushmagan. Kod yuborilmagan.");
+      let result;
+      if(state.register){
+        if(!state.contactReady)throw new Error("SMSsiz ro‘yxatdan o‘tish xizmati hozircha tayyor emas.");
+        result=await api("/api/auth/contact/register",{
+          method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            name:String(fd.get("name")||"").trim(),phone,password,
+            accepted_privacy:fd.get("consent")==="on"
+          })
+        });
+      }else{
+        try{
+          result=await api("/api/auth/login",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({phone,password})
+          });
+        }catch(firstError){
+          // Existing verified phone accounts retain their old password login.
+          if(!state.contactReady || !/noto‘g‘ri|noto'g'ri/i.test(firstError.message||""))
+            throw firstError;
+          result=await api("/api/auth/contact/login",{
+            method:"POST",headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({phone,password})
+          });
+        }
       }
-      if (state.register) {
-        await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-          name:String(fd.get("name")||"").trim(),phone,password,
-          otp_code:String(fd.get("otp_code")||"").trim()
-        })});
-      }
-      const result=await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,password})});
       await finishLogin(result.access_token);
       form.reset();
       $("#customerDialog").close();
@@ -526,10 +451,10 @@
       button.disabled=!response.available;
       hint.textContent=response.available
         ?"Telegram hisobingiz orqali tasdiqlash uchun bosing. Telefon raqamini ulashishga rozilik kerak."
-        :"Telegram tasdiqlash hozircha yoqilmagan. Ro‘yxatdan o‘tish uchun SMS kodni tanlang.";
+        :"Telegram hozir ishlamasa, pastda telefon va parol bilan SMSsiz ro‘yxatdan o‘ting.";
     }catch(_){
       button.disabled=true;
-      hint.textContent="Telegram tasdiqlashni tekshirib bo‘lmadi. Hozircha SMS orqali ro‘yxatdan o‘ting.";
+      hint.textContent="Telegramni tekshirib bo‘lmadi. Telefon bilan SMS-kodsiz ro‘yxatdan o‘tishingiz mumkin.";
     }
   }
   async function startTelegramLogin(){
@@ -554,7 +479,7 @@
       location.assign(authURL.href);
     }catch(error){
       hint.textContent=humanError(error)+
-        " Telegram hali ulanmagan bo‘lsa, SMS tasdiqlashni tanlang.";
+        " Telegram ishlamasa, telefon bilan SMS-kodsiz ro‘yxatdan o‘ting.";
       button.disabled=false;
     }
   }
@@ -650,97 +575,12 @@
         button.addEventListener("click",()=>window.askAli(question));
         quick.appendChild(button);
       }
-      const photoPrompt=el("button","","📷 Surat kaloriyasi");
-      photoPrompt.type="button";
-      photoPrompt.addEventListener("click",()=>{
-        const text=$("#aliInput");
-        if(text)text.value="Rasmdagi taomning taxminiy kaloriyasi qancha?";
-        $("#aliPhotoInput")?.click();
-      });
-      quick.appendChild(photoPrompt);
       const operator=el("a","ali-help-link ali-quick-operator","👩‍💻 Operatorga ulanish");
       operator.href=botLink();
       operator.target="_blank";operator.rel="noopener noreferrer";
       quick.appendChild(operator);
     }
-    let attachedPhoto=null;
     let sending=false;
-    const chatInput=$("#chat .chat-input");
-    if(chat && chatInput){
-      const toolbar=el("div","ali-photo-toolbar");
-      const uploadBtn=el("button","ali-photo-trigger","📷 Rasm qo‘shish");
-      uploadBtn.type="button";
-      const photoInput=el("input","ali-photo-file");
-      photoInput.id="aliPhotoInput";
-      photoInput.type="file";
-      photoInput.accept="image/jpeg,image/png,image/webp";
-      photoInput.setAttribute("aria-label","Taom rasmini tanlash");
-      photoInput.hidden=true;
-      uploadBtn.addEventListener("click",()=>photoInput.click());
-      const preview=el("div","ali-photo-preview");
-      preview.hidden=true;
-      const help=el("span","ali-photo-help",
-        "Surat AI xizmatiga tahlil uchun yuboriladi, saqlanmaydi. Kaloriya faqat taxminiy.");
-      toolbar.append(uploadBtn,photoInput,help,preview);
-      chat.insertBefore(toolbar,chatInput);
-      const clearPhoto=()=>{
-        attachedPhoto=null;
-        photoInput.value="";
-        preview.replaceChildren();
-        preview.hidden=true;
-      };
-      // Phone cameras often generate 12+ megapixel photos. Resize locally:
-      // avoid upload errors, remove EXIF/coordinates and reduce mobile data use.
-      photoInput.addEventListener("change",async()=>{
-        const file=photoInput.files?.[0];
-        if(!file){clearPhoto();return;}
-        if(!["image/jpeg","image/png","image/webp","image/heic","image/heif"].includes(file.type)
-           || file.size>16_000_000){
-          clearPhoto();
-          window.alert("JPG/PNG/WEBP rasm (yoki telefon qo‘llaydigan HEIC), 16 MB gacha tanlang.");
-          return;
-        }
-        uploadBtn.disabled=true;
-        help.textContent="Surat tayyorlanmoqda...";
-        let photoURL;
-        try {
-          photoURL=URL.createObjectURL(file);
-          const photo=new Image();
-          await new Promise((resolve,reject)=>{
-            photo.onload=resolve;
-            photo.onerror=()=>reject(new Error("Telefoningiz bu rasm formatini ocholmadi. JPG tanlang."));
-            photo.src=photoURL;
-          });
-          const width=photo.naturalWidth, height=photo.naturalHeight;
-          if(width<16 || height<16)throw new Error("Rasm juda kichik.");
-          const scale=Math.min(1,1280/Math.max(width,height));
-          const canvas=document.createElement("canvas");
-          canvas.width=Math.max(16,Math.round(width*scale));
-          canvas.height=Math.max(16,Math.round(height*scale));
-          const ctx=canvas.getContext("2d");
-          if(!ctx)throw new Error("Rasmni tayyorlab bo‘lmadi.");
-          ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(photo,0,0,canvas.width,canvas.height);
-          let result=canvas.toDataURL("image/jpeg",.78);
-          if(result.length>5_000_000)result=canvas.toDataURL("image/jpeg",.55);
-          if(result.length>5_000_000)throw new Error("Rasm hajmi hali katta. Boshqa rasm tanlang.");
-          attachedPhoto=result.substring(result.indexOf(",")+1);
-          const thumb=el("img","ali-photo-thumb");
-          thumb.alt="Tanlangan taom surati";thumb.src=result;
-          const remove=el("button","ali-photo-remove","✕ Olib tashlash");
-          remove.type="button";remove.addEventListener("click",clearPhoto);
-          preview.replaceChildren(thumb,el("span","","Surat tayyor"),remove);
-          preview.hidden=false;
-          if(!$("#aliInput")?.value.trim())$("#aliInput").value="Rasmdagi taomning taxminiy kaloriyasi qancha?";
-        }catch(err){clearPhoto();window.alert(err.message||"Rasmni tayyorlab bo‘lmadi.");}
-        finally {
-          if(photoURL)URL.revokeObjectURL(photoURL);
-          uploadBtn.disabled=false;
-          help.textContent="Surat AI xizmatiga tahlil uchun yuboriladi, saqlanmaydi. Kaloriya faqat taxminiy.";
-        }
-      });
-      window.aliClearPhoto=clearPhoto;
-    }
     window.askAli=async function(question) {
       if(sending)return;
       const input=$("#aliInput");
@@ -751,10 +591,6 @@
       const userBox=el("div","message");
       userBox.appendChild(el("strong","","Siz: "));
       userBox.appendChild(document.createTextNode(q));
-      if(attachedPhoto){
-        const img=el("span","ali-photo-sent","📷 Rasm ilova qilindi");
-        userBox.appendChild(img);
-      }
       body.appendChild(userBox);
       if(/operator|jonli yordam|odam bilan|inson bilan/i.test(q)){
         const info=el("div","message","Sizni operator bilan bog‘lanish uchun Telegram yordam botiga yo‘naltiramiz.");
@@ -766,7 +602,6 @@
         window.open(botLink(),"_blank","noopener,noreferrer");
         return;
       }
-      const fileToSend=attachedPhoto;
       if(input)input.value="";
       const answerBox=el("div","message","Muhammadali javob yozmoqda…");
       body.appendChild(answerBox);body.scrollTop=body.scrollHeight;
@@ -775,7 +610,6 @@
       if(sendBtn)sendBtn.disabled=true;
       try {
         const payload={message:q};
-        if(fileToSend)payload.image_base64=fileToSend;
         const answer=await api("/api/assistant/chat",{
           method:"POST",headers:{"Content-Type":"application/json"},
           body:JSON.stringify(payload)
@@ -788,10 +622,8 @@
           link.target="_blank";link.rel="noopener noreferrer";
           answerBox.appendChild(link);
         }
-        window.aliClearPhoto?.();
       } catch(error) {
         answerBox.textContent=humanError(error)+" Operator: "+botLink();
-        // Keep the photo selected so the customer can retry without reuploading.
       } finally {
         sending=false;
         if(sendBtn)sendBtn.disabled=false;
