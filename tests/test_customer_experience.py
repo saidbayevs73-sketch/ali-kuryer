@@ -269,3 +269,43 @@ def test_phone_registration_login_and_customer_profile(monkeypatch):
     profile = client.get("/api/auth/me", headers={"Authorization":"Bearer "+token})
     assert profile.status_code == 200
     assert profile.json()["name"] == "Ali Test"
+
+
+def test_ai_quota_error_for_photo_is_not_fake_calorie_count(monkeypatch):
+    import httpx
+    monkeypatch.setenv("AI_API_KEY","mock-only-test-credential")
+    monkeypatch.setenv("AI_API_URL","https://api.openai.com/v1/chat/completions")
+    async def rejected(self, url, **kwargs):
+        return httpx.Response(429,request=httpx.Request("POST",url),
+            json={"error":{"code":"insufficient_quota","message":"private"}})
+    monkeypatch.setattr(httpx.AsyncClient,"post",rejected)
+    response=client.post("/api/assistant/chat",json={
+        "message":"Rasmdagi taomda qancha kkal?",
+        "image_base64":_test_food_photo_base64()
+    })
+    assert response.status_code==200
+    result=response.json()
+    assert result["mode"]=="basic"
+    assert result["ai_issue"]=="quota"
+    assert result["image_analyzed"] is False
+    assert "Billing" in result["reply"]
+    assert "tahlil qila olmayapti" in result["reply"]
+    assert "private" not in result["reply"]
+
+
+def test_ai_rate_limit_error_explains_retry(monkeypatch):
+    import httpx
+    monkeypatch.setenv("AI_API_KEY","mock-only-test-credential")
+    monkeypatch.setenv("AI_API_URL","https://api.openai.com/v1/chat/completions")
+    async def rejected(self,url,**kwargs):
+        return httpx.Response(429,request=httpx.Request("POST",url),
+            json={"error":{"code":"rate_limit_exceeded"}})
+    monkeypatch.setattr(httpx.AsyncClient,"post",rejected)
+    response=client.post("/api/assistant/chat",json={
+        "message":"Bugun kechqurun ovqat uchun maslahat kerak, nimalarni tayyorlasam bo‘ladi?"
+    })
+    assert response.status_code==200
+    result=response.json()
+    assert result["mode"]=="basic"
+    assert result["ai_issue"]=="rate_limit"
+    assert "limit" in result["reply"]
