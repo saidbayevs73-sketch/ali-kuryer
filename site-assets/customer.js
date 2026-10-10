@@ -397,30 +397,55 @@
         preview.replaceChildren();
         preview.hidden=true;
       };
-      photoInput.addEventListener("change",()=>{
+      // Phone cameras often generate 12+ megapixel photos. Resize locally:
+      // avoid upload errors, remove EXIF/coordinates and reduce mobile data use.
+      photoInput.addEventListener("change",async()=>{
         const file=photoInput.files?.[0];
         if(!file){clearPhoto();return;}
-        if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>4_000_000){
+        if(!["image/jpeg","image/png","image/webp","image/heic","image/heif"].includes(file.type)
+           || file.size>16_000_000){
           clearPhoto();
-          window.alert("JPEG, PNG yoki WEBP rasm tanlang (4 MB dan kichik).");
+          window.alert("JPG/PNG/WEBP rasm (yoki telefon qo‘llaydigan HEIC), 16 MB gacha tanlang.");
           return;
         }
-        const reader=new FileReader();
-        reader.onerror=()=>{clearPhoto();window.alert("Rasmni o‘qib bo‘lmadi.");};
-        reader.onload=()=>{
-          if(typeof reader.result!=="string"||!reader.result.startsWith("data:image/")){
-            clearPhoto();return;
-          }
-          attachedPhoto=reader.result.slice(reader.result.indexOf(",")+1);
+        uploadBtn.disabled=true;
+        help.textContent="Surat tayyorlanmoqda...";
+        let photoURL;
+        try {
+          photoURL=URL.createObjectURL(file);
+          const photo=new Image();
+          await new Promise((resolve,reject)=>{
+            photo.onload=resolve;
+            photo.onerror=()=>reject(new Error("Telefoningiz bu rasm formatini ocholmadi. JPG tanlang."));
+            photo.src=photoURL;
+          });
+          const width=photo.naturalWidth, height=photo.naturalHeight;
+          if(width<16 || height<16)throw new Error("Rasm juda kichik.");
+          const scale=Math.min(1,1280/Math.max(width,height));
+          const canvas=document.createElement("canvas");
+          canvas.width=Math.max(16,Math.round(width*scale));
+          canvas.height=Math.max(16,Math.round(height*scale));
+          const ctx=canvas.getContext("2d");
+          if(!ctx)throw new Error("Rasmni tayyorlab bo‘lmadi.");
+          ctx.fillStyle="#ffffff";ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(photo,0,0,canvas.width,canvas.height);
+          let result=canvas.toDataURL("image/jpeg",.78);
+          if(result.length>5_000_000)result=canvas.toDataURL("image/jpeg",.55);
+          if(result.length>5_000_000)throw new Error("Rasm hajmi hali katta. Boshqa rasm tanlang.");
+          attachedPhoto=result.substring(result.indexOf(",")+1);
           const thumb=el("img","ali-photo-thumb");
-          thumb.alt="Tanlangan taom surati";thumb.src=reader.result;
+          thumb.alt="Tanlangan taom surati";thumb.src=result;
           const remove=el("button","ali-photo-remove","✕ Olib tashlash");
           remove.type="button";remove.addEventListener("click",clearPhoto);
           preview.replaceChildren(thumb,el("span","","Surat tayyor"),remove);
           preview.hidden=false;
           if(!$("#aliInput")?.value.trim())$("#aliInput").value="Rasmdagi taomning taxminiy kaloriyasi qancha?";
-        };
-        reader.readAsDataURL(file);
+        }catch(err){clearPhoto();window.alert(err.message||"Rasmni tayyorlab bo‘lmadi.");}
+        finally {
+          if(photoURL)URL.revokeObjectURL(photoURL);
+          uploadBtn.disabled=false;
+          help.textContent="Surat AI xizmatiga tahlil uchun yuboriladi, saqlanmaydi. Kaloriya faqat taxminiy.";
+        }
       });
       window.aliClearPhoto=clearPhoto;
     }
