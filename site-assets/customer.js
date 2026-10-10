@@ -114,7 +114,7 @@
     section.after(help);
   }
 
-  const state = {register:false, smsReady:false, smsChecked:false, usernameReady:false, usernameSelected:false, usernameRegister:false};
+  const state = {register:false, smsReady:false, smsChecked:false, passwordReady:true, usernameReady:false, usernameSelected:false, usernameRegister:false};
   function buildLogin() {
     const header = $("header .header-buttons");
     if (header) {
@@ -209,11 +209,12 @@
   }
 
   async function loadAuthOptions() {
-    let ready=false, usernameReady=false;
+    let ready=false, usernameReady=false, passwordReady=true;
     try {
       const options=await api("/api/auth/options");
       ready=options?.sms_registration === true;
       usernameReady=options?.username_signup === true;
+      passwordReady=options?.password_login !== false;
     }catch(_){
       // An unavailable readiness endpoint must not make SMS appear to work.
       ready=false;
@@ -221,6 +222,7 @@
     state.smsReady=ready;
     state.smsChecked=true;
     state.usernameReady=usernameReady;
+    state.passwordReady=passwordReady;
     const area=$("#aliUsernameArea"),open=$("#aliUsernameOpen");
     if(area)area.hidden=false;
     if(open){
@@ -321,7 +323,7 @@
     $("#customerAuthForm [name=password]").autocomplete = register?"new-password":"current-password";
     const submit=$("#customerAuthForm .auth-submit");
     submit.textContent = register ? "Ro‘yxatdan o‘tish" : "Kirish";
-    submit.disabled = Boolean(register && !state.smsReady);
+    submit.disabled = Boolean(register && !state.smsReady) || Boolean(!register && !state.passwordReady);
     const smsButton=$("#authSmsSend");
     if(smsButton)smsButton.disabled=!state.smsReady;
     const smsInfo=$("#aliSmsAvailability");
@@ -332,7 +334,9 @@
         : "SMS tasdiqlash holati tekshirilmoqda...";
     $("#customerAuthForm .status").textContent = register && !state.smsReady
       ? "Yangi mijoz ro‘yxati SMS sozlanmaguncha to‘xtatilgan. Telefon kodi yuborilmagan."
-      : "";
+      : !register && !state.passwordReady
+         ? "Telefon raqam va parol orqali kirish admin tomonidan o‘chirilgan. Boshqa kirish usulini tanlang."
+         : "";
     for (const b of document.querySelectorAll("[data-auth]")) b.classList.toggle("active",(b.dataset.auth==="register")===register);
   }
   function showLogin() {
@@ -478,13 +482,15 @@
       if (state.register && !state.smsReady) {
         throw new Error("SMS tasdiqlash hali ishga tushmagan. Kod yuborilmagan.");
       }
+      let registered=null;
       if (state.register) {
-        await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+        registered=await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
           name:String(fd.get("name")||"").trim(),phone,password,
           otp_code:String(fd.get("otp_code")||"").trim()
         })});
       }
-      const result=await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,password})});
+      if (!state.register && !state.passwordReady) throw new Error("Telefon + parol usuli o‘chirilgan");
+      const result=registered?.access_token ? registered : await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,password})});
       await finishLogin(result.access_token);
       form.reset();
       $("#customerDialog").close();
