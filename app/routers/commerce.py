@@ -547,7 +547,8 @@ async def logged_customer_assistant(data: AssistantOptInMessage,
             customer_id=user.id, question=data.message, answer=result["reply"]
         ))
         db.commit()
-    return {"reply": result["reply"], "saved": bool(data.retain_history)}
+    return {"reply": result["reply"], "mode": result.get("mode", "ai"),
+            "saved": bool(data.retain_history)}
 
 
 @router.get("/assistant/history")
