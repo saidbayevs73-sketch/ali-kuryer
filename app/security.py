@@ -5,6 +5,8 @@ import hashlib
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.config import settings
+import os
+from fastapi import HTTPException
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
@@ -15,13 +17,31 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed_password: str) -> bool:
     return pwd_context.verify(password, hashed_password)
 
+def require_secure_jwt_key() -> None:
+    """Refuse signed tokens if production SECRET_KEY is missing or predictable.
+
+    This must be configured using a private Render secret, never source code.
+    Local/test SQLite remains usable for isolated automated tests.
+    """
+    deployed = settings.ENVIRONMENT.lower() == "production" or (
+        os.getenv("RENDER", "").lower() in {"1", "true", "yes"}
+    )
+    if deployed and len(settings.SECRET_KEY.encode("utf-8")) < 32:
+        raise HTTPException(
+            status_code=503,
+            detail="Serverning maxfiy xavfsizlik kaliti sozlanmagan."
+        )
+
+
 def create_access_token(data: dict, expires_minutes: int = 60 * 24):
+    require_secure_jwt_key()
     payload = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload.update({"exp": expire})
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 def decode_access_token(token: str):
+    require_secure_jwt_key()
     try:
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
