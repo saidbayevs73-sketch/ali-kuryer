@@ -37,6 +37,7 @@ fun AliCustomerWebsite() {
     val context = LocalContext.current
     val site = "https://ali-kuryer.onrender.com/"
     var loadError by remember { mutableStateOf(false) }
+    var canNavigateBack by remember { mutableStateOf(false) }
     var pendingGeo by remember {
         mutableStateOf<Pair<String, GeolocationPermissions.Callback>?>(null)
     }
@@ -80,6 +81,7 @@ fun AliCustomerWebsite() {
                 }
                 override fun onPageFinished(view: WebView, url: String) {
                     if (url.startsWith(site)) loadError = false
+                    canNavigateBack = view.canGoBack()
                 }
             }
             webChromeClient = object : WebChromeClient() {
@@ -119,7 +121,7 @@ fun AliCustomerWebsite() {
             webView.destroy()
         }
     }
-    BackHandler(enabled = webView.canGoBack()) {
+    BackHandler(enabled = canNavigateBack) {
         webView.goBack()
     }
     Box(Modifier.fillMaxSize()) {
