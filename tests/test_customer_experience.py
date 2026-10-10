@@ -7,6 +7,13 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ.pop("AI_API_KEY", None)
 os.environ.pop("GOOGLE_CLIENT_ID", None)
 
+import pytest
+
+@pytest.fixture(autouse=True)
+def allow_legacy_photo_regression_tests(monkeypatch):
+    # Historical photo-processing tests explicitly opt in to the old backend.
+    monkeypatch.setenv("ALI_ASSISTANT_PHOTO_ENABLED", "1")
+
 from fastapi.testclient import TestClient
 
 from main import app
@@ -348,3 +355,16 @@ def test_no_weight_cannot_guess_calories_from_photo_without_ai(monkeypatch):
     data = response.json()
     assert "calorie_source" not in data
     assert data["image_analyzed"] is False
+
+
+def test_public_muhammadali_photo_submission_disabled(monkeypatch):
+    monkeypatch.delenv("ALI_ASSISTANT_PHOTO_ENABLED", raising=False)
+    r = client.post("/api/assistant/chat", json={
+        "message": "Rasm yuboryapman", "image_base64": _test_food_photo_base64()
+    })
+    assert r.status_code == 422
+    assert "matnli" in r.json()["detail"]
+    page = client.get("/site-assets/customer.js").text
+    assert "aliPhotoInput" not in page
+    assert "image_base64" not in page
+    assert "📷 Rasm qo‘shish" not in page
