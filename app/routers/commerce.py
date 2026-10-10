@@ -166,6 +166,10 @@ def create_order(data: NewOrderIn, db: Session = Depends(get_db), user=Depends(m
         raise HTTPException(400, "Buyurtma va suhbatlar qayta ishlanishiga rozilik kerak")
     if not _PHONE.fullmatch(data.phone):
         raise HTTPException(422, "Telefon +998XXXXXXXXX shaklida bo‘lishi kerak")
+    if os.getenv("ENVIRONMENT", "").lower() == "production" or os.getenv("RENDER", "").lower() in {"true", "1", "yes"}:
+        proof = db.get(models.VerifiedPhone, data.phone)
+        if user.phone != data.phone or not proof or proof.user_id != user.id:
+            raise HTTPException(403, "Buyurtmadan avval telefoningizni SMS orqali tasdiqlang")
     if (data.latitude is None) != (data.longitude is None):
         raise HTTPException(422, "GPS kenglik va uzunlik birga berilishi kerak")
     if data.latitude is not None:
