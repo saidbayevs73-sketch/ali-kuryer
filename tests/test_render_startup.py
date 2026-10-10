@@ -319,3 +319,27 @@ def test_legacy_central_admin_verifier_checks_role_and_token(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", open_admin)
     assert verify_central_admin("admin", "strong-example-password") is True
     assert sent == [{"username": "admin", "password": "strong-example-password"}]
+
+
+def test_legacy_central_session_requires_live_admin_verification(monkeypatch):
+    from legacy_customer_api import install
+    import legacy_customer_api
+    monkeypatch.setenv("ALI_LEGACY_ADMIN_AUTH_MODE", "central")
+    test_session = {
+        "role": "admin", "id": 0, "expires": 9999999999,
+        "csrf": "dummy-csrf", "canonical_token": "x" * 40
+    }
+    class DummyHandler:
+        def do_GET(self): pass
+        def do_POST(self): pass
+        def end_headers(self): pass
+
+    scope = {"H": DummyHandler, "init_db": lambda: None,
+             "session": lambda handler, role: test_session,
+             "sessions": {"example-session": test_session}}
+    install(scope)
+    monkeypatch.setattr(legacy_customer_api, "central_admin_token_valid", lambda value: True)
+    assert scope["session"](None, "admin") is test_session
+    monkeypatch.setattr(legacy_customer_api, "central_admin_token_valid", lambda value: False)
+    assert scope["session"](None, "admin") is None
+    assert scope["sessions"] == {}
