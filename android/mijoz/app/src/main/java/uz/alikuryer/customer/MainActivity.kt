@@ -705,7 +705,7 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                                         Text("OSHXONA MENYUSI", color = Color(0xFFFF9EA8),
                                             fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         Spacer(Modifier.height(7.dp))
-                                        Text(selected?.name.orEmpty(), color = AliSurface,
+                                        Text(selected?.name.orEmpty(), color = Color.White,
                                             fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
                                         Spacer(Modifier.height(7.dp))
                                         Text(selected?.address.orEmpty(), color = Color.LightGray,

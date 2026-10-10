@@ -111,7 +111,7 @@ internal fun AliPromoHero(onExplore: () -> Unit) {
                     onClick = onExplore, shape = RoundedCornerShape(12.dp),
                     color = Color.White
                 ) {
-                    Text("Oshxonalarni ko‘rish  →", color = AliBlack,
+                    Text("Oshxonalarni ko‘rish  →", color = Color(0xFF17171B),
                         fontWeight = FontWeight.Bold, fontSize = 12.sp,
                         modifier = Modifier.padding(horizontal = 13.dp, vertical = 10.dp))
                 }
