@@ -271,6 +271,62 @@ def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
 
 
 
+def admin_alias(db: Session, user: models.User | None) -> str:
+    if user is None:
+        return "admin"
+    preference = db.get(models.AdminLoginPreference, user.id)
+    return preference.username if preference else "admin"
+
+
+class AdminUsernameUpdate(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_username: str = Field(min_length=4, max_length=32)
+
+
+@router.get("/admin/account")
+def get_admin_account(user: models.User = Depends(shared_get_current_user),
+                      db: Session = Depends(get_db)):
+    if user.role != "admin":
+        raise HTTPException(403, "Faqat admin")
+    return {"username": admin_alias(db, user), "role": "admin"}
+
+
+@router.post("/admin/change-username")
+def change_admin_username(data: AdminUsernameUpdate,
+                          user: models.User = Depends(shared_get_current_user),
+                          db: Session = Depends(get_db)):
+    import re
+    from sqlalchemy.exc import IntegrityError
+    if user.role != "admin":
+        raise HTTPException(403, "Faqat admin")
+    existing = db.get(models.User, user.id)
+    if not existing or not existing.is_active or not existing.password_hash or (
+            not security.verify_password(data.current_password, existing.password_hash)):
+        raise HTTPException(401, "Joriy admin paroli noto‘g‘ri")
+    alias = data.new_username.strip().lower()
+    if not re.fullmatch(r"[a-z][a-z0-9_.]{3,31}", alias):
+        raise HTTPException(422, "Login 4–32 ta lotin harfi, raqam, nuqta yoki _ dan iborat bo‘lsin")
+    if alias in {"root", "support", "operator", "restaurant", "courier",
+                 "customer", "api", "superuser", "administrator"}:
+        raise HTTPException(422, "Bu login band")
+    if db.get(models.UsernameIdentity, alias) is not None:
+        raise HTTPException(409, "Bu login boshqa foydalanuvchi tomonidan band qilingan")
+    current = db.get(models.AdminLoginPreference, user.id)
+    if current is None:
+        current = models.AdminLoginPreference(user_id=user.id, username=alias)
+        db.add(current)
+    else:
+        current.username = alias
+        from datetime import datetime
+        current.updated_at = datetime.utcnow()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Bu login band")
+    return {"username": alias, "message": "Admin login nomi o‘zgartirildi. Yangi login bilan kiring."}
+
+
 class AdminUsernameLogin(BaseModel):
     username: str = Field(min_length=1, max_length=32)
     password: str = Field(min_length=1, max_length=128)
@@ -282,13 +338,14 @@ def admin_username_login(data: AdminUsernameLogin,
     """Server-enforced admin role, fixed owner-facing alias; no phone field in app."""
     import os
     import re
-    if data.username.strip().lower() != "admin":
-        raise HTTPException(401, "Login yoki parol noto‘g‘ri")
+    requested_username = data.username.strip().lower()
     owner_phone = os.getenv("ADMIN_PHONE", "").strip()
     if not re.fullmatch(r"\+998[0-9]{9}", owner_phone):
         raise HTTPException(503, "Admin hisobi sozlanmagan. Render sozlamalarini tekshiring.")
     user = db.query(models.User).filter_by(phone=owner_phone).first()
-    if not user or user.role != "admin" or not user.is_active or not user.password_hash or (
+    # Account alias is bound to a *verified server-side admin*, not client input.
+    expected_alias = admin_alias(db, user) if user else "admin"
+    if not user or requested_username != expected_alias or user.role != "admin" or not user.is_active or not user.password_hash or (
             not security.verify_password(data.password, user.password_hash)):
         raise HTTPException(401, "Login yoki parol noto‘g‘ri")
     return {
