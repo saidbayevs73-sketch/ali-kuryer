@@ -1,4 +1,5 @@
 
+import os
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.admin_login_guard import owner_login_guard
 from sqlalchemy.orm import Session
@@ -66,6 +67,7 @@ def customer_auth_options():
 from app.admin_login_guard import AdminLoginThrottle
 
 customer_contact_guard = AdminLoginThrottle(max_failures=8, window_seconds=300)
+customer_signup_guard = AdminLoginThrottle(max_failures=5, window_seconds=3600)
 
 
 class ContactRegisterRequest(BaseModel):
@@ -105,6 +107,9 @@ def register_contact_customer(data: ContactRegisterRequest, request: Request,
     import os
     from sqlalchemy.exc import IntegrityError
     _require_contact_signup_ready()
+    peer = request.client.host if request.client else "unknown"
+    if customer_signup_guard.blocked(peer):
+        raise HTTPException(429, "Ro‘yxatdan o‘tish urinishlari ko‘p. Keyinroq qayta urinib ko‘ring.")
     if not data.accepted_privacy:
         raise HTTPException(422, "Maxfiylik shartlarini qabul qiling")
     if len(data.password.encode("utf-8")) > 72:
@@ -124,6 +129,7 @@ def register_contact_customer(data: ContactRegisterRequest, request: Request,
     except IntegrityError:
         db.rollback()
         raise HTTPException(409, "Ro‘yxatdan o‘tish amalga oshmadi. Qayta urinib ko‘ring")
+    customer_signup_guard.fail(peer)  # successful account creation also counts toward quota
     return {
         "access_token": security.create_access_token(
             {"sub": str(user.id), "role": "customer"}),
@@ -143,7 +149,7 @@ def login_contact_customer(data: ContactLoginRequest, request: Request,
     if customer_contact_guard.blocked(peer):
         raise HTTPException(429, "Ko‘p noto‘g‘ri urinish. 5 daqiqadan keyin urinib ko‘ring.",
                             headers={"Retry-After": "300"})
-    matches = db.query(models.UnverifiedCustomerContact).filter_by(phone=data.phone).limit(30).all()
+    matches = db.query(models.UnverifiedCustomerContact).filter_by(phone=data.phone).limit(10).all()
     authenticated = []
     for contact in matches:
         user = db.get(models.User, contact.user_id)
