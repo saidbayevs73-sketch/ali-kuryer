@@ -380,6 +380,8 @@ async def assistant_chat(data: AssistantChatIn):
             "mode": "operator", "action": "open_operator",
             "operator_url": _operator_url(),
         }
+    if data.image_base64 and os.getenv("ALI_ASSISTANT_PHOTO_ENABLED") != "1":
+        raise HTTPException(422, "Muhammadali hozir faqat matnli savollarni qabul qiladi.")
     image_url = _prepare_food_image(data.image_base64) if data.image_base64 else None
     if image_url is None:
         estimate = _typed_portion_calories(data.message)
