@@ -19,6 +19,36 @@ ALLOWED_ORIGINS = {
 }
 
 
+def verify_central_admin(username, password):
+    """Verify legacy-admin credentials against the canonical FastAPI server.
+
+    Controlled rollout only: fail closed on timeout/error and never fall back
+    to the older independently configured legacy password in central mode.
+    No bearer token, password, or server response is logged or persisted.
+    """
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
+    if username != "admin" or not password:
+        return False
+    # Do not turn an environment mistake into a credential leak to another host.
+    base = os.getenv("ALI_CANONICAL_AUTH_ORIGIN", "https://ali-kuryer.onrender.com").rstrip("/")
+    if base != "https://ali-kuryer.onrender.com":
+        return False
+    payload = json.dumps({"username": username, "password": password}).encode("utf-8")
+    request = Request(
+        base + "/api/auth/admin/login", data=payload, method="POST",
+        headers={"Content-Type": "application/json", "Accept": "application/json"}
+    )
+    try:
+        with urlopen(request, timeout=8) as response:
+            if response.status != 200:
+                return False
+            result = json.loads(response.read(4096))
+        return isinstance(result, dict) and result.get("role") == "admin" and bool(result.get("access_token"))
+    except (URLError, OSError, ValueError, TypeError):
+        return False
+
+
 def install(legacy):
     """Patch the existing handler without replacing orders, users or passwords."""
     Handler = legacy['H']
@@ -228,6 +258,39 @@ def install(legacy):
             return
         if staff_blocked(self):
             self.out('Topilmadi', 404)
+            return
+        if path == "/admin/login" and os.getenv("ALI_LEGACY_ADMIN_AUTH_MODE") == "central":
+            # Opt-in compatibility for the old admin web panel. The source of
+            # truth is the API admin account, never a second legacy password.
+            size = int(self.headers.get("Content-Length", "0"))
+            if not 1 <= size <= 4096:
+                self.out("So‘rov hajmi noto‘g‘ri", 413)
+                return
+            params = parse_qs(self.rfile.read(size).decode("utf-8"), keep_blank_values=True)
+            username = params.get("login", [""])[0].strip()
+            password = params.get("password", [""])[0]
+            attempts = legacy["login_attempts"]
+            key = (self.client_address[0], "admin", username)
+            count, last = attempts.get(key, (0, 0))
+            now = legacy["time"].time()
+            if count >= 10 and now - last < 300:
+                self.out(legacy["login_page"]("admin", "Ko‘p urinish. 5 daqiqadan keyin urinib ko‘ring."), 429)
+                return
+            if not verify_central_admin(username, password):
+                attempts[key] = (count + 1, now)
+                self.out(legacy["login_page"]("admin", "Login yoki parol noto‘g‘ri."), 401)
+                return
+            attempts.pop(key, None)
+            token = secrets.token_urlsafe(32)
+            ttl = legacy["SESSION_TTL"]
+            legacy["sessions"][token] = {
+                "role": "admin", "id": 0,
+                "expires": now + ttl, "csrf": secrets.token_urlsafe(32)
+            }
+            cookie = "ak_admin=" + token + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + str(ttl)
+            if os.getenv("COOKIE_SECURE") == "1":
+                cookie += "; Secure"
+            self.red("/admin", cookie)
             return
         if path in {'/api/order-quote', '/api/customer-orders/lookup'}:
             origin = self.headers.get('Origin', '')
