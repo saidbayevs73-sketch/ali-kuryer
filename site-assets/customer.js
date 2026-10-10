@@ -139,6 +139,8 @@
           <p id="aliSmsAvailability" class="muted" role="status" aria-live="polite">
             SMS xizmati tekshirilmoqda. Tasdiqlash ishlamasa kod yuborilgan deb hisoblamang.
           </p>
+          <p class="muted" style="margin:6px 0"><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot"
+            target="_blank" rel="noopener noreferrer">Ro‘yxatdan o‘tishda yordam: operatorga yozish ↗</a></p>
           <button type="button" id="authSmsSend" class="btn btn-black" disabled>📩 SMS-kod olish</button>
           <label>SMS tasdiqlash kodi<input name="otp_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000"></label>
           <p class="muted">SMS kodi kelmasa, 60 soniyadan keyin qayta so‘rang.</p>
