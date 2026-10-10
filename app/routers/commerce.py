@@ -533,6 +533,7 @@ def get_menu_photo(item_id: int, db: Session = Depends(get_db)):
 class AssistantOptInMessage(BaseModel):
     message: str = Field(min_length=2, max_length=600)
     retain_history: bool = False
+    image_base64: str | None = Field(default=None, max_length=6_000_000)
 
 
 @router.post("/assistant/chat")
@@ -540,7 +541,9 @@ async def logged_customer_assistant(data: AssistantOptInMessage,
                                     db: Session = Depends(get_db), user=Depends(me)):
     role(user, "customer")
     from app.routers.customer_experience import AssistantChatIn, assistant_chat
-    result = await assistant_chat(AssistantChatIn(message=data.message))
+    result = await assistant_chat(AssistantChatIn(
+        message=data.message, image_base64=data.image_base64
+    ))
     # Retain only with informed, explicit user opt-in.
     if data.retain_history:
         db.add(models.AssistantConversationLog(
@@ -548,6 +551,9 @@ async def logged_customer_assistant(data: AssistantOptInMessage,
         ))
         db.commit()
     return {"reply": result["reply"], "mode": result.get("mode", "ai"),
+            "image_analyzed": bool(result.get("image_analyzed", False)),
+            "action": result.get("action"),
+            "operator_url": result.get("operator_url"),
             "saved": bool(data.retain_history)}
 
 
