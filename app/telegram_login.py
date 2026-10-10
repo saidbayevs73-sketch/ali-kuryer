@@ -10,6 +10,7 @@ import re
 import secrets
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
+from typing import Literal
 
 import requests
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -28,6 +29,8 @@ TOKEN_URL = "https://oauth.telegram.org/token"
 JWKS_URL = "https://oauth.telegram.org/.well-known/jwks.json"
 CALLBACK_URL = "https://ali-kuryer.onrender.com/api/auth/telegram/callback"
 MOBILE_CALLBACK = "alikuryer://telegram-login"
+# Browser callback ticket stays in the URL fragment (not sent in subsequent HTTP requests).
+WEB_CALLBACK = "https://ali-kuryer.onrender.com/#ali-telegram-ticket="
 MAX_AGE = timedelta(minutes=6)
 APP_SECRET_RE = re.compile(r"^[A-Za-z0-9_-]{43}$")
 UZ_PHONE_RE = re.compile(r"^\+998[0-9]{9}$")
@@ -85,6 +88,7 @@ def b64(value: bytes) -> str:
 
 class TelegramStart(BaseModel):
     device_secret: str = Field(min_length=43, max_length=43)
+    channel: Literal["app", "web"] = "app"
 
 
 class TelegramFinish(BaseModel):
@@ -98,6 +102,8 @@ def start_telegram_login(data: TelegramStart, db: Session = Depends(get_db)):
     if not APP_SECRET_RE.fullmatch(data.device_secret):
         raise HTTPException(422, "Ilova tasdiqlash kaliti noto‘g‘ri")
     state, nonce = secrets.token_urlsafe(32), secrets.token_urlsafe(32)
+    if data.channel == "web":
+        state = "web_" + state
     verifier = secrets.token_urlsafe(48)
     attempt = models.TelegramLoginAttempt(
         state=state,
@@ -227,7 +233,9 @@ def telegram_callback(
         attempt.ticket_hash = digest(ticket)
         attempt.status = "approved"
         db.commit()
-        redirect = MOBILE_CALLBACK + "?" + urlencode({"ticket": ticket})
+        redirect = (WEB_CALLBACK + ticket) if state.startswith("web_") else (
+            MOBILE_CALLBACK + "?" + urlencode({"ticket": ticket})
+        )
         return RedirectResponse(redirect, status_code=303, headers={
             "Cache-Control": "no-store", "Referrer-Policy": "no-referrer"
         })
