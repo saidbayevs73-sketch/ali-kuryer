@@ -21,7 +21,7 @@ jobs:
       - name: Verify Python syntax
         run: python -m compileall -q main.py app legacy_customer_api.py ali_kuryer.py scripts/migrate_legacy_to_postgres.py
       - name: Test application boot and health
-        run: python -m pytest -q tests/test_render_startup.py tests/test_customer_experience.py tests/test_legacy_migration.py tests/test_sms_otp.py tests/test_admin_login_guard.py tests/test_admin_readiness.py tests/test_firebase_phone_auth.py tests/test_telegram_login.py
+        run: python -m pytest -q tests/test_render_startup.py tests/test_customer_experience.py tests/test_legacy_migration.py tests/test_sms_otp.py tests/test_sms_free_signup.py tests/test_admin_login_guard.py tests/test_admin_readiness.py tests/test_firebase_phone_auth.py tests/test_telegram_login.py
       - name: Verify customer JavaScript syntax
         run: node --check site-assets/customer.js
       - name: Verify Super Admin JavaScript syntax
