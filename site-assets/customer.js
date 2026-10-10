@@ -368,8 +368,64 @@
     links.innerHTML='<a href="/legal/offer.html">Ommaviy oferta</a><a href="/legal/privacy.html">Maxfiylik siyosati</a><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot" target="_blank" rel="noopener noreferrer">Yordamchi bot</a><a href="#hamkorlik">Hamkorlik</a>';
     footer.appendChild(links);
   }
+
+  // Match the five main Android customer tabs on narrow screens.
+  function buildMobileNavigation() {
+    const dock = el("nav", "ali-mobile-nav");
+    dock.setAttribute("aria-label", "Mijoz uchun bosh menyu");
+    const tabs = [
+      {name:"Asosiy", icon:"⌂", action:()=>window.scrollTo({top:0,behavior:"smooth"})},
+      {name:"Qidiruv", icon:"⌕", action:()=>{const s=$("#search");s?.scrollIntoView({behavior:"smooth",block:"center"});s?.focus({preventScroll:true})}},
+      {name:"Buyurtmalar", icon:"▤", action:openCustomerOrders},
+      {name:"Savat", icon:"▣", action:()=>window.openCart?.()},
+      {name:"Profil", icon:"◯", action:showLogin},
+    ];
+    for(const [index,tab] of tabs.entries()){
+      const btn=el("button","",tab.name);
+      btn.type="button";
+      btn.replaceChildren(el("span","ali-nav-icon",tab.icon),el("span","",tab.name));
+      btn.setAttribute("aria-label",tab.name);
+      if(index===0)btn.setAttribute("aria-current","page");
+      btn.addEventListener("click",()=>{
+        for(const other of dock.querySelectorAll("button"))other.removeAttribute("aria-current");
+        btn.setAttribute("aria-current","page");
+        tab.action();
+      });
+      dock.appendChild(btn);
+    }
+    document.body.appendChild(dock);
+    const orderDialog=el("dialog","customer-dialog");
+    orderDialog.id="aliOrderDialog";
+    orderDialog.innerHTML='<button type="button" class="auth-close" aria-label="Yopish">×</button><h2>Buyurtmalarim</h2><p>Buyurtmalar va ularning holatini shu yerda ko‘rishingiz mumkin.</p><div id="aliOrderList" role="status" aria-live="polite"></div>';
+    document.body.appendChild(orderDialog);
+    $(".auth-close",orderDialog).addEventListener("click",()=>orderDialog.close());
+  }
+  async function openCustomerOrders() {
+    if(!me){showLogin();return}
+    const dialog=$("#aliOrderDialog"),box=$("#aliOrderList");
+    if(!dialog||!box)return;
+    box.replaceChildren(el("p","muted","Buyurtmalar yuklanmoqda…"));
+    dialog.showModal();
+    try{
+      const token=sessionStorage.getItem("ali_customer_token");
+      const orders=await api("/api/v1/orders/my",{headers:{"Authorization":"Bearer "+token}});
+      box.replaceChildren();
+      if(!orders.length){box.appendChild(el("p","muted","Hozircha buyurtmalaringiz yo‘q."));return}
+      for(const order of orders){
+        const item=el("article","ali-order-preview");
+        item.appendChild(el("strong","","Buyurtma №"+order.id));
+        item.appendChild(el("p","muted","Holati: "+String(order.status||"Noma’lum")));
+        item.appendChild(el("b","",Number(order.total||0).toLocaleString("uz-UZ")+" so‘m"));
+        box.appendChild(item);
+      }
+    }catch(e){
+      box.replaceChildren(el("p","status",humanError(e)));
+    }
+  }
+
   buildPartners();
   buildLogin();
+  buildMobileNavigation();
   buildAssistant();
   buildLegalLinks();
   loadConfig();
