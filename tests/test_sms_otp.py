@@ -308,3 +308,44 @@ def test_customer_token_cannot_change_admin_password(monkeypatch):
        json={"current_password":"CustomerStrongPassword99!",
              "new_password":"NewStrongAdminPassword456!"})
     assert r.status_code == 403
+
+
+def test_admin_phone_login_cannot_bypass_owner_rate_limit(monkeypatch):
+    from app import auth, security
+    from app.admin_login_guard import AdminLoginThrottle
+
+    phone = "+998901290799"
+    strong_password = "Valid-Strong-Owner-Password2026!"
+    guard = AdminLoginThrottle(max_failures=2, window_seconds=300)
+    monkeypatch.setattr(auth, "owner_login_guard", guard)
+    monkeypatch.setenv("ADMIN_PHONE", phone)
+    with SessionLocal() as db:
+        assert db.query(models.User).filter_by(phone=phone).first() is None
+        db.add(models.User(
+            name="Isolated owner rate test", phone=phone, role="admin",
+            is_active=True, password_hash=security.hash_password(strong_password)
+        ))
+        db.commit()
+    try:
+        first = client.post("/api/auth/admin/login", json={
+            "username": "admin", "password": "bad-attempt-one"
+        })
+        second = client.post("/api/auth/login", json={
+            "phone": phone, "password": "bad-attempt-two"
+        })
+        assert first.status_code == second.status_code == 401
+        locked = client.post("/api/auth/admin/login", json={
+            "username": "admin", "password": strong_password
+        })
+        assert locked.status_code == 429
+        assert locked.headers.get("retry-after") == "300"
+        guard.success(next(iter(guard._attempts)))
+        allowed = client.post("/api/auth/admin/login", json={
+            "username": "admin", "password": strong_password
+        })
+        assert allowed.status_code == 200, allowed.text
+        assert allowed.json()["role"] == "admin"
+    finally:
+        with SessionLocal() as db:
+            db.query(models.User).filter_by(phone=phone).delete()
+            db.commit()
