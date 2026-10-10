@@ -19,7 +19,7 @@ import app.models  # Register SQLAlchemy tables before create_all
 
 from app.bootstrap import ensure_admin
 from app.config import settings
-from app import auth
+from app import auth, telegram_login
 from app.routers import support_bot
 from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
 
@@ -67,6 +67,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(auth.router)
+app.include_router(telegram_login.router)
 app.include_router(customer_experience.router)
 app.include_router(customer.router)
 app.include_router(panels.router)
