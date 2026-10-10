@@ -47,6 +47,7 @@ def customer_auth_options():
     return {
         "password_login": True,  # existing phone/password users
         "username_signup": _username_signup_ready(),
+        "contact_signup": _contact_signup_ready(),
         "sms_registration": sms_available,
         "sms_verification": sms_available,
         "telegram_login": telegram_available,
@@ -60,6 +61,104 @@ def customer_auth_options():
         ),
     }
 
+
+
+from app.admin_login_guard import AdminLoginThrottle
+
+customer_contact_guard = AdminLoginThrottle(max_failures=8, window_seconds=300)
+
+
+class ContactRegisterRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=100)
+    phone: str = Field(min_length=13, max_length=13, pattern=r"^\+998[0-9]{9}$")
+    password: str = Field(min_length=10, max_length=72)
+    accepted_privacy: bool
+
+
+class ContactLoginRequest(BaseModel):
+    phone: str = Field(min_length=13, max_length=13, pattern=r"^\+998[0-9]{9}$")
+    password: str = Field(min_length=1, max_length=72)
+
+
+def _contact_signup_ready() -> bool:
+    from app.database import DATABASE_URL
+    production = os.getenv("RENDER", "").lower() in {"true", "1", "yes"} or (
+        os.getenv("ENVIRONMENT", "").lower() == "production")
+    return (
+        os.getenv("ALI_CONTACT_SIGNUP_ENABLED") == "1"
+        and (not production or DATABASE_URL.startswith("postgresql"))
+        and bool(os.getenv("SECRET_KEY", "") or not production)
+    )
+
+
+def _require_contact_signup_ready() -> None:
+    if not _contact_signup_ready():
+        raise HTTPException(
+            503, "SMSsiz ro‘yxatdan o‘tish doimiy baza va xavfsizlik "
+                 "sozlamalari tayyor bo‘lgach ishga tushadi.")
+
+
+@router.post("/contact/register", status_code=201)
+def register_contact_customer(data: ContactRegisterRequest, request: Request,
+                              db: Session = Depends(get_db)):
+    """No SMS, no false verification and no unverified phone ownership claim."""
+    import os
+    from sqlalchemy.exc import IntegrityError
+    _require_contact_signup_ready()
+    if not data.accepted_privacy:
+        raise HTTPException(422, "Maxfiylik shartlarini qabul qiling")
+    if len(data.password.encode("utf-8")) > 72:
+        raise HTTPException(422, "Parol 72 baytdan oshmasin")
+    # No account is linked to an existing verified customer by phone alone.
+    # User.phone remains NULL; verified identities keep their own ownership.
+    user = models.User(
+        name=data.name.strip(), phone=None, role="customer",
+        password_hash=security.hash_password(data.password), is_active=True
+    )
+    db.add(user)
+    try:
+        db.flush()
+        db.add(models.UnverifiedCustomerContact(user_id=user.id, phone=data.phone))
+        db.commit()
+        db.refresh(user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Ro‘yxatdan o‘tish amalga oshmadi. Qayta urinib ko‘ring")
+    return {
+        "access_token": security.create_access_token(
+            {"sub": str(user.id), "role": "customer"}),
+        "token_type": "bearer",
+        "role": "customer",
+        "phone_verified": False,
+        "message": "Kabinet yaratildi. Telefon faqat aloqa uchun, tasdiqlanmagan."
+    }
+
+
+@router.post("/contact/login")
+def login_contact_customer(data: ContactLoginRequest, request: Request,
+                           db: Session = Depends(get_db)):
+    """Phone + password for contact-only accounts; no proof of phone ownership."""
+    _require_contact_signup_ready()
+    peer = request.client.host if request.client else "unknown"
+    if customer_contact_guard.blocked(peer):
+        raise HTTPException(429, "Ko‘p noto‘g‘ri urinish. 5 daqiqadan keyin urinib ko‘ring.",
+                            headers={"Retry-After": "300"})
+    matches = db.query(models.UnverifiedCustomerContact).filter_by(phone=data.phone).limit(30).all()
+    authenticated = []
+    for contact in matches:
+        user = db.get(models.User, contact.user_id)
+        if user and user.role == "customer" and user.is_active and user.password_hash:
+            if security.verify_password(data.password, user.password_hash):
+                authenticated.append(user)
+    if len(authenticated) != 1:
+        customer_contact_guard.fail(peer)
+        raise HTTPException(401, "Telefon yoki parol noto‘g‘ri")
+    customer_contact_guard.success(peer)
+    user = authenticated[0]
+    return {
+        "access_token": security.create_access_token({"sub": str(user.id), "role": "customer"}),
+        "role": "customer", "token_type": "bearer", "phone_verified": False
+    }
 
 
 class UsernameRegisterRequest(BaseModel):
