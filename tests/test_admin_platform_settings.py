@@ -92,3 +92,15 @@ def test_refuse_secret_like_keys_and_external_telegram():
     payload["contacts"]["telegram_url"] = "https://t.me/AliKuryerYordamBot"
     payload["providers"]["click"]["api_secret"] = "should-not-save"
     assert client.put("/api/admin/platform-config", json=payload, headers=admin).status_code == 422
+
+
+def test_legacy_site_cors_origin_is_allowlisted():
+    response = client.options(
+        "/api/public/platform-config",
+        headers={
+            "Origin": "https://ali-kuryer-1.onrender.com",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "https://ali-kuryer-1.onrender.com"

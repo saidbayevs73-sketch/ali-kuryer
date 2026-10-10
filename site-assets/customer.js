@@ -135,6 +135,12 @@
         <div id="registerNameWrap" hidden><label>Ism va familiya<input name="name" autocomplete="name" minlength="2" maxlength="100"></label></div>
         <label>Telefon raqam<input name="phone" type="tel" required placeholder="+998901234567" autocomplete="tel"></label>
         <label>Parol<input name="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password"></label>
+        <div id="authOtpWrap" hidden>
+          <p class="muted">Telefoningizga 6 xonali SMS kodi yuboriladi. Kod 5 daqiqa amal qiladi.</p>
+          <button type="button" id="authSmsSend" class="btn btn-black">📩 SMS-kod olish</button>
+          <label>SMS tasdiqlash kodi<input name="otp_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000"></label>
+          <p class="muted">SMS kodi kelmasa, 60 soniyadan keyin qayta so‘rang.</p>
+        </div>
         <label class="checkline" id="authConsent" hidden><input type="checkbox" name="consent"> <span><a href="/legal/privacy.html" target="_blank" rel="noopener">Maxfiylik shartlari</a> bilan tanishdim.</span></label>
         <button type="submit" class="auth-submit">Kirish</button>
         <p class="status" role="status" aria-live="polite"></p>
@@ -147,11 +153,14 @@
     $(".auth-close",d).addEventListener("click",()=>d.close());
     for(const button of d.querySelectorAll("[data-auth]")) button.addEventListener("click",()=>setAuthMode(button.dataset.auth==="register"));
     $("#customerAuthForm").addEventListener("submit", submitAuth);
+    $("#authSmsSend").addEventListener("click", requestRegisterSms);
   }
   function setAuthMode(register) {
     state.register = register;
     $("#registerNameWrap").hidden = !register;
     $("#authConsent").hidden = !register;
+    $("#authOtpWrap").hidden = !register;
+    $("#customerAuthForm [name=otp_code]").required = register;
     $("#customerAuthForm [name=name]").required = register;
     $("#customerAuthForm [name=consent]").required = register;
     $("#customerAuthForm [name=password]").autocomplete = register?"new-password":"current-password";
@@ -174,6 +183,50 @@
       const logout=el("button","auth-submit","Chiqish");
       logout.type="button";
       logout.addEventListener("click",()=>{sessionStorage.removeItem("ali_customer_token");me=null;$("#customerLoginBtn").textContent="👤 Kirish";d.close();});
+      // Previously registered accounts and Google users can verify ownership.
+      const verification=el("div","customer-sms-verify");
+      const vStatus=el("p","status","Telefon tasdiqlanishini tekshiramiz...");
+      const vPhone=document.createElement("input");
+      vPhone.type="tel";vPhone.placeholder="+998901234567";vPhone.value=me.phone||"";
+      vPhone.setAttribute("aria-label","Tasdiqlanadigan telefon");
+      const vCode=document.createElement("input");
+      vCode.inputMode="numeric";vCode.maxLength=6;
+      vCode.autocomplete="one-time-code";
+      vCode.placeholder="6 xonali SMS kodi";
+      vCode.setAttribute("aria-label","SMS tasdiqlash kodi");
+      const send=el("button","btn btn-black","SMS-kod olish");send.type="button";
+      const confirm=el("button","btn btn-black","Raqamni tasdiqlash");confirm.type="button";
+      const h={"Authorization":"Bearer "+sessionStorage.getItem("ali_customer_token")};
+      function verifiedScreen() {verification.replaceChildren(el("p","","✅ Telefoningiz SMS orqali tasdiqlangan."));}
+      verification.append(vStatus,vPhone,send,vCode,confirm);
+      profile.appendChild(verification);
+      api("/api/auth/phone/status",{headers:h}).then(data=>{
+        if(data.verified) verifiedScreen();
+        else vStatus.textContent="⚠ Telefon raqamini SMS orqali tasdiqlang.";
+      }).catch(()=>{vStatus.textContent="Telefon holatini tekshirib bo‘lmadi."});
+      send.onclick=async()=>{
+        send.disabled=true;
+        try {
+          await api("/api/auth/phone/request",{
+            method:"POST",headers:{"Content-Type":"application/json",...h},
+            body:JSON.stringify({phone:vPhone.value.trim()})
+          });
+          vStatus.textContent="SMS so‘raldi. Kodni kiriting.";
+        }catch(e){vStatus.textContent=humanError(e)}
+        finally{send.disabled=false}
+      };
+      confirm.onclick=async()=>{
+        confirm.disabled=true;
+        try{
+          await api("/api/auth/phone/confirm",{
+            method:"POST",headers:{"Content-Type":"application/json",...h},
+            body:JSON.stringify({phone:vPhone.value.trim(),otp_code:vCode.value.trim()})
+          });
+          me.phone=vPhone.value.trim();
+          verifiedScreen();
+        }catch(e){vStatus.textContent=humanError(e)}
+        finally{confirm.disabled=false}
+      };
       const payInfo=el("div","ali-profile-payment");
       const payTitle=el("h3","","To‘lov usullari");
       const cardNote=el("p","","Naqd to‘lov mavjud. Click, Payme va karta qo‘shish bank integratsiyasi tasdiqlangach ishga tushadi.");
@@ -185,7 +238,7 @@
       profile.appendChild(supportInfo);
       api("/api/public/platform-config").then(details=>{
         const c=details.contacts||{};
-        supportInfo.textContent=["Aloqa:",c.support_phone,c.support_email,c.office_address].filter(Boolean).join(" ");
+        supportInfo.textContent=[c.support_phone,c.support_email,c.office_address].filter(Boolean).join(" · ")||"Operator ma’lumotlari hozircha kiritilmagan.";
         if(c.telegram_url&&/^https:\/\/t\.me\/[A-Za-z0-9_]+\/?$/.test(c.telegram_url)){
           const a=el("a","","💬 Operatorga Telegram orqali yozish");
           a.href=c.telegram_url;a.target="_blank";a.rel="noopener noreferrer";
@@ -203,6 +256,30 @@
     }
     d.showModal();
   }
+  async function requestRegisterSms() {
+    const input=$("#customerAuthForm [name=phone]");
+    const phone=String(input?.value||"").replace(/[\s-]/g,"");
+    const message=$("#customerAuthForm .status");
+    if(!/^\+998\d{9}$/.test(phone)){
+      message.textContent="Telefonni +998901234567 shaklida kiriting.";
+      return;
+    }
+    const button=$("#authSmsSend");
+    button.disabled=true;
+    message.textContent="SMS so‘ralmoqda...";
+    try {
+      await api("/api/auth/otp/request",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({phone})
+      });
+      message.textContent="SMS kodini tekshiring. 5 daqiqa ichida kiriting.";
+    } catch(err) {
+      message.textContent=humanError(err);
+    } finally {
+      button.disabled=false;
+    }
+  }
+
   async function submitAuth(event) {
     event.preventDefault();
     const form=event.currentTarget;
@@ -216,7 +293,8 @@
     try {
       if (state.register) {
         await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-          name:String(fd.get("name")||"").trim(),phone,password
+          name:String(fd.get("name")||"").trim(),phone,password,
+          otp_code:String(fd.get("otp_code")||"").trim()
         })});
       }
       const result=await api("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({phone,password})});
