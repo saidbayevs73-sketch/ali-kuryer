@@ -101,8 +101,26 @@ object AliApi {
         }
     }
 
-    suspend fun register(name: String, phone: String, password: String) {
-        val body = JSONObject().put("name", name).put("phone", phone).put("password", password)
+    suspend fun requestRegistrationCode(phone: String) {
+        request("POST", "/api/auth/otp/request", JSONObject().put("phone", phone))
+    }
+
+    suspend fun requestExistingPhoneCode(token: String, phone: String) {
+        request("POST", "/api/auth/phone/request", JSONObject().put("phone", phone), token)
+    }
+
+    suspend fun confirmExistingPhone(token: String, phone: String, code: String) {
+        request("POST", "/api/auth/phone/confirm",
+            JSONObject().put("phone", phone).put("otp_code", code), token)
+    }
+
+    suspend fun isPhoneVerified(token: String): Boolean =
+        JSONObject(request("GET", "/api/auth/phone/status", token = token))
+            .optBoolean("verified", false)
+
+    suspend fun register(name: String, phone: String, password: String, otpCode: String) {
+        val body = JSONObject().put("name", name).put("phone", phone)
+            .put("password", password).put("otp_code", otpCode)
         request("POST", "/api/auth/register", body)
     }
 
