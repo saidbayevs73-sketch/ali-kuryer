@@ -21,7 +21,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth
 from app.routers import support_bot
-from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
+from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce, platform_settings
 
 ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
@@ -73,6 +73,7 @@ app.include_router(panels.router)
 app.include_router(restaurant.router)
 app.include_router(orders.router)
 app.include_router(commerce.router)
+app.include_router(platform_settings.router)
 app.include_router(admin.router)
 app.include_router(courier.router)
 app.include_router(support_bot.router)
@@ -99,6 +100,20 @@ def _panel(request: Request):
     if templates is None or not (TEMPLATE_DIR / "panel.html").is_file():
         raise HTTPException(status_code=404, detail="Panel hozircha mavjud emas")
     return templates.TemplateResponse(request=request, name="panel.html")
+
+
+@app.get("/admin/settings", include_in_schema=False)
+def admin_settings_page():
+    # This is a private, opt-in staff feature. The HTML does not contain
+    # account secrets; every API call independently checks admin RBAC.
+    from app.database import DATABASE_URL
+    if (os.getenv("ENABLE_STAFF_WEB_PANELS", "0") != "1"
+            or not DATABASE_URL.startswith("postgresql")):
+        raise HTTPException(status_code=404, detail="Topilmadi")
+    page = TEMPLATE_DIR / "admin-settings.html"
+    if not page.is_file():
+        raise HTTPException(status_code=404, detail="Topilmadi")
+    return FileResponse(str(page), media_type="text/html")
 
 
 @app.get("/admin", include_in_schema=False)

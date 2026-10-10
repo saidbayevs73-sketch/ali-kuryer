@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ali Kuryer — Admin sozlamalari</title>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#18181b;background:#f5f6f8}*{box-sizing:border-box}
+body{margin:0}header{background:#111;color:white;padding:22px 5%;font-size:22px;font-weight:750}
+header b{color:#ec1428}main{max-width:920px;margin:20px auto;padding:0 16px}
+section{background:#fff;padding:23px;border-radius:18px;border:1px solid #ebebef;margin-bottom:16px}
+label{display:block;font-weight:600;font-size:14px;margin:10px 0 5px}
+input{width:100%;padding:12px;border-radius:9px;border:1px solid #c9cbd1;font:inherit;margin-top:6px}
+input[type=checkbox]{width:auto;margin-right:8px}
+button{padding:12px 18px;background:#d9001a;color:white;border:0;border-radius:9px;cursor:pointer;font:inherit;font-weight:650}
+button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#202127}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.muted{font-size:13px;color:#626572}
+.provider{border:1px solid #e8e8ee;border-radius:11px;padding:14px;margin:14px 0}
+.warn{background:#fff4e5;padding:13px;border-radius:10px;color:#6c4116}
+#app{display:none}table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;border-bottom:1px solid #e8e9ef;padding:9px;overflow-wrap:anywhere}
+@media(max-width:640px){.grid{grid-template-columns:1fr}section{padding:16px}table{font-size:12px}}
+</style>
+</head>
+<body><header><b>Ali</b> Kuryer — ichki boshqaruv</header>
+<main>
+<section id="login">
+<h2>Administrator sifatida kirish</h2>
+<p class="muted">Bu sahifa faqat ruxsat berilgan admin uchun. Kirish ma'lumotlari umumiy saytda ko‘rsatilmaydi.</p>
+<form id="login-form">
+<label>Telefon <input id="phone" type="tel" placeholder="+998901234567" autocomplete="username" required></label>
+<label>Parol <input id="password" type="password" autocomplete="current-password" required></label>
+<button>Kirish</button>
+</form><p id="login-msg" role="alert"></p>
+</section>
+<div id="app">
+<section><h2>Aloqa ma'lumotlari</h2>
+<form id="settings-form">
+<div class="grid">
+<label>Operator telefoni<input id="support_phone" placeholder="+998901234567" maxlength="20"></label>
+<label>Operator emaili<input id="support_email" type="email" maxlength="120"></label>
+<label>Telegram manzili<input id="telegram_url" placeholder="https://t.me/AliKuryerYordamBot" maxlength="150"></label>
+<label>Ofis manzili<input id="office_address" maxlength="200"></label>
+</div>
+<h2>To‘lov tizimlari</h2>
+<p class="warn">Shartnomadan keyin Click, Payme va bank bo‘yicha merchant identifikatorini kiriting. Maxfiy kalit, parol, karta raqami va CVV kiritmang. Bu sozlamalar haqiqiy onlayn to‘lovni faollashtirmaydi — provayder integratsiyasi va testlar talab qilinadi.</p>
+<div id="providers"></div>
+<button id="save">Sozlamalarni saqlash</button>
+<p id="save-msg" role="status"></p>
+</form></section>
+<section><h2>Ro‘yxatdan o‘tgan mijozlar</h2>
+<p class="muted">Faqat admin ko‘radi. Anonim mehmonlar bu ro‘yxatga kirmaydi. Telefon va shaxsiy ma’lumotlarni hech kimga yubormang.</p>
+<p id="customer-total"></p><div style="overflow:auto"><table>
+<thead><tr><th>ID</th><th>Ism</th><th>Telefon</th><th>Ro‘yxat sanasi</th></tr></thead>
+<tbody id="customers"></tbody></table></div>
+<button id="load-more" class="secondary" type="button">Keyingi 50 ta</button>
+<p id="customers-msg" role="status"></p></section>
+<button id="logout" class="secondary" type="button">Tizimdan chiqish</button>
+</div>
+</main>
+<script>
+"use strict";
+let token="",offset=0,total=0;
+const names={click:"Click",payme:"Payme",bank_card:"Bank kartasi"};
+const byId=id=>document.getElementById(id);
+async function api(path,method="GET",data) {
+  const headers={"Authorization":"Bearer "+token};
+  if(data)headers["Content-Type"]="application/json";
+  const response=await fetch(path,{method,headers,body:data?JSON.stringify(data):undefined,cache:"no-store"});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(typeof result.detail==="string"?result.detail:"Server xatosi: "+response.status);
+  return result;
+}
+const make=(type,txt)=>{const n=document.createElement(type);n.textContent=txt||"";return n};
+function showProviders(providerValues){
+  const root=byId("providers");root.replaceChildren();
+  for(const [key,title] of Object.entries(names)){
+    const box=make("div");box.className="provider";box.dataset.provider=key;
+    box.append(make("h3",title));
+    const label=make("label","Merchant nomi (ommaviy)");const display=make("input");
+    display.name="merchant_label";display.maxLength=80;display.value=providerValues[key]?.merchant_label||"";label.append(display);box.append(label);
+    const midLabel=make("label","Merchant ID (maxfiy kalit emas)");const mid=make("input");
+    mid.name="merchant_id";mid.maxLength=100;mid.value=providerValues[key]?.merchant_id||"";midLabel.append(mid);box.append(midLabel);
+    for(const [field,caption] of [["contract_signed","Shartnoma imzolangan"],["requested_enabled","Integratsiyadan keyin yoqilsin"]]){
+       const cLabel=make("label");const check=make("input");check.type="checkbox";check.name=field;
+       check.checked=!!providerValues[key]?.[field];cLabel.append(check,document.createTextNode(caption));box.append(cLabel);
+    }
+    root.append(box);
+  }
+}
+async function loadSettings(){
+  const current=await api("/api/admin/platform-config");
+  for(const [key,val] of Object.entries(current.contacts))if(byId(key))byId(key).value=val||"";
+  showProviders(current.providers);
+}
+async function loadCustomers(){
+  const record=await api("/api/admin/customers?offset="+offset+"&limit=50");
+  total=record.total;
+  const table=byId("customers");
+  for(const item of record.customers){
+    const row=make("tr");
+    for(const value of [item.id,item.name,item.phone||"—",item.registered_at||"—"]){row.append(make("td",String(value)));}
+    table.append(row);
+  }
+  offset+=record.customers.length;byId("customer-total").textContent="Jami ro‘yxatdan o‘tgan mijozlar: "+total;
+  byId("load-more").disabled=offset>=total;byId("customers-msg").textContent="";
+}
+byId("login-form").addEventListener("submit",async e=>{
+  e.preventDefault();byId("login-msg").textContent="";
+  try {
+    const answer=await api("/api/auth/login","POST",{phone:byId("phone").value.trim(),password:byId("password").value});
+    if(answer.role!=="admin")throw Error("Bu hisob administrator emas");
+    token=answer.access_token;byId("password").value="";
+    await loadSettings();offset=0;byId("customers").replaceChildren();await loadCustomers();
+    byId("login").style.display="none";byId("app").style.display="block";
+  }catch(ex){token="";byId("login-msg").textContent=ex.message}
+});
+byId("settings-form").addEventListener("submit",async e=>{
+ e.preventDefault();byId("save").disabled=true;byId("save-msg").textContent="Saqlanmoqda...";
+ const contacts={};
+ for(const field of ["support_phone","support_email","telegram_url","office_address"]) contacts[field]=byId(field).value.trim();
+ const providers={};
+ for(const box of document.querySelectorAll(".provider")){
+   const pick=name=>box.querySelector('[name="'+name+'"]');
+   providers[box.dataset.provider]={
+     merchant_label:pick("merchant_label").value.trim(),
+     merchant_id:pick("merchant_id").value.trim(),
+     contract_signed:pick("contract_signed").checked,
+     requested_enabled:pick("requested_enabled").checked
+   };
+ }
+ try{
+   await api("/api/admin/platform-config","PUT",{contacts,providers});
+   byId("save-msg").textContent="Sozlamalar bazaga xavfsiz saqlandi. Online to‘lovlar hali ulanmagan.";
+ }catch(ex){byId("save-msg").textContent=ex.message}
+ finally{byId("save").disabled=false}
+});
+byId("load-more").addEventListener("click",()=>loadCustomers().catch(e=>{byId("customers-msg").textContent=e.message}));
+byId("logout").addEventListener("click",()=>{token="";location.reload()});
+</script></body></html>

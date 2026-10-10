@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean, LargeBinary, JSON
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -165,3 +165,20 @@ class VerifiedPhone(Base):
     phone = Column(String(30), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     verified_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class PlatformSettings(Base):
+    """Public contact information and NON-SECRET payment configuration.
+
+    Passwords, provider API keys, card PAN/CVV and bank credentials NEVER
+    belong in this table. Defaults are deliberately safe/offline.
+    """
+    __tablename__ = "platform_settings"
+    id = Column(Integer, primary_key=True)
+    support_phone = Column(String(20), nullable=False, default="")
+    support_email = Column(String(120), nullable=False, default="")
+    telegram_url = Column(String(150), nullable=False, default="")
+    office_address = Column(String(200), nullable=False, default="")
+    payment_preferences = Column(JSON, nullable=False, default=dict)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)

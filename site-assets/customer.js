@@ -174,6 +174,24 @@
       const logout=el("button","auth-submit","Chiqish");
       logout.type="button";
       logout.addEventListener("click",()=>{sessionStorage.removeItem("ali_customer_token");me=null;$("#customerLoginBtn").textContent="👤 Kirish";d.close();});
+      const payInfo=el("div","ali-profile-payment");
+      const payTitle=el("h3","","To‘lov usullari");
+      const cardNote=el("p","","Naqd to‘lov mavjud. Click, Payme va karta qo‘shish bank integratsiyasi tasdiqlangach ishga tushadi.");
+      const cardButton=el("button","auth-submit","💳 Karta qo‘shish — tez kunda");
+      cardButton.type="button";cardButton.disabled=true;
+      payInfo.append(payTitle,cardNote,cardButton);
+      profile.appendChild(payInfo);
+      const supportInfo=el("p","","Operator aloqa ma’lumotlari yuklanmoqda...");
+      profile.appendChild(supportInfo);
+      api("/api/public/platform-config").then(details=>{
+        const c=details.contacts||{};
+        supportInfo.textContent=["Aloqa:",c.support_phone,c.support_email,c.office_address].filter(Boolean).join(" ");
+        if(c.telegram_url&&/^https:\/\/t\.me\/[A-Za-z0-9_]+\/?$/.test(c.telegram_url)){
+          const a=el("a","","💬 Operatorga Telegram orqali yozish");
+          a.href=c.telegram_url;a.target="_blank";a.rel="noopener noreferrer";
+          profile.appendChild(a);
+        }
+      }).catch(()=>{supportInfo.textContent="Operator ma’lumotlari hozircha mavjud emas.";});
       profile.appendChild(logout);
     } else {
       $("#customerAuthForm").hidden=false;
