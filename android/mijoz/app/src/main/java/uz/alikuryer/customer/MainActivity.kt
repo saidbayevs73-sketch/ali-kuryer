@@ -117,16 +117,8 @@ private fun AliCustomerApp() {
     var phone by remember { mutableStateOf("+998") }
     var password by remember { mutableStateOf("") }
     var registerMode by remember { mutableStateOf(false) }
-    var smsCode by remember { mutableStateOf("") }
-    var smsListening by remember { mutableStateOf(false) }
-    var smsRequestNonce by remember { mutableIntStateOf(0) }
+    var firebaseLoginMode by remember { mutableStateOf(false) }
     var phoneVerified by remember { mutableStateOf<Boolean?>(null) }
-
-    AliSmsConsent(
-        enabled = smsListening,
-        requestNonce = smsRequestNonce,
-        onCode = { smsCode = it }
-    )
 
     var chatText by remember { mutableStateOf("") }
     var retainAiHistory by remember { mutableStateOf(false) }
@@ -999,189 +991,144 @@ private fun AliCustomerApp() {
                     }
                     if (session == null) {
                         item {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                FilterChip(selected = !registerMode,
-                                    onClick = { registerMode = false },
-                                    label = { Text("Kirish") })
-                                FilterChip(selected = registerMode,
-                                    onClick = { registerMode = true },
-                                    label = { Text("Ro‘yxatdan o‘tish") })
+                            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                                FilterChip(
+                                    selected = !registerMode && !firebaseLoginMode,
+                                    onClick = { registerMode = false; firebaseLoginMode = false },
+                                    label = { Text("Parol bilan") }
+                                )
+                                FilterChip(
+                                    selected = firebaseLoginMode,
+                                    onClick = { registerMode = false; firebaseLoginMode = true },
+                                    label = { Text("SMS bilan") }
+                                )
+                                FilterChip(
+                                    selected = registerMode,
+                                    onClick = { registerMode = true; firebaseLoginMode = false },
+                                    label = { Text("Ro‘yxatdan o‘tish") }
+                                )
                             }
                         }
                         if (registerMode) item {
-                            OutlinedTextField(fullName, { fullName = it },
+                            OutlinedTextField(
+                                fullName, { fullName = it },
                                 label = { Text("Ism va familiya") },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp))
+                                shape = RoundedCornerShape(14.dp)
+                            )
                         }
-                        item {
-                            OutlinedTextField(phone, { phone = it },
-                                label = { Text("Telefon: +998XXXXXXXXX") },
-                                modifier = Modifier.fillMaxWidth(), singleLine = true,
-                                shape = RoundedCornerShape(14.dp))
-                        }
-                        item {
-                            OutlinedTextField(password, { password = it },
-                                label = { Text("Parol (kamida 8 belgi)") },
-                                modifier = Modifier.fillMaxWidth(), singleLine = true,
-                                visualTransformation = PasswordVisualTransformation(),
-                                shape = RoundedCornerShape(14.dp))
-                        }
-                        if (registerMode) {
+                        if (registerMode || firebaseLoginMode) {
                             item {
-                                Surface(color = Color.White, shape = RoundedCornerShape(18.dp)) {
-                                    Column(Modifier.fillMaxWidth().padding(15.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        Text("Telefonni SMS orqali tasdiqlash",
-                                            fontWeight = FontWeight.ExtraBold)
-                                        Text("6 xonali kod telefoningizga keladi. Kod 5 daqiqa amal qiladi. " +
-                                            "Bir daqiqadan so‘ng qayta so‘rash mumkin.",
-                                            fontSize = 12.sp, color = AliMuted)
-                                        Button(onClick = {
-                                            if (!Regex("^\\+998[0-9]{9}$").matches(phone)) {
-                                                message = "Telefonni +998XXXXXXXXX shaklida kiriting."
-                                            } else {
-                                                smsListening = true
-                                                smsRequestNonce++
-                                                smsCode = ""
-                                                scope.launch {
-                                                    busy = true
-                                                    try {
-                                                        AliApi.requestRegistrationCode(phone)
-                                                        message = "SMS kodi so‘raldi. Xabar kelishini kuting."
-                                                    } catch (e: Exception) {
-                                                        message = e.message ?: "SMS jo‘natilmadi"
-                                                        smsListening = false
-                                                    } finally { busy = false }
-                                                }
+                                AliFirebasePhonePanel(
+                                    phone = phone,
+                                    onPhoneChange = { phone = it },
+                                    onTokenVerified = { firebaseToken ->
+                                        scope.launch {
+                                            busy = true
+                                            try {
+                                                session = AliApi.firebasePhoneLogin(
+                                                    firebaseToken, fullName.trim()
+                                                )
+                                                phoneVerified = true
+                                                password = ""
+                                                message = "Telefon Firebase orqali tasdiqlandi"
+                                            } catch (e: Exception) {
+                                                message = e.message ?: "SMS tekshiruvini server qabul qilmadi"
+                                            } finally {
+                                                busy = false
                                             }
-                                        }, enabled = !busy, shape = RoundedCornerShape(13.dp)) {
-                                            Icon(Icons.Default.Sms, null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text("SMS-kod olish")
                                         }
-                                        OutlinedTextField(
-                                            smsCode,
-                                            { smsCode = it.filter(Char::isDigit).take(6) },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            label = { Text("SMS tasdiqlash kodi — 6 raqam") },
-                                            singleLine = true,
-                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                                                keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword
-                                            ),
-                                            shape = RoundedCornerShape(14.dp)
-                                        )
-                                        Text("Android SMSni faqat sizning ruxsatingiz bilan bir marta " +
-                                            "o‘qib, kodni to‘ldirishi mumkin. Qo‘lda ham kiritsa bo‘ladi.",
-                                            fontSize = 11.sp, color = AliMuted)
                                     }
-                                }
+                                )
+                                if (busy) LinearProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
-                        }
-                        item {
-                            Button(onClick = {
-                                if (!Regex("^\\+998[0-9]{9}$").matches(phone) ||
-                                    password.length < 8 ||
-                                    (registerMode && (fullName.trim().length < 2 ||
-                                        !Regex("^[0-9]{6}$").matches(smsCode)))) {
-                                    message = "Ism, telefon yoki parolni to‘g‘ri kiriting."
-                                } else {
-                                    scope.launch {
-                                        busy = true
-                                        try {
-                                            if (registerMode) AliApi.register(
-                                                fullName.trim(), phone, password, smsCode)
-                                            session = AliApi.login(phone, password)
-                                            message = "Mijoz hisobiga muvaffaqiyatli kirdingiz"
-                                            password = ""
-                                            smsCode = ""
-                                            smsListening = false
-                                            phoneVerified = if (registerMode) true else
-                                                AliApi.isPhoneVerified(session!!.token)
-                                        } catch (e: Exception) {
-                                            message = e.message ?: "Tizimga kirish amalga oshmadi"
-                                        } finally { busy = false }
+                        } else {
+                            item {
+                                OutlinedTextField(phone, { phone = it },
+                                    label = { Text("Telefon: +998XXXXXXXXX") },
+                                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                    shape = RoundedCornerShape(14.dp))
+                            }
+                            item {
+                                OutlinedTextField(password, { password = it },
+                                    label = { Text("Parol (kamida 8 belgi)") },
+                                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                                    visualTransformation = PasswordVisualTransformation(),
+                                    shape = RoundedCornerShape(14.dp))
+                            }
+                            item {
+                                Button(onClick = {
+                                    if (!Regex("^\\+998[0-9]{9}$").matches(phone) ||
+                                        password.length < 8) {
+                                        message = "Telefon yoki parol noto‘g‘ri."
+                                    } else {
+                                        scope.launch {
+                                            busy = true
+                                            try {
+                                                session = AliApi.login(phone, password)
+                                                phoneVerified = AliApi.isPhoneVerified(session!!.token)
+                                                message = "Mijoz hisobiga muvaffaqiyatli kirdingiz"
+                                                password = ""
+                                            } catch (e: Exception) {
+                                                message = e.message ?: "Tizimga kirish amalga oshmadi"
+                                            } finally {
+                                                busy = false
+                                            }
+                                        }
                                     }
+                                }, modifier = Modifier.fillMaxWidth().height(51.dp),
+                                    enabled = !busy, shape = RoundedCornerShape(15.dp)) {
+                                    Text("Kirish", fontWeight = FontWeight.Bold)
                                 }
-                            }, modifier = Modifier.fillMaxWidth().height(51.dp),
-                                enabled = !busy, shape = RoundedCornerShape(15.dp)) {
-                                Text(if (registerMode) "Ro‘yxatdan o‘tish" else "Kirish",
-                                    fontWeight = FontWeight.Bold)
                             }
                         }
                     } else {
                         item {
                             Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
-                                Column(Modifier.fillMaxWidth().padding(15.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Column(
+                                    Modifier.fillMaxWidth().padding(15.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
                                     Text("Telefon raqami xavfsizligi", fontWeight = FontWeight.Bold)
                                     Text(when (phoneVerified) {
-                                        true -> "✅ Telefon SMS orqali tasdiqlangan."
-                                        false -> "⚠️ Raqam hali tasdiqlanmagan. Buyurtmadan avval tasdiqlang."
-                                        null -> "Telefon tasdiqlanishi tekshirilmoqda."
+                                        true -> "✅ Telefon SMS orqali tasdiqlangan"
+                                        false -> "⚠️ Telefoningizni SMS orqali tasdiqlang"
+                                        null -> "Telefon raqami tekshirilmoqda..."
                                     }, fontSize = 12.sp, color = AliMuted)
-                                    if (phoneVerified != true) {
-                                        OutlinedTextField(phone, { phone = it },
-                                            label = { Text("Telefon +998XXXXXXXXX") },
-                                            modifier = Modifier.fillMaxWidth(), singleLine = true)
-                                        Button(onClick = {
-                                            if (!Regex("^\\+998[0-9]{9}$").matches(phone)) {
-                                                message = "Telefon raqami noto‘g‘ri."
-                                            } else {
-                                                smsListening = true
-                                                smsRequestNonce++
-                                                smsCode = ""
-                                                scope.launch {
-                                                    busy = true
-                                                    try {
-                                                        AliApi.requestExistingPhoneCode(session!!.token, phone)
-                                                        message = "SMS kodini kuting."
-                                                    } catch (e: Exception) {
-                                                        message = e.message ?: "SMS jo‘natilmadi"
-                                                        smsListening = false
-                                                    } finally { busy = false }
-                                                }
-                                            }
-                                        }, enabled = !busy, shape = RoundedCornerShape(12.dp)) {
-                                            Text("Telefonimga SMS yuborish")
-                                        }
-                                        OutlinedTextField(smsCode,
-                                            { smsCode = it.filter(Char::isDigit).take(6) },
-                                            label = { Text("6 xonali kod") },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            singleLine = true,
-                                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                                                keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword))
-                                        Button(
-                                            enabled = smsCode.length == 6 && !busy,
-                                            onClick = {
-                                                scope.launch {
-                                                    busy = true
-                                                    try {
-                                                        AliApi.confirmExistingPhone(
-                                                            session!!.token, phone, smsCode)
-                                                        phoneVerified = true
-                                                        smsListening = false
-                                                        smsCode = ""
-                                                        message = "Telefoningiz muvaffaqiyatli tasdiqlandi."
-                                                    } catch (e: Exception) {
-                                                        message = e.message ?: "Kod noto‘g‘ri"
-                                                    } finally { busy = false }
-                                                }
-                                            },
-                                            shape = RoundedCornerShape(13.dp)
-                                        ) { Text("Raqamni tasdiqlash") }
-                                    }
                                 }
                             }
+                        }
+                        if (phoneVerified == false) item {
+                            AliFirebasePhonePanel(
+                                phone = phone, onPhoneChange = { phone = it },
+                                onTokenVerified = { firebaseToken ->
+                                    scope.launch {
+                                        busy = true
+                                        try {
+                                            val newSession = AliApi.firebasePhoneLogin(
+                                                firebaseToken, fullName.trim()
+                                            )
+                                            session = newSession
+                                            phoneVerified = true
+                                            message = "Telefoningiz SMS orqali tasdiqlandi"
+                                        } catch (e: Exception) {
+                                            message = e.message ?: "Raqam tasdiqlanmadi"
+                                        } finally {
+                                            busy = false
+                                        }
+                                    }
+                                }
+                            )
                         }
                         item {
                             OutlinedButton(onClick = {
                                 session = null
-                                smsListening = false
-                                smsCode = ""
                                 phoneVerified = null
-                            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                                firebaseLoginMode = false
+                            }, modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp)) {
                                 Text("Hisobdan chiqish", color = AliRed)
                             }
                         }
