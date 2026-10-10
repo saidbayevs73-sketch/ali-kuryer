@@ -45,3 +45,14 @@ Kontent/rang/e’lon boshqaruvi, oshxona/kuryer tasdiqlash, buyurtma nazorati, G
 - Render PostgreSQL mavjud, lekin qaysi service unga ulanganini tasdiqlab bo‘lmadi; tashqi SQL tekshiruvi IP cheklovi sabab ishlamadi.
 - Yangi konsol hali productionda yoqilmagan; haqiqiy mijoz buyurtmalariga tegilmagan.
 - Hech bir loyiha va baza o‘chirilmagan.
+
+
+## 2026-10-11 yangilangan sinov komponentlari
+- Super Admin uchun tashqi JS/CSS ajratildi; Content Security Policy `unsafe-inline`siz ishlaydi.
+- Mijoz buyurtmalari, oshxonalar, hamkorlik arizalari va operator suhbatlari uchun API orqali nazorat oynasi bor. Aloqa xatosi nol soni bilan chalkashmaydi.
+- Oshxonani tasdiqlash, kuryer va oshxona xodimlarini (faqat admin) yaratish uchun APIga ulangan formalar qo‘shildi.
+- Eski web admin uchun opt-in markaziy login har bir imtiyozli murojaatda FastAPI admin tokenining hali yaroqliligini tekshiradi. Parol almashsa eski token va cookie bekor bo‘ladi (faqat central mode yoqilganda).
+- Production Render SQLite vaqtinchalik baza bo‘lsa admin parolini o‘zgartirish va bir martalik reset 503 qaytaradi — yolg‘on muvaffaqiyat berilmaydi.
+- Server testlari va JavaScript syntax testlari GitHub Actions orqali bajariladi; Android 15 emulyatorida APK ishga tushishi avval tasdiqlangan.
+
+**Diqqat:** Legacy xizmatning central mode yoqilishi, Render environment orqali yangi kuchli parolni sozlash, Postgresga xavfsiz migratsiya, to‘lov integratsiyasi va to‘liq staging tekshiruvi hali bajarilmagan. Bularsiz production deploy qilinmasin.
