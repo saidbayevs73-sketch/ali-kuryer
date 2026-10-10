@@ -36,6 +36,12 @@ def maybe_reset_existing_admin(session, existing):
     except HTTPException:
         print("Ali Kuryer admin recovery: password policy not met", flush=True)
         return
+    from app.auth import require_durable_admin_password_store
+    try:
+        require_durable_admin_password_store()
+    except HTTPException:
+        print("Ali Kuryer admin recovery: persistent PostgreSQL database required", flush=True)
+        return
     record_id = hashlib.sha256(reset_id.encode("utf-8")).hexdigest()
     if session.get(models.AdminPasswordResetEvent, record_id):
         print("Ali Kuryer admin recovery: request already applied", flush=True)
