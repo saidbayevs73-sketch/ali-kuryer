@@ -114,7 +114,7 @@
     section.after(help);
   }
 
-  const state = {register:false};
+  const state = {register:false, smsReady:false, smsChecked:false};
   function buildLogin() {
     const header = $("header .header-buttons");
     if (header) {
@@ -136,8 +136,12 @@
         <label>Telefon raqam<input name="phone" type="tel" required placeholder="+998901234567" autocomplete="tel"></label>
         <label>Parol<input name="password" type="password" required minlength="8" maxlength="72" autocomplete="current-password"></label>
         <div id="authOtpWrap" hidden>
-          <p class="muted">Telefoningizga 6 xonali SMS kodi yuboriladi. Kod 5 daqiqa amal qiladi.</p>
-          <button type="button" id="authSmsSend" class="btn btn-black">📩 SMS-kod olish</button>
+          <p id="aliSmsAvailability" class="muted" role="status" aria-live="polite">
+            SMS xizmati tekshirilmoqda. Tasdiqlash ishlamasa kod yuborilgan deb hisoblamang.
+          </p>
+          <p class="muted" style="margin:6px 0"><a class="ali-help-link" href="https://t.me/AliKuryerYordamBot"
+            target="_blank" rel="noopener noreferrer">Ro‘yxatdan o‘tishda yordam: operatorga yozish ↗</a></p>
+          <button type="button" id="authSmsSend" class="btn btn-black" disabled>📩 SMS-kod olish</button>
           <label>SMS tasdiqlash kodi<input name="otp_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" placeholder="000000"></label>
           <p class="muted">SMS kodi kelmasa, 60 soniyadan keyin qayta so‘rang.</p>
         </div>
@@ -163,7 +167,25 @@
     $("#customerAuthForm").addEventListener("submit", submitAuth);
     $("#authSmsSend").addEventListener("click", requestRegisterSms);
     $("#aliTelegramLogin").addEventListener("click", startTelegramLogin);
+    loadAuthOptions();
   }
+
+  async function loadAuthOptions() {
+    let ready=false;
+    try {
+      const options=await api("/api/auth/options");
+      ready=options?.sms_registration === true;
+    }catch(_){
+      // An unavailable readiness endpoint must not make SMS appear to work.
+      ready=false;
+    }
+    state.smsReady=ready;
+    state.smsChecked=true;
+    setAuthMode(state.register);
+    const send=$("#customerProfile .customer-sms-verify button");
+    if(send)send.disabled=!ready;
+  }
+
   function setAuthMode(register) {
     state.register = register;
     $("#registerNameWrap").hidden = !register;
@@ -173,8 +195,20 @@
     $("#customerAuthForm [name=name]").required = register;
     $("#customerAuthForm [name=consent]").required = register;
     $("#customerAuthForm [name=password]").autocomplete = register?"new-password":"current-password";
-    $("#customerAuthForm .auth-submit").textContent = register ? "Ro‘yxatdan o‘tish" : "Kirish";
-    $("#customerAuthForm .status").textContent = "";
+    const submit=$("#customerAuthForm .auth-submit");
+    submit.textContent = register ? "Ro‘yxatdan o‘tish" : "Kirish";
+    submit.disabled = Boolean(register && !state.smsReady);
+    const smsButton=$("#authSmsSend");
+    if(smsButton)smsButton.disabled=!state.smsReady;
+    const smsInfo=$("#aliSmsAvailability");
+    if(smsInfo)smsInfo.textContent=state.smsReady
+      ? "Telefoningizga 6 xonali SMS kodi yuboriladi. Kod 5 daqiqa amal qiladi."
+      : state.smsChecked
+        ? "Hozir SMS tasdiqlash faol emas. Avval ro‘yxatdan o‘tgan bo‘lsangiz «Kirish»ni tanlang. Boshqa kirish usullari yuqoridagi oynada ko‘rsatiladi."
+        : "SMS tasdiqlash holati tekshirilmoqda...";
+    $("#customerAuthForm .status").textContent = register && !state.smsReady
+      ? "Yangi mijoz ro‘yxati SMS sozlanmaguncha to‘xtatilgan. Telefon kodi yuborilmagan."
+      : "";
     for (const b of document.querySelectorAll("[data-auth]")) b.classList.toggle("active",(b.dataset.auth==="register")===register);
   }
   function showLogin() {
@@ -204,7 +238,8 @@
       vCode.autocomplete="one-time-code";
       vCode.placeholder="6 xonali SMS kodi";
       vCode.setAttribute("aria-label","SMS tasdiqlash kodi");
-      const send=el("button","btn btn-black","SMS-kod olish");send.type="button";
+      const send=el("button","btn btn-black","SMS-kod olish");
+      send.type="button";send.disabled=!state.smsReady;
       const confirm=el("button","btn btn-black","Raqamni tasdiqlash");confirm.type="button";
       const h={"Authorization":"Bearer "+sessionStorage.getItem("ali_customer_token")};
       function verifiedScreen() {verification.replaceChildren(el("p","","✅ Telefoningiz SMS orqali tasdiqlangan."));}
@@ -212,7 +247,9 @@
       profile.appendChild(verification);
       api("/api/auth/phone/status",{headers:h}).then(data=>{
         if(data.verified) verifiedScreen();
-        else vStatus.textContent="⚠ Telefon raqamini SMS orqali tasdiqlang.";
+        else vStatus.textContent=state.smsReady
+          ? "⚠ Telefon raqamini SMS orqali tasdiqlang."
+          : "SMS tasdiqlash hozircha mavjud emas. Kod so‘ramang.";
       }).catch(()=>{vStatus.textContent="Telefon holatini tekshirib bo‘lmadi."});
       send.onclick=async()=>{
         send.disabled=true;
@@ -250,6 +287,11 @@
     d.showModal();
   }
   async function requestRegisterSms() {
+    if(!state.smsReady){
+      const msg=$("#customerAuthForm .status");
+      if(msg)msg.textContent="SMS tasdiqlash hozircha mavjud emas. Kod yuborilmadi.";
+      return;
+    }
     const input=$("#customerAuthForm [name=phone]");
     const phone=String(input?.value||"").replace(/[\s-]/g,"");
     const message=$("#customerAuthForm .status");
@@ -284,6 +326,9 @@
     const button=$("button[type=submit]",form);
     button.disabled=true;msg.textContent="Tekshirilmoqda...";
     try {
+      if (state.register && !state.smsReady) {
+        throw new Error("SMS tasdiqlash hali ishga tushmagan. Kod yuborilmagan.");
+      }
       if (state.register) {
         await api("/api/auth/register",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
           name:String(fd.get("name")||"").trim(),phone,password,

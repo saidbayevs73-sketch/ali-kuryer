@@ -27,6 +27,38 @@ class PhoneConfirmation(PhoneRequest):
     otp_code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
+@router.get("/options")
+def customer_auth_options():
+    """Public, nonsecret readiness of customer verification providers.
+
+    No credentials, connection strings, OTPs or personally identifying details
+    are returned. Read-only: does not create users or contact SMS gateways.
+    """
+    import os
+    from app import telegram_login
+    try:
+        otp.require_otp_ready()
+        sms_available = True
+    except HTTPException:
+        sms_available = False
+    telegram_available = telegram_login.service_ready()
+    google_available = bool(os.getenv("GOOGLE_CLIENT_ID", "").strip())
+    return {
+        "password_login": True,  # existing users only
+        "sms_registration": sms_available,
+        "sms_verification": sms_available,
+        "telegram_login": telegram_available,
+        "google_login": google_available,
+        "message": (
+            "SMS orqali ro‘yxatdan o‘tish mavjud."
+            if sms_available else
+            "SMS tasdiqlash xizmati hozircha tayyor emas. "
+            "Mavjud hisobingiz bo‘lsa, parol bilan kiring. "
+            "Yangi mijozlar uchun boshqa tasdiqlash usuli mavjud bo‘lsa, uni tanlang."
+        ),
+    }
+
+
 @router.post("/otp/request")
 def request_registration_sms(data: PhoneRequest, db: Session = Depends(get_db)):
     """Send an SMS only to a phone not already registered."""
