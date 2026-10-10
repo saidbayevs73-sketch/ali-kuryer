@@ -170,6 +170,8 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
     var phoneVerified by remember { mutableStateOf<Boolean?>(null) }
 
     var chatText by remember { mutableStateOf("") }
+    var attachedChatPhoto by remember { mutableStateOf<Uri?>(null) }
+    var sendingChat by remember { mutableStateOf(false) }
     var retainAiHistory by remember { mutableStateOf(false) }
     val chat = remember { mutableStateListOf<Pair<Boolean, String>>() }
     var privacyAccepted by remember { mutableStateOf(false) }
@@ -185,6 +187,23 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
         val currentToken = session?.token ?: return@LaunchedEffect
         try { phoneVerified = AliApi.isPhoneVerified(currentToken) }
         catch (_: Exception) { phoneVerified = null }
+    }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { imageUri ->
+        attachedChatPhoto = imageUri
+        if (imageUri != null && chatText.isBlank()) {
+            chatText = "Rasmdagi taomning taxminiy kaloriyasi qancha?"
+        }
+    }
+
+    fun openOperatorBot() {
+        val telegram = Uri.parse("https://t.me/AliKuryerYordamBot")
+        val intent = Intent(Intent.ACTION_VIEW, telegram)
+        if (runCatching { context.startActivity(intent) }.isFailure) {
+            message = "Operator uchun Telegram: https://t.me/AliKuryerYordamBot"
+        }
     }
 
     fun openSupport() {
@@ -1226,13 +1245,40 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                             }
                         }
                         Spacer(Modifier.height(12.dp))
-                        Text("Ali Kuryer • mijoz ilovasi 1.3.0",
+                        Text("Ali Kuryer • mijoz ilovasi 1.6.4",
                             color = AliMuted, fontSize = 11.sp)
                     }
                 }
 
                 "chat" -> Column(Modifier.fillMaxSize().padding(16.dp)) {
-                    AliSectionTitle("Muhammadali", "Ali Kuryer virtual yordamchisi")
+                    AliSectionTitle("Muhammadali", "AI yordamchi · taom va kaloriya tavsiyasi")
+                    Spacer(Modifier.height(10.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(listOf(
+                            "🍽 3 xil menyu" to "Menga 3 xil oilaviy kechki ovqat menyusi tavsiya qil.",
+                            "📦 Buyurtmam" to "Buyurtmam holatini qanday kuzataman?",
+                            "📍 Manzil" to "Yetkazish manzilini qanday belgilayman?",
+                            "📷 Kaloriya" to "photo",
+                            "👩‍💻 Operator" to "operator"
+                        )) { prompt ->
+                            OutlinedButton(
+                                onClick = {
+                                    when (prompt.second) {
+                                        "photo" -> {
+                                            chatText = "Rasmdagi taomning taxminiy kaloriyasi qancha?"
+                                            photoPicker.launch("image/*")
+                                        }
+                                        "operator" -> openOperatorBot()
+                                        else -> chatText = prompt.second
+                                    }
+                                },
+                                shape = RoundedCornerShape(13.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(prompt.first, fontSize = 12.sp, color = AliBlack)
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(10.dp))
                     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         item {
@@ -1258,6 +1304,38 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                             }
                         }
                     }
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedButton(
+                            onClick = { photoPicker.launch("image/*") },
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(Icons.Default.PhotoLibrary, null,
+                                tint = AliRed, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(5.dp))
+                            Text("Rasm qo‘shish", color = AliBlack, fontSize = 12.sp)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        if (attachedChatPhoto != null) {
+                            coil.compose.AsyncImage(
+                                model = attachedChatPhoto,
+                                contentDescription = "Yuboriladigan taom fotosurati",
+                                modifier = Modifier.size(48.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            )
+                            IconButton(onClick = { attachedChatPhoto = null },
+                                modifier = Modifier.size(34.dp)) {
+                                Icon(Icons.Default.Close, "Rasmni olib tashlash",
+                                    tint = AliMuted)
+                            }
+                        } else {
+                            Text("JPEG, PNG yoki WEBP", fontSize = 11.sp, color = AliMuted)
+                        }
+                    }
+                    Text("Surat AI xizmatiga yuboriladi, serverda saqlanmaydi. " +
+                         "Kaloriya faqat taxminiy.", color = AliMuted, fontSize = 10.sp,
+                         lineHeight = 14.sp)
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = retainAiHistory && session != null,
                             enabled = session != null,
@@ -1277,23 +1355,43 @@ private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) 
                         Spacer(Modifier.width(8.dp))
                         FilledIconButton(onClick = {
                             val question = chatText.trim()
-                            if (question.length > 1) {
-                                chat.add(true to question)
-                                chatText = ""
-                                scope.launch {
-                                    try { chat.add(false to AliApi.chat(question, session?.token,
-                                        session != null && retainAiHistory)) }
-                                    catch (e: Exception) {
-                                        val detail = (e as? IllegalStateException)?.message
-                                        chat.add(false to (
-                                            (detail?.takeIf { it.isNotBlank() }
-                                                ?: "Internet yoki AI xizmati bilan aloqa uzildi.") +
-                                            " Operator bilan ilovadagi onlayn chat orqali bog‘lanishingiz mumkin."
-                                        ))
+                            if (question.length > 1 && !sendingChat) {
+                                if (question.contains("operator", ignoreCase = true) ||
+                                    question.contains("odam bilan", ignoreCase = true)) {
+                                    openOperatorBot()
+                                    chat.add(false to "Operator uchun Telegram bot ochilmoqda.")
+                                    chatText = ""
+                                } else {
+                                    val photo = attachedChatPhoto
+                                    chat.add(true to (question +
+                                        if (photo != null) "\n📷 Taom rasmi biriktirildi" else ""))
+                                    chatText = ""
+                                    sendingChat = true
+                                    scope.launch {
+                                        try {
+                                            val imageBase64 = photo?.let {
+                                                AliChatPhoto.encode(context, it)
+                                            }
+                                            val reply = AliApi.chat(question, session?.token,
+                                                session != null && retainAiHistory,
+                                                imageBase64 = imageBase64)
+                                            chat.add(false to reply)
+                                            attachedChatPhoto = null
+                                        } catch (e: Exception) {
+                                            val detail = (e as? IllegalStateException)?.message
+                                            chat.add(false to (
+                                                detail?.takeIf { it.isNotBlank() }
+                                                    ?: "Internet yoki AI xizmati bilan aloqa uzildi. " +
+                                                       "Operatorga yozing: https://t.me/AliKuryerYordamBot"
+                                            ))
+                                        } finally {
+                                            sendingChat = false
+                                        }
                                     }
                                 }
                             }
-                        }, modifier = Modifier.size(52.dp), enabled = chatText.trim().length > 1,
+                        }, modifier = Modifier.size(52.dp),
+                            enabled = chatText.trim().length > 1 && !sendingChat,
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = AliRed)) {
                             Icon(Icons.Default.Send, "Yuborish", tint = Color.White)

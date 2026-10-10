@@ -223,15 +223,21 @@ object AliApi {
     }
 
     suspend fun chat(
-        message: String, token: String? = null, retainHistory: Boolean = false
+        message: String, token: String? = null, retainHistory: Boolean = false,
+        imageBase64: String? = null
     ): String {
         val body = JSONObject().put("message", message)
         val endpoint = if (token == null) "/api/assistant/chat" else "/api/v1/assistant/chat"
         if (token != null) body.put("retain_history", retainHistory)
+        if (imageBase64 != null) body.put("image_base64", imageBase64)
         val payload = JSONObject(request("POST", endpoint, body, token))
         val reply = payload.optString("reply", "")
         if (reply.isBlank()) throw IllegalStateException("Yordamchi javob bermadi")
-        return if (payload.optString("mode") == "basic")
-            "Ma’lumot rejimi: $reply" else reply
+        return when (payload.optString("mode")) {
+            "basic" -> "Ma’lumot rejimi: $reply"
+            "operator" -> "Operator: $reply\n" +
+                payload.optString("operator_url", "https://t.me/AliKuryerYordamBot")
+            else -> reply
+        }
     }
 }
