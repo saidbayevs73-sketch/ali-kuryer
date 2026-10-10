@@ -20,6 +20,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -47,7 +48,7 @@ class MainActivity : ComponentActivity() {
         AliTelegramBridge.handle(intent)
         // Android 15 edge-to-edge: use window insets so content never overlaps clock/notch.
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK),
+            statusBarStyle = SystemBarStyle.light(android.graphics.Color.rgb(246, 245, 242), android.graphics.Color.BLACK),
             navigationBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK)
         )
         setContent {
@@ -101,6 +102,10 @@ private fun AliCustomerApp() {
     val context = LocalContext.current
 
     var page by remember { mutableStateOf("home") }
+    val profileScroll = rememberLazyListState()
+    LaunchedEffect(page) {
+        if (page == "profile") profileScroll.scrollToItem(0)
+    }
     var restaurants by remember { mutableStateOf<List<Restaurant>>(emptyList()) }
     var foods by remember { mutableStateOf<List<Food>>(emptyList()) }
     var searchFoods by remember { mutableStateOf<List<FoodHit>>(emptyList()) }
@@ -476,7 +481,7 @@ private fun AliCustomerApp() {
                         alwaysShowLabel = true,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = AliRed, selectedTextColor = AliBlack,
-                            indicatorColor = Color(0xFFFFE7EA),
+                            indicatorColor = Color(0xFFF6E9E9),
                             unselectedIconColor = AliMuted, unselectedTextColor = AliMuted
                         )
                     )
@@ -486,7 +491,7 @@ private fun AliCustomerApp() {
     ) { inner ->
         Column(Modifier.fillMaxSize().padding(inner)) {
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth(),
-                color = AliRed, trackColor = Color(0xFFFFE4E8))
+                color = AliRed, trackColor = Color(0xFFF6E9E9))
             if (message.isNotBlank()) {
                 Surface(color = Color(0xFFFFF3DF)) {
                     Row(Modifier.fillMaxWidth().padding(9.dp),
@@ -971,26 +976,27 @@ private fun AliCustomerApp() {
                     }
                 )
 
-                "profile" -> LazyColumn(contentPadding = PaddingValues(18.dp),
+                "profile" -> LazyColumn(state = profileScroll, contentPadding = PaddingValues(18.dp),
                     verticalArrangement = Arrangement.spacedBy(13.dp)) {
                     item {
                         AliSectionTitle("Mening profilim", "Ali Kuryer mijoz hisobi")
                     }
                     item {
-                        Surface(shape = RoundedCornerShape(21.dp), color = AliBlack) {
+                        Surface(shape = RoundedCornerShape(21.dp), color = Color(0xFFF0EEEA),
+                            border = BorderStroke(1.dp, AliBorder)) {
                             Row(Modifier.fillMaxWidth().padding(18.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AccountCircle, null, tint = Color.White,
+                                Icon(Icons.Default.AccountCircle, null, tint = AliBlack,
                                     modifier = Modifier.size(53.dp))
                                 Spacer(Modifier.width(11.dp))
                                 Column {
                                     Text(if (session == null) "Xush kelibsiz!"
                                          else (fullName.ifBlank { "Ali Kuryer mijozi" }),
-                                        color = Color.White, fontSize = 19.sp,
+                                        color = AliBlack, fontSize = 19.sp,
                                         fontWeight = FontWeight.ExtraBold)
                                     Text(if (session == null) "Hisobga kiring yoki ro‘yxatdan o‘ting"
                                          else phone,
-                                        color = Color.White.copy(alpha = .7f), fontSize = 12.sp)
+                                        color = AliMuted, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -1108,7 +1114,7 @@ private fun AliCustomerApp() {
                                 ) {
                                     Text("Telefon raqami xavfsizligi", fontWeight = FontWeight.Bold)
                                     Text(when (phoneVerified) {
-                                        true -> "✅ Telefon SMS orqali tasdiqlangan"
+                                        true -> "✓ Telefon raqamingiz tasdiqlangan"
                                         false -> "⚠️ Telefoningizni SMS orqali tasdiqlang"
                                         null -> "Telefon raqami tekshirilmoqda..."
                                     }, fontSize = 12.sp, color = AliMuted)
