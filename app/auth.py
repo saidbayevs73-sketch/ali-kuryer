@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from app.database import SessionLocal
-from app import models, schemas, security
+from app import models, schemas, security, otp
 from app.dependencies import get_current_user as shared_get_current_user
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -17,6 +17,77 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+class PhoneRequest(BaseModel):
+    phone: str = Field(min_length=13, max_length=13)
+
+
+class PhoneConfirmation(PhoneRequest):
+    otp_code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+@router.post("/otp/request")
+def request_registration_sms(data: PhoneRequest, db: Session = Depends(get_db)):
+    """Send an SMS only to a phone not already registered."""
+    phone = data.phone.strip()
+    otp.validate_phone(phone)
+    if db.query(models.User).filter_by(phone=phone).first():
+        raise HTTPException(409, "Bu telefon raqami oldin ro‘yxatdan o‘tgan")
+    return otp.request_otp(db, phone)
+
+
+@router.get("/phone/status")
+def phone_status(user: models.User = Depends(shared_get_current_user),
+                 db: Session = Depends(get_db)):
+    verified = db.get(models.VerifiedPhone, user.phone) if user.phone else None
+    return {"phone": user.phone, "verified": bool(verified and verified.user_id == user.id)}
+
+
+@router.post("/phone/request")
+def request_existing_customer_sms(
+    data: PhoneRequest,
+    user: models.User = Depends(shared_get_current_user),
+    db: Session = Depends(get_db),
+):
+    """For existing/unverified or Google customer accounts."""
+    if user.role != "customer" or not user.is_active:
+        raise HTTPException(403, "Faqat mijoz hisobi")
+    phone = data.phone.strip()
+    otp.validate_phone(phone)
+    if user.phone and user.phone != phone:
+        raise HTTPException(403, "Telefon raqamini almashtirish alohida tasdiq talab qiladi")
+    other = db.query(models.User).filter_by(phone=phone).first()
+    if other and other.id != user.id:
+        raise HTTPException(409, "Telefon boshqa hisobga tegishli")
+    return otp.request_otp(db, phone)
+
+
+@router.post("/phone/confirm")
+def confirm_existing_customer_phone(
+    data: PhoneConfirmation,
+    user: models.User = Depends(shared_get_current_user),
+    db: Session = Depends(get_db),
+):
+    if user.role != "customer" or not user.is_active:
+        raise HTTPException(403, "Faqat mijoz hisobi")
+    phone = data.phone.strip()
+    if user.phone and user.phone != phone:
+        raise HTTPException(403, "Telefon raqami mos emas")
+    other = db.query(models.User).filter_by(phone=phone).first()
+    if other and other.id != user.id:
+        raise HTTPException(409, "Telefon boshqa hisobga tegishli")
+    otp.consume_otp(db, phone, data.otp_code)
+    if not user.phone:
+        user.phone = phone
+    otp.mark_verified(db, phone, user.id)
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Bu telefon raqami band")
+    return {"verified": True}
 
 
 @router.post("/register", status_code=201)
@@ -30,17 +101,27 @@ def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=409, detail="Bu raqam ro'yxatdan o'tgan")
 
+    # Reject fabricated phone numbers: a server-generated SMS OTP must be
+    # valid, unexpired and entered by the user before the account is created.
+    otp.consume_otp(db, phone, data.otp_code)
     user = models.User(
         phone=phone,
         name=data.name.strip(),
         password_hash=security.hash_password(data.password),
         role="customer",
     )
-    db.add(user)
-    db.commit()
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.add(user)
+        db.flush()
+        otp.mark_verified(db, phone, user.id)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, "Bu raqam allaqachon band")
     db.refresh(user)
 
-    return {"message": "Ro'yxatdan o'tildi", "user_id": user.id}
+    return {"message": "Telefon SMS orqali tasdiqlandi", "user_id": user.id}
 
 
 @router.post("/login")
