@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Ali Kuryer | Maxfiy boshqaruv</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#192128;background:#f5f6f8}
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}
+button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+:focus-visible{outline:3px solid #ed4f56;outline-offset:2px}
+.hidden{display:none!important}.muted{color:#66717e}.small{font-size:12px}.danger{color:#b42334}.success{color:#047857}
+.login-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 15% 10%,#ffe2e3,transparent 40%),#f5f6f8}
+.login{width:min(100%,420px);background:white;border:1px solid #e9e9ef;border-radius:24px;box-shadow:0 20px 65px #1b273318;padding:32px}
+.brand{font-size:22px;font-weight:900;letter-spacing:-.04em;color:#111d27}.brand span{color:#eb333d}
+.login h1{font-size:28px;letter-spacing:-.04em;margin:32px 0 8px}.login p{line-height:1.55}
+label{font-weight:650;font-size:13px;display:block;margin:16px 0 7px}
+input{width:100%;border:1px solid #d3d9e0;border-radius:12px;padding:12px 14px;background:white;color:#18202b}
+input:disabled{background:#f2f3f5}
+.primary{background:#d91b30;color:white;border:1px solid #d91b30}
+.btn{border-radius:11px;padding:11px 15px;font-weight:750;min-height:44px}
+.secondary{background:white;border:1px solid #d5dbe3;color:#283443}
+.full{width:100%;margin-top:20px}
+.notice{margin:16px 0;padding:12px 14px;background:#fff5f5;border:1px solid #f2cdcf;border-radius:12px;font-size:13px}
+.app{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}
+aside{background:#141b23;color:white;padding:24px 16px;display:flex;flex-direction:column;gap:14px}
+aside .brand{color:white;margin:6px 12px 18px}
+nav{display:grid;gap:6px}
+nav button{text-align:left;background:none;color:#d3dae3;border:0;border-radius:11px;padding:12px 14px;font-weight:650}
+nav button.active{background:#ef273a;color:white}
+.side-bottom{margin-top:auto;padding:14px;color:#a9b5c3;border-top:1px solid #34404b;font-size:12px}
+main{padding:34px clamp(18px,4vw,54px);max-width:1500px;width:100%;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:26px}
+h1{font-size:clamp(25px,3vw,36px);letter-spacing:-.04em;margin:4px 0 0}
+.eyebrow{font-size:11px;text-transform:uppercase;color:#8c4b53;letter-spacing:.14em;font-weight:800}
+.top-actions{display:flex;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin:18px 0 26px}
+.stat,.panel{background:white;border:1px solid #e4e8ed;border-radius:17px;padding:22px;box-shadow:0 4px 22px #1d2c3510}
+.stat b{display:block;font-size:34px;letter-spacing:-.06em;margin-top:10px}.stat span{font-size:13px;color:#66717e}
+.two{display:grid;grid-template-columns:1.35fr 1fr;gap:18px}.panel h2{font-size:18px;margin:0 0 16px;letter-spacing:-.02em}
+.item{padding:14px 0;border-bottom:1px solid #e7ebef;display:flex;justify-content:space-between;gap:14px;align-items:center}
+.item:last-child{border-bottom:0}.item b{display:block;font-size:14px}.item small{color:#66717e;display:block;margin-top:5px}
+.pill{font-size:11px;font-weight:750;background:#f1f3f5;color:#4e5965;border-radius:100px;padding:6px 9px;white-space:nowrap}
+.grid-actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:#66717e;padding:24px 0;text-align:center}
+#content-message{margin-bottom:18px}
+@media(max-width:1000px){.stats{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+@media(max-width:660px){.app{display:block}aside{padding:14px;gap:7px}aside .brand{margin:0 0 8px}.side-bottom{display:none}nav{display:flex;overflow-x:auto}nav button{white-space:nowrap}main{padding:24px 15px}.stats{gap:9px}.stat,.panel{padding:15px}.stat b{font-size:27px}.top{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<section id="login-screen" class="login-shell">
+  <form class="login" id="login-form" autocomplete="on">
+    <div class="brand"><span>ALI</span> KURYER <span>•</span> ADMIN</div>
+    <h1>Boshqaruv markazi</h1>
+    <p class="muted">Bu sahifa faqat vakolatli administrator uchun. Mijoz, kuryer va oshxona hisoblari bu yerdan kira olmaydi.</p>
+    <label for="username">Login</label>
+    <input id="username" name="username" value="admin" autocomplete="username" required maxlength="32">
+    <label for="password">Parol</label>
+    <input id="password" type="password" name="password" autocomplete="current-password" required minlength="1">
+    <p id="login-message" class="notice hidden" role="alert"></p>
+    <button id="login-button" class="primary btn full" type="submit">Xavfsiz kirish</button>
+    <p class="muted small">Parol esdan chiqqan bo‘lsa, administratorning tasdiqlangan tiklash jarayonidan foydalaning. Oddiy <b>admin/admin</b> paroli qabul qilinmaydi.</p>
+  </form>
+</section>
+<div id="admin-app" class="app hidden">
+  <aside>
+    <div class="brand"><span>ALI</span> KURYER</div>
+    <nav aria-label="Boshqaruv bo‘limlari">
+      <button type="button" class="active" data-tab="overview">▦ Umumiy nazorat</button>
+      <button type="button" data-tab="orders">☷ Buyurtmalar</button>
+      <button type="button" data-tab="restaurants">▤ Oshxonalar</button>
+      <button type="button" data-tab="partners">✦ Hamkorlik arizalari</button>
+      <button type="button" data-tab="support">◌ Operator</button>
+      <button type="button" data-tab="security">⚙ Xavfsizlik</button>
+    </nav>
+    <div class="side-bottom">Super Admin · barcha ma’lumotlar serverdan olinadi, sinov ma’lumotlari ko‘rsatilmaydi.</div>
+  </aside>
+  <main>
+    <header class="top">
+      <div><div class="eyebrow">ALI KURYER / SUPER ADMIN</div><h1 id="page-title">Umumiy nazorat</h1></div>
+      <div class="top-actions">
+        <button type="button" id="refresh" class="btn secondary">↻ Yangilash</button>
+        <button type="button" id="logout" class="btn secondary">Chiqish</button>
+      </div>
+    </header>
+    <p id="content-message" class="notice hidden" role="status"></p>
+    <section id="overview" data-page>
+      <div class="stats">
+        <div class="stat"><span>Buyurtmalar</span><b id="stat-orders">—</b></div>
+        <div class="stat"><span>Oshxonalar</span><b id="stat-restaurants">—</b></div>
+        <div class="stat"><span>Yangi arizalar</span><b id="stat-partners">—</b></div>
+        <div class="stat"><span>Operator suhbatlari</span><b id="stat-threads">—</b></div>
+      </div>
+      <div class="two">
+        <div class="panel"><h2>Oxirgi buyurtmalar</h2><div id="recent-orders" class="empty">Serverdan olinmoqda…</div></div>
+        <div class="panel"><h2>Hamkorlar so‘rovlari</h2><div id="recent-partners" class="empty">Serverdan olinmoqda…</div></div>
+      </div>
+    </section>
+    <section id="orders" data-page class="panel hidden"><h2>Buyurtmalar ro‘yxati</h2><div id="order-list"></div></section>
+    <section id="restaurants" data-page class="panel hidden"><h2>Oshxonalar ro‘yxati</h2><div id="restaurant-list"></div></section>
+    <section id="partners" data-page class="panel hidden"><h2>Hamkorlik arizalari</h2><div id="partner-list"></div></section>
+    <section id="support" data-page class="panel hidden"><h2>Operator suhbatlari</h2><div id="support-list"></div></section>
+    <section id="security" data-page class="panel hidden">
+      <h2>Admin parolini almashtirish</h2>
+      <p class="muted">Barcha ilovalar uchun yagona autentifikatsiya serverini ishlatish maqsad qilingan. Ikkinchi eski Render xizmati hali alohida parol tizimida bo‘lishi mumkin.</p>
+      <form id="password-form" style="max-width:440px">
+        <label for="current-pass">Amaldagi parol</label><input id="current-pass" type="password" autocomplete="current-password" required>
+        <label for="new-pass">Yangi parol (kamida 14 belgi)</label><input id="new-pass" type="password" autocomplete="new-password" minlength="14" required>
+        <label for="repeat-pass">Yangi parolni takrorlang</label><input id="repeat-pass" type="password" autocomplete="new-password" minlength="14" required>
+        <button type="submit" class="btn primary full">Parolni yangilash va qayta kirish</button>
+      </form>
+      <p id="password-message" role="alert" class="notice hidden"></p>
+    </section>
+  </main>
+</div>
+<script>
+"use strict";
+// The token is intentionally held in memory only: never in a URL, cookie,
+// localStorage, sessionStorage, or an analytics event.
+let accessToken = "";
+let activeTab = "overview";
+const cache = {orders: [], restaurants: [], partners: [], support: []};
+const $ = id => document.getElementById(id);
+const show = (element, yes) => element.classList.toggle("hidden", !yes);
+function message(id, value) {
+  const node = $(id);
+  node.textContent = value || "";
+  show(node, !!value);
+}
+function logout(note = "") {
+  accessToken = "";
+  $("password").value = "";
+  $("current-pass").value = "";
+  $("new-pass").value = "";
+  $("repeat-pass").value = "";
+  show($("admin-app"), false);
+  show($("login-screen"), true);
+  message("login-message", note);
+}
+async function api(path, options = {}) {
+  const headers = {"Accept": "application/json", ...(options.body ? {"Content-Type": "application/json"} : {})};
+  if (accessToken) headers.Authorization = "Bearer " + accessToken;
+  let res;
+  try { res = await fetch(path, {...options, headers, credentials: "same-origin", cache: "no-store"}); }
+  catch { throw Error("Server bilan aloqa yo‘q. Internetni tekshiring."); }
+  let body = {};
+  try { body = await res.json(); } catch {}
+  if (!res.ok) {
+    if (res.status === 401 && accessToken) { logout("Sessiya yakunlandi. Qayta kiring."); throw Error("Sessiya yakunlandi."); }
+    throw Error(typeof body.detail === "string" ? body.detail : "Server xatosi: " + res.status);
+  }
+  return body;
+}
+function listOf(v) { return Array.isArray(v) ? v : []; }
+function item(container, title, desc, badge = "") {
+  const node = document.createElement("div"); node.className = "item";
+  const copy = document.createElement("div");
+  const bold = document.createElement("b"); bold.textContent = title;
+  const small = document.createElement("small"); small.textContent = desc;
+  copy.append(bold, small); node.append(copy);
+  if (badge) { const pill = document.createElement("span"); pill.className = "pill"; pill.textContent = badge; node.append(pill); }
+  container.append(node);
+}
+function render(target, rows, renderOne) {
+  const el = $(target); el.replaceChildren();
+  if (!rows.length) { const n = document.createElement("p"); n.className = "empty"; n.textContent = "Hozircha ma’lumot yo‘q."; el.append(n); return; }
+  rows.forEach(row => renderOne(el, row));
+}
+function orderRow(el, x) {
+  const o = x.order && typeof x.order === "object" ? x.order : x;
+  item(el, "Buyurtma №" + (o.id ?? "—"), String(o.customer_name || o.status || "Buyurtma") + " · " + (o.total ?? "—") + " so‘m", String(o.status || "Jarayonda"));
+}
+function restaurantRow(el, x) {
+  item(el, String(x.name || "Oshxona"), "ID: " + (x.id ?? "—"), x.is_approved === false ? "Tasdiqlanmagan" : "Ro‘yxatda");
+}
+function partnerRow(el, x) {
+  item(el, String(x.name || x.full_name || "Hamkor"), String(x.phone || "Aloqa ma’lumoti yo‘q"), String(x.kind || x.status || "Ariza"));
+}
+function supportRow(el, x) {
+  item(el, "Mijoz №" + (x.customer_id ?? "—"), String(x.last_message || "Yordam suhbati"), String(x.unread_count || 0) + " yangi");
+}
+async function refresh() {
+  if (!accessToken) return;
+  message("content-message", "");
+  const endpoints = {
+    orders: "/api/v1/staff/orders",
+    restaurants: "/api/v1/staff/restaurants",
+    partners: "/api/admin/partner-applications",
+    support: "/api/v1/admin/support/threads"
+  };
+  const results = await Promise.allSettled(Object.entries(endpoints).map(async ([key, path]) => [key, await api(path)]));
+  let errors = [];
+  for (let index = 0; index < results.length; index++) {
+    const entry = results[index];
+    const key = Object.keys(endpoints)[index];
+    if (entry.status === "fulfilled") cache[key] = listOf(entry.value[1]);
+    else {cache[key] = []; errors.push(key + ": " + (entry.reason.message || "xato"));}
+  }
+  $("stat-orders").textContent = cache.orders.length;
+  $("stat-restaurants").textContent = cache.restaurants.length;
+  $("stat-partners").textContent = cache.partners.length;
+  $("stat-threads").textContent = cache.support.length;
+  render("recent-orders", cache.orders.slice(0,5), orderRow);
+  render("recent-partners", cache.partners.slice(0,5), partnerRow);
+  render("order-list", cache.orders, orderRow);
+  render("restaurant-list", cache.restaurants, restaurantRow);
+  render("partner-list", cache.partners, partnerRow);
+  render("support-list", cache.support, supportRow);
+  if (errors.length) message("content-message", "Ba’zi ma’lumotlarni olishning iloji bo‘lmadi: " + errors.join("; "));
+}
+function tab(name) {
+  activeTab = name;
+  document.querySelectorAll("[data-page]").forEach(el => show(el, el.id === name));
+  document.querySelectorAll("[data-tab]").forEach(el => el.classList.toggle("active", el.dataset.tab === name));
+  const titles = {overview:"Umumiy nazorat",orders:"Buyurtmalar",restaurants:"Oshxonalar",partners:"Hamkorlik arizalari",support:"Operator suhbatlari",security:"Xavfsizlik"};
+  $("page-title").textContent = titles[name] || "Boshqaruv";
+}
+document.querySelectorAll("[data-tab]").forEach(el => el.addEventListener("click", () => tab(el.dataset.tab)));
+$("refresh").addEventListener("click", () => {refresh().catch(e => message("content-message", e.message));});
+$("logout").addEventListener("click", () => logout());
+$("login-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("login-button").disabled = true;
+  message("login-message", "");
+  try {
+    const data = await api("/api/auth/admin/login", {
+      method: "POST",
+      body: JSON.stringify({username: $("username").value.trim(), password: $("password").value})
+    });
+    if (data.role !== "admin" || !data.access_token) throw Error("Admin ruxsati tasdiqlanmadi.");
+    accessToken = data.access_token;
+    $("password").value = "";
+    show($("login-screen"), false); show($("admin-app"), true);
+    tab("overview");
+    await refresh();
+  } catch (err) { message(accessToken ? "content-message" : "login-message", err.message); }
+  finally { $("login-button").disabled = false; }
+});
+$("password-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  message("password-message", "");
+  const next = $("new-pass").value;
+  if (next !== $("repeat-pass").value) {message("password-message", "Parollar bir xil emas."); return;}
+  if (next.length < 14) {message("password-message", "Kamida 14 belgili kuchli parol kiriting."); return;}
+  try {
+    await api("/api/auth/admin/change-password", {
+      method: "POST", body: JSON.stringify({current_password: $("current-pass").value, new_password: next})
+    });
+    logout("Admin paroli o‘zgartirildi. Yangi parol bilan kiring.");
+  } catch (err) {message("password-message", err.message);}
+});
+</script>
+</body>
+</html>
