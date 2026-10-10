@@ -228,9 +228,10 @@ object AliApi {
         val body = JSONObject().put("message", message)
         val endpoint = if (token == null) "/api/assistant/chat" else "/api/v1/assistant/chat"
         if (token != null) body.put("retain_history", retainHistory)
-        val reply = JSONObject(request("POST", endpoint, body, token))
-            .optString("reply", "")
+        val payload = JSONObject(request("POST", endpoint, body, token))
+        val reply = payload.optString("reply", "")
         if (reply.isBlank()) throw IllegalStateException("Yordamchi javob bermadi")
-        return reply
+        return if (payload.optString("mode") == "basic")
+            "Ma’lumot rejimi: $reply" else reply
     }
 }
