@@ -41,6 +41,7 @@ def test_auth_schemas_exist_and_validate():
         name="Sinov Mijoz",
         phone="+998901234567",
         password="testpassword123",
+        otp_code="123456",
     )
     assert user.name == "Sinov Mijoz"
     assert LoginRequest(phone=user.phone, password=user.password).phone == user.phone
