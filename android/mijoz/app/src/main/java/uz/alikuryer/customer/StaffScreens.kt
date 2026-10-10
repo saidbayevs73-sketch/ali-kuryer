@@ -48,8 +48,11 @@ internal fun AliStaffApp() {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var token by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf(if (role == "admin") "admin" else "") }
     var password by remember { mutableStateOf("") }
+    var oldAdminPassword by remember { mutableStateOf("") }
+    var newAdminPassword by remember { mutableStateOf("") }
+    var repeatAdminPassword by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var tab by remember { mutableStateOf("home") }
@@ -245,7 +248,8 @@ internal fun AliStaffApp() {
     val tabs = when (role) {
         "courier" -> listOf("home" to "Buyurtmalar", "orders" to "Mening", "chat" to "Chat")
         "restaurant" -> listOf("home" to "Buyurtmalar", "menu" to "Menyu", "chat" to "Chat")
-        else -> listOf("home" to "Buyurtmalar", "chat" to "Chat", "ai" to "AI", "team" to "Xodimlar")
+        else -> listOf("home" to "Buyurtmalar", "chat" to "Chat", "ai" to "AI",
+            "team" to "Xodimlar", "settings" to "Sozlamalar")
     }
     Scaffold(
         topBar = {
@@ -284,6 +288,7 @@ internal fun AliStaffApp() {
                             "chat" -> Icons.Default.ChatBubbleOutline
                             "ai" -> Icons.Default.SmartToy
                             "team" -> Icons.Default.Groups
+                            "settings" -> Icons.Default.Settings
                             "orders" -> Icons.Default.DeliveryDining
                             else -> Icons.Default.Dashboard
                         }, null)
@@ -306,6 +311,7 @@ internal fun AliStaffApp() {
                             "chat" -> "Xabarlar va suhbatlar"
                             "ai" -> "Muhammadali AI nazorati"
                             "team" -> "Xodimlar va hamkorlar"
+                            "settings" -> "Admin sozlamalari"
                             else -> if (role == "courier") "Kuryer buyurtmalari"
                             else "Buyurtmalar"
                         },
@@ -619,6 +625,60 @@ internal fun AliStaffApp() {
                     }
                 }
             }
+
+            if (role == "admin" && tab == "settings") {
+                item {
+                    StaffCard {
+                        Text("Admin parolini almashtirish",
+                            fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                        Text("Login nomi: admin. Amaldagi parolingizni kiriting, " +
+                            "so‘ng yangi xavfsiz parol o‘rnating.",
+                            color = AliMuted, fontSize = 12.sp)
+                        OutlinedTextField(oldAdminPassword, { oldAdminPassword = it },
+                            label = { Text("Hozirgi parol") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true)
+                        OutlinedTextField(newAdminPassword, { newAdminPassword = it },
+                            label = { Text("Yangi parol (kamida 14 belgi)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true)
+                        OutlinedTextField(repeatAdminPassword, { repeatAdminPassword = it },
+                            label = { Text("Yangi parolni takrorlang") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            singleLine = true)
+                        Button(
+                            enabled = !busy && oldAdminPassword.isNotBlank() &&
+                                newAdminPassword.length >= 14 &&
+                                repeatAdminPassword == newAdminPassword,
+                            onClick = {
+                                scope.launch {
+                                    busy = true
+                                    error = ""
+                                    try {
+                                        StaffApi.changeAdminPassword(
+                                            token, oldAdminPassword, newAdminPassword)
+                                        oldAdminPassword = ""
+                                        newAdminPassword = ""
+                                        repeatAdminPassword = ""
+                                        token = ""
+                                        tab = "home"
+                                        error = ""
+                                    } catch (e: Exception) {
+                                        error = e.message ?: "Parolni o‘zgartirib bo‘lmadi"
+                                    } finally { busy = false }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = AliRed)
+                        ) { Text("Parolni o‘zgartirish") }
+                        Text("Parol almashtirilgach, xavfsizlik uchun qayta login qiling.",
+                            color = AliMuted, fontSize = 11.sp)
+                    }
+                }
+            }
             item {
                 Spacer(Modifier.height(14.dp))
                 Text("Ali Kuryer • ${roleLabel(role)} • 1.4.0",
@@ -649,8 +709,10 @@ private fun StaffLogin(role: String, phone: String, password: String,
                 fontSize = 12.sp, color = AliMuted)
             Spacer(Modifier.height(8.dp))
             OutlinedTextField(phone, onPhone, modifier = Modifier.fillMaxWidth(),
-                label = { Text("Telefon +998XXXXXXXXX") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                label = { Text(if (role == "admin") "Login nomi" else "Telefon +998XXXXXXXXX") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (role == "admin") KeyboardType.Text else KeyboardType.Phone
+                ),
                 singleLine = true)
             OutlinedTextField(password, onPassword, modifier = Modifier.fillMaxWidth(),
                 label = { Text("Parol") },
@@ -665,7 +727,8 @@ private fun StaffLogin(role: String, phone: String, password: String,
             }
         }
         Spacer(Modifier.height(18.dp))
-        Text("Xavfsiz kirish • Har bir rol uchun alohida ruxsat",
+        Text(if (role == "admin") "Login: admin • Kuchli parol bilan himoyalangan" else
+            "Xavfsiz kirish • Har bir rol uchun alohida ruxsat",
             color = AliMuted, fontSize = 12.sp)
     }
 }

@@ -265,6 +265,69 @@ def register(data: schemas.RegisterRequest, db: Session = Depends(get_db)):
     return {"message": "Telefon SMS orqali tasdiqlandi", "user_id": user.id}
 
 
+
+class AdminUsernameLogin(BaseModel):
+    username: str = Field(min_length=1, max_length=32)
+    password: str = Field(min_length=1, max_length=128)
+
+
+@router.post("/admin/login")
+def admin_username_login(data: AdminUsernameLogin,
+                         db: Session = Depends(get_db)):
+    """Server-enforced admin role, fixed owner-facing alias; no phone field in app."""
+    import os
+    import re
+    if data.username.strip().lower() != "admin":
+        raise HTTPException(401, "Login yoki parol noto‘g‘ri")
+    owner_phone = os.getenv("ADMIN_PHONE", "").strip()
+    if not re.fullmatch(r"\\+998[0-9]{9}", owner_phone):
+        raise HTTPException(503, "Admin hisobi sozlanmagan. Render sozlamalarini tekshiring.")
+    user = db.query(models.User).filter_by(phone=owner_phone).first()
+    if not user or user.role != "admin" or not user.is_active or not user.password_hash or (
+            not security.verify_password(data.password, user.password_hash)):
+        raise HTTPException(401, "Login yoki parol noto‘g‘ri")
+    return {
+        "access_token": security.admin_access_token(user),
+        "token_type": "bearer", "role": "admin",
+    }
+
+
+class AdminChangePassword(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=14, max_length=72)
+
+
+def validate_strong_admin_password(value: str) -> None:
+    import re
+    if (len(value.encode("utf-8")) > 72 or len(value) < 14 or
+            not re.search(r"[A-Z]", value) or not re.search(r"[a-z]", value) or
+            not re.search(r"[0-9]", value) or not re.search(r"[^A-Za-z0-9]", value) or
+            value.lower() in {"admin", "admin123", "adminadmin"}):
+        raise HTTPException(422,
+            "Yangi parol kamida 14 belgidan iborat bo‘lsin: katta-kichik harf, raqam va belgi.")
+
+
+@router.post("/admin/change-password")
+def change_admin_password(data: AdminChangePassword,
+                          user=Depends(shared_get_current_user),
+                          db: Session = Depends(get_db)):
+    if user.role != "admin":
+        raise HTTPException(403, "Faqat admin o‘z parolini o‘zgartira oladi")
+    # Resolve in the same session as the mutation.
+    current = db.get(models.User, user.id)
+    if not current or not current.is_active:
+        raise HTTPException(401, "Admin sessiyasi yaroqsiz")
+    if not current.password_hash or not security.verify_password(data.current_password, current.password_hash):
+        raise HTTPException(401, "Joriy parol noto‘g‘ri")
+    validate_strong_admin_password(data.new_password)
+    if security.verify_password(data.new_password, current.password_hash):
+        raise HTTPException(422, "Yangi parol oldingisidan farq qilishi kerak")
+    current.password_hash = security.hash_password(data.new_password)
+    db.commit()
+    # Previous JWTs cease working due to password-hash-bound admin token version.
+    return {"message": "Admin paroli yangilandi. Qayta tizimga kiring."}
+
+
 @router.post("/login")
 def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.phone == data.phone.strip()).first()
@@ -272,7 +335,8 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
     if not user or not user.is_active or not user.password_hash or not security.verify_password(data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Telefon yoki parol noto'g'ri")
 
-    token = security.create_access_token({"sub": str(user.id), "role": user.role})
+    token = (security.admin_access_token(user) if user.role == "admin" else
+             security.create_access_token({"sub": str(user.id), "role": user.role}))
 
     return {
         "access_token": token,

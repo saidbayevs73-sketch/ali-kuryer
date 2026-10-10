@@ -25,6 +25,13 @@ class UsernameIdentity(Base):
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
 
 
+class AdminPasswordResetEvent(Base):
+    """One-time nonsecret event identifier for an owner-approved password recovery."""
+    __tablename__ = "admin_password_reset_events"
+    id = Column(String(64), primary_key=True)
+    applied_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class Restaurant(Base):
     __tablename__ = "restaurants"
 

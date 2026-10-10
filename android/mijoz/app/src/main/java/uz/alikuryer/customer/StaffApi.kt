@@ -39,13 +39,23 @@ internal object StaffApi {
         }
 
     suspend fun login(phone: String, password: String, expectedRole: String): String {
-        val json = JSONObject(call("/api/auth/login", "POST",
-            body = JSONObject().put("phone", phone).put("password", password)))
+        val endpoint = if (expectedRole == "admin") "/api/auth/admin/login" else "/api/auth/login"
+        val body = if (expectedRole == "admin") {
+            JSONObject().put("username", phone).put("password", password)
+        } else {
+            JSONObject().put("phone", phone).put("password", password)
+        }
+        val json = JSONObject(call(endpoint, "POST", body = body))
         if (json.optString("role") != expectedRole)
             throw IllegalStateException("Bu ilovaga faqat ${roleLabel(expectedRole)} hisobi bilan kiriladi")
         return json.optString("access_token").takeIf { it.isNotBlank() }
             ?: throw IllegalStateException("Kirish tokeni olinmadi")
     }
+    suspend fun changeAdminPassword(token: String, current: String, updated: String) {
+        call("/api/auth/admin/change-password", "POST", token,
+            JSONObject().put("current_password", current).put("new_password", updated))
+    }
+
     suspend fun getOrders(token: String): JSONArray = JSONArray(call("/api/v1/staff/orders", token = token))
     suspend fun offers(token: String): JSONArray = JSONArray(call("/api/v1/courier/offers", token = token))
     suspend fun accept(token: String, orderId: Int): JSONObject =
