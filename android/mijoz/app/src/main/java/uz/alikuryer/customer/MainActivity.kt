@@ -47,15 +47,28 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AliTelegramBridge.handle(intent)
         // Android 15 edge-to-edge: use window insets so content never overlaps clock/notch.
+        val darkSystem = (resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
         enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(android.graphics.Color.rgb(246, 245, 242), android.graphics.Color.BLACK),
-            navigationBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK)
+            statusBarStyle = if (darkSystem) SystemBarStyle.dark(android.graphics.Color.rgb(25, 25, 29))
+                             else SystemBarStyle.light(android.graphics.Color.rgb(246, 245, 242), android.graphics.Color.BLACK),
+            navigationBarStyle = if (darkSystem) SystemBarStyle.dark(android.graphics.Color.rgb(25, 25, 29))
+                                else SystemBarStyle.light(android.graphics.Color.rgb(246, 245, 242), android.graphics.Color.BLACK)
         )
         setContent {
+            val dark = androidx.compose.foundation.isSystemInDarkTheme()
             MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = AliRed, onPrimary = Color.White, background = AliCanvas,
-                    surface = Color.White, onSurface = AliBlack
+                colorScheme = if (dark) darkColorScheme(
+                    primary = Color(0xFFE1A3AA), onPrimary = Color(0xFF371A22),
+                    background = Color(0xFF19191D), surface = Color(0xFF25252B),
+                    onSurface = Color(0xFFF0EDE9), surfaceVariant = Color(0xFF313036),
+                    outline = Color(0xFF39383E)
+                ) else lightColorScheme(
+                    primary = Color(0xFFB54852), onPrimary = Color.White,
+                    background = Color(0xFFF6F5F2), surface = Color.White,
+                    onSurface = Color(0xFF27272B), surfaceVariant = Color(0xFFF6E9E9),
+                    outline = Color(0xFFE7E4DF)
                 )
             ) {
                 var splash by remember { mutableStateOf(true) }
@@ -405,7 +418,7 @@ private fun AliCustomerApp() {
     Scaffold(
         containerColor = AliCanvas,
         topBar = {
-            Surface(color = Color.White, shadowElevation = 1.dp) {
+            Surface(color = AliSurface, shadowElevation = 1.dp) {
                 Column(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().height(74.dp)
                         .padding(horizontal = 16.dp),
@@ -454,7 +467,7 @@ private fun AliCustomerApp() {
         },
         bottomBar = {
             if (page !in listOf("chat", "support", "order_chat")) NavigationBar(
-                containerColor = Color.White, tonalElevation = 7.dp) {
+                containerColor = AliSurface, tonalElevation = 1.dp) {
                 data class Nav(val key: String, val title: String, val icon: @Composable () -> Unit)
                 val tabs = listOf(
                     Nav("home", "Asosiy") { Icon(Icons.Default.Home, null) },
@@ -493,7 +506,7 @@ private fun AliCustomerApp() {
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth(),
                 color = AliRed, trackColor = Color(0xFFF6E9E9))
             if (message.isNotBlank()) {
-                Surface(color = Color(0xFFFFF3DF)) {
+                Surface(color = AliWelcome) {
                     Row(Modifier.fillMaxWidth().padding(9.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Text(message, modifier = Modifier.weight(1f),
@@ -1157,7 +1170,7 @@ private fun AliCustomerApp() {
                     item {
                         HorizontalDivider(color = AliBorder)
                         Surface(onClick = { page = "chat" },
-                            color = Color.White, shape = RoundedCornerShape(16.dp)) {
+                            color = AliSurface, shape = RoundedCornerShape(16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.SmartToy, null, tint = AliRed)
@@ -1169,7 +1182,7 @@ private fun AliCustomerApp() {
                         }
                         Spacer(Modifier.height(7.dp))
                         Surface(onClick = { openSupport() },
-                            color = Color.White, shape = RoundedCornerShape(16.dp)) {
+                            color = AliSurface, shape = RoundedCornerShape(16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.SupportAgent, null, tint = AliRed)
@@ -1190,7 +1203,7 @@ private fun AliCustomerApp() {
                     Spacer(Modifier.height(10.dp))
                     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         item {
-                            Surface(color = Color.White,
+                            Surface(color = AliSurface,
                                 shape = RoundedCornerShape(16.dp)) {
                                 Text("Assalomu alaykum! Men Muhammadali. " +
                                     "Taom tanlashda yordam beraman. Nima haqida so‘ramoqchisiz?",
@@ -1202,11 +1215,11 @@ private fun AliCustomerApp() {
                             Row(Modifier.fillMaxWidth(),
                                 horizontalArrangement = if (item.first)
                                     Arrangement.End else Arrangement.Start) {
-                                Surface(color = if (item.first) AliRed else Color.White,
+                                Surface(color = if (item.first) AliRed else AliSurface,
                                     shape = RoundedCornerShape(17.dp),
                                     modifier = Modifier.fillMaxWidth(.87f)) {
                                     Text(item.second, modifier = Modifier.padding(13.dp),
-                                        color = if (item.first) Color.White else AliBlack,
+                                        color = if (item.first) MaterialTheme.colorScheme.onPrimary else AliBlack,
                                         fontSize = 13.sp, lineHeight = 19.sp)
                                 }
                             }
