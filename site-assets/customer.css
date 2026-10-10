@@ -304,3 +304,43 @@ footer strong {color:#fff}
   border-radius:9px;padding:6px 10px;font-weight:650;letter-spacing:.1px
 }
 @media(max-width:680px){.card-image{min-height:225px}}
+
+
+/* Customer cabinet convenience only — approved photographic storefront is unchanged. */
+.customer-dialog .ali-profile-heading {padding:3px 1px 16px}
+.customer-dialog .ali-profile-heading h3 {
+  color:var(--ali-ink,#232326);font-size:21px;line-height:1.3;margin:0 0 4px
+}
+.customer-dialog .ali-profile-heading p {margin:4px 0;font-size:12px}
+.customer-dialog .ali-profile-shortcuts {
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+  margin:4px 0 17px
+}
+.customer-dialog .ali-profile-shortcut {
+  border:1px solid #ebe4df;border-radius:13px;background:#faf9f7;
+  padding:13px 10px;color:#2d2e33;font:inherit;font-size:12px;
+  text-align:left;cursor:pointer;min-height:53px
+}
+.customer-dialog .ali-profile-shortcut:active {background:#f6e5e3}
+.customer-dialog .ali-username-account {margin:11px 0}
+.customer-dialog .ali-username-open {
+  display:block;width:100%;border:1px solid #e7ded9;border-radius:11px;
+  background:#f4f2ef;padding:12px 14px;font:inherit;font-weight:700;
+  color:#252528;cursor:pointer
+}
+.customer-dialog .ali-username-open:disabled {opacity:.78;cursor:not-allowed}
+.customer-dialog #aliUsernameForm {
+  border-top:1px solid #eee8e3;margin-top:11px;padding-top:9px
+}
+.customer-dialog .ali-username-back {
+  background:none;border:0;text-decoration:underline;
+  color:#aa4148;cursor:pointer;margin:13px auto 2px;display:block
+}
+.customer-dialog .ali-username-account .muted{
+  color:#696971;font-size:12px;line-height:1.5
+}
+.customer-dialog .auth-submit:disabled{background:#a4a4aa;cursor:not-allowed}
+@media(max-width:430px){
+  .customer-dialog .ali-profile-shortcuts{grid-template-columns:1fr 1fr;gap:8px}
+  .customer-dialog .ali-profile-shortcut{padding:10px 8px;font-size:11px}
+}
