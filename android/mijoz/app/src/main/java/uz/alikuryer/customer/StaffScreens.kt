@@ -249,7 +249,7 @@ internal fun AliStaffApp() {
     }
     Scaffold(
         topBar = {
-            Surface(color = Color.White, shadowElevation = 1.dp) {
+            Surface(color = AliSurface, shadowElevation = 1.dp) {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 18.dp, vertical = 10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AliMark(size = 43)
@@ -273,7 +273,7 @@ internal fun AliStaffApp() {
             }
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(containerColor = AliSurface) {
                 tabs.forEach { (key, label) ->
                     NavigationBarItem(selected = tab == key, onClick = {
                         tab = key
@@ -672,7 +672,7 @@ private fun StaffLogin(role: String, phone: String, password: String,
 
 @Composable
 private fun StaffCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(color = Color.White, shape = RoundedCornerShape(18.dp),
+    Surface(color = AliSurface, shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, AliBorder)) {
         Column(modifier = Modifier.fillMaxWidth().padding(15.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp), content = content)

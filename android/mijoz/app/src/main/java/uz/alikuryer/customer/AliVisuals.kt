@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
@@ -26,10 +27,18 @@ import coil.compose.AsyncImage
 import java.util.Locale
 
 internal val AliRed = Color(0xFFE02032)
-internal val AliBlack = Color(0xFF17171B)
-internal val AliMuted = Color(0xFF787981)
-internal val AliCanvas = Color(0xFFF7F7F9)
-internal val AliBorder = Color(0xFFEAEAF0)
+/** All customer screens inherit the selected color mode. */
+internal val LocalAliDark = compositionLocalOf { false }
+internal val AliBlack: Color
+    @Composable get() = if (LocalAliDark.current) Color(0xFFF4F4F6) else Color(0xFF17171B)
+internal val AliMuted: Color
+    @Composable get() = if (LocalAliDark.current) Color(0xFFAFB2BB) else Color(0xFF787981)
+internal val AliCanvas: Color
+    @Composable get() = if (LocalAliDark.current) Color(0xFF101114) else Color(0xFFF7F7F9)
+internal val AliSurface: Color
+    @Composable get() = if (LocalAliDark.current) Color(0xFF1B1D21) else Color.White
+internal val AliBorder: Color
+    @Composable get() = if (LocalAliDark.current) Color(0xFF343740) else Color(0xFFEAEAF0)
 
 internal fun priceText(value: Long): String =
     "%,d".format(Locale.US, value).replace(",", " ") + " so‘m"
@@ -82,7 +91,7 @@ internal fun AliSectionTitle(title: String, caption: String? = null, trailing: S
 internal fun AliPromoHero(onExplore: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(174.dp)
         .clip(RoundedCornerShape(25.dp))
-        .background(Brush.linearGradient(listOf(AliBlack, Color(0xFF3A1C24), AliRed)))) {
+        .background(Brush.linearGradient(listOf(Color(0xFF17171B), Color(0xFF3A1C24), AliRed)))) {
         AsyncImage(
             model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1100&q=85",
             contentDescription = null,
@@ -143,7 +152,7 @@ internal val quickCategories = listOf(
 internal fun AliCategoryTile(item: QuickCategory, onClick: () -> Unit) {
     Column(Modifier.width(80.dp).clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        Surface(color = Color.White, border = BorderStroke(1.dp, AliBorder),
+        Surface(color = AliSurface, border = BorderStroke(1.dp, AliBorder),
             shape = RoundedCornerShape(20.dp)) {
             Box(Modifier.size(70.dp), contentAlignment = Alignment.Center) {
                 Text(item.icon, fontSize = 31.sp)
@@ -167,7 +176,7 @@ internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(23.dp),
         border = BorderStroke(1.dp, AliBorder),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = AliSurface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)) {
         Column {
             Box(Modifier.fillMaxWidth().height(125.dp)
@@ -232,7 +241,7 @@ internal fun AliRestaurantTile(restaurant: Restaurant, onClick: () -> Unit) {
 internal fun AliFoodTile(food: Food, count: Int, onPlus: () -> Unit,
                          onMinus: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(),
-        color = Color.White, shape = RoundedCornerShape(20.dp),
+        color = AliSurface, shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, AliBorder)) {
         Row(Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically) {

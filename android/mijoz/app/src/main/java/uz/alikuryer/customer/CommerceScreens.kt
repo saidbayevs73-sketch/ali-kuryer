@@ -53,7 +53,7 @@ internal fun AliOrdersScreen(
         items(orders, key = { it.id }) { order ->
             Surface(
                 onClick = { onOpen(order) },
-                shape = RoundedCornerShape(18.dp), color = Color.White,
+                shape = RoundedCornerShape(18.dp), color = AliSurface,
                 border = BorderStroke(1.dp, AliBorder)
             ) {
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
@@ -95,7 +95,7 @@ internal fun AliOrderTracker(
             AliEmptyState("📦", "Buyurtma yuklanmoqda", "Internet ulanishini tekshiring.")
         } else {
             item {
-                Surface(color = Color.White, shape = RoundedCornerShape(21.dp)) {
+                Surface(color = AliSurface, shape = RoundedCornerShape(21.dp)) {
                     Column(Modifier.fillMaxWidth().padding(19.dp)) {
                         Text("HOZIRGI HOLAT", fontWeight = FontWeight.Bold,
                             fontSize = 11.sp, color = AliMuted)
@@ -110,7 +110,7 @@ internal fun AliOrderTracker(
                 }
             }
             if (order.courierName != null) item {
-                Surface(color = Color.White, shape = RoundedCornerShape(19.dp)) {
+                Surface(color = AliSurface, shape = RoundedCornerShape(19.dp)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
                         Text("Sizning kuryeringiz", fontWeight = FontWeight.Bold,
                             fontSize = 16.sp)
@@ -136,7 +136,7 @@ internal fun AliOrderTracker(
                     val lng = order.courierLng
                     val bbox = "${lng-0.008}%2C${lat-0.006}%2C${lng+0.008}%2C${lat+0.006}"
                     val url = "https://www.openstreetmap.org/export/embed.html?bbox=$bbox&layer=mapnik&marker=$lat%2C$lng"
-                    Surface(color = Color.White, shape = RoundedCornerShape(18.dp)) {
+                    Surface(color = AliSurface, shape = RoundedCornerShape(18.dp)) {
                         Column(Modifier.padding(14.dp)) {
                             Text("Kuryerning so‘nggi joylashuvi", fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(5.dp))
@@ -168,7 +168,7 @@ internal fun AliOrderTracker(
                         }
                     }
                 } else {
-                    Surface(color = Color.White, shape = RoundedCornerShape(18.dp)) {
+                    Surface(color = AliSurface, shape = RoundedCornerShape(18.dp)) {
                         Column(Modifier.fillMaxWidth().padding(14.dp)) {
                             Text("📍 Jonli xarita", fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(6.dp))
@@ -211,7 +211,7 @@ internal fun AliConversationScreen(
             Text("Xizmat sifatini nazorat qilish uchun buyurtma va operator yozishmalari " +
                 "vakolatli administrator tomonidan ko‘rilishi mumkin.",
                 modifier = Modifier.fillMaxWidth().padding(10.dp),
-                fontSize = 11.sp, color = AliBlack)
+                fontSize = 11.sp, color = Color(0xFF17171B))
         }
         Spacer(Modifier.height(12.dp))
         LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -220,7 +220,7 @@ internal fun AliConversationScreen(
                     "Operator yoki buyurtma ishtirokchilariga xabar yozing.")
             }
             items(messages, key = { it.id }) { message ->
-                Surface(color = Color.White, shape = RoundedCornerShape(15.dp),
+                Surface(color = AliSurface, shape = RoundedCornerShape(15.dp),
                     border = BorderStroke(1.dp, AliBorder)) {
                     Column(Modifier.fillMaxWidth().padding(12.dp)) {
                         Text(message.senderName, color = AliRed,

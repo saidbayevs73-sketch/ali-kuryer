@@ -44,25 +44,64 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Android 15 edge-to-edge: use window insets so content never overlaps clock/notch.
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK),
-            navigationBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK)
-        )
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = AliRed, onPrimary = Color.White, background = AliCanvas,
-                    surface = Color.White, onSurface = AliBlack
-                )
-            ) {
-                var splash by remember { mutableStateOf(true) }
-                LaunchedEffect(Unit) { delay(950); splash = false }
-                Surface(
-                    modifier = Modifier.fillMaxSize().safeDrawingPadding(),
-                    color = AliCanvas
+            val preferences = remember { getSharedPreferences("ali_kuryer_appearance", Context.MODE_PRIVATE) }
+            var appearanceMode by remember {
+                mutableStateOf(preferences.getString("mode", "system")
+                    ?.takeIf { it in setOf("light", "dark", "system") } ?: "system")
+            }
+            val isDark = when (appearanceMode) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()
+            }
+            val canvas = if (isDark) Color(0xFF101114) else Color(0xFFF7F7F9)
+            val surfaceColor = if (isDark) Color(0xFF1B1D21) else Color.White
+            val textColor = if (isDark) Color(0xFFF4F4F6) else Color(0xFF17171B)
+            SideEffect {
+                val barColor = if (isDark) android.graphics.Color.rgb(16, 17, 20)
+                               else android.graphics.Color.WHITE
+                val style = if (isDark) SystemBarStyle.dark(barColor)
+                            else SystemBarStyle.light(barColor, android.graphics.Color.BLACK)
+                this@MainActivity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+            }
+            CompositionLocalProvider(LocalAliDark provides isDark) {
+                MaterialTheme(
+                    colorScheme = if (isDark) darkColorScheme(
+                        primary = AliRed, onPrimary = Color.White,
+                        background = canvas, onBackground = textColor,
+                        surface = surfaceColor, onSurface = textColor,
+                        surfaceVariant = Color(0xFF282B30),
+                        onSurfaceVariant = Color(0xFFBABCC6),
+                        outline = Color(0xFF555963),
+                        outlineVariant = Color(0xFF353841)
+                    ) else lightColorScheme(
+                        primary = AliRed, onPrimary = Color.White,
+                        background = canvas, onBackground = textColor,
+                        surface = surfaceColor, onSurface = textColor,
+                        surfaceVariant = Color(0xFFF0F1F4),
+                        onSurfaceVariant = Color(0xFF696B73),
+                        outline = Color(0xFFBBBFC8),
+                        outlineVariant = Color(0xFFEAEAF0)
+                    )
                 ) {
-                    if (splash) AliSplash() else if (BuildConfig.APP_ROLE == "customer") AliCustomerApp() else AliStaffApp()
+                    var splash by remember { mutableStateOf(true) }
+                    LaunchedEffect(Unit) { delay(950); splash = false }
+                    Surface(modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+                            color = AliCanvas) {
+                        if (splash) AliSplash()
+                        else if (BuildConfig.APP_ROLE == "customer")
+                            AliCustomerApp(
+                                appearanceMode = appearanceMode,
+                                onAppearanceChange = { next ->
+                                    if (next in setOf("light", "dark", "system")) {
+                                        appearanceMode = next
+                                        preferences.edit().putString("mode", next).apply()
+                                    }
+                                }
+                            )
+                        else AliStaffApp()
+                    }
                 }
             }
         }
@@ -71,7 +110,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun AliSplash() {
-    Surface(color = Color.White, modifier = Modifier.fillMaxSize()) {
+    Surface(color = AliSurface, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally) {
             AliMark(size = 190)
@@ -90,7 +129,7 @@ private fun AliSplash() {
 }
 
 @Composable
-private fun AliCustomerApp() {
+private fun AliCustomerApp(appearanceMode: String, onAppearanceChange: (String) -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -394,7 +433,7 @@ private fun AliCustomerApp() {
     Scaffold(
         containerColor = AliCanvas,
         topBar = {
-            Surface(color = Color.White, shadowElevation = 1.dp) {
+            Surface(color = AliSurface, shadowElevation = 1.dp) {
                 Column(Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().height(74.dp)
                         .padding(horizontal = 16.dp),
@@ -443,7 +482,7 @@ private fun AliCustomerApp() {
         },
         bottomBar = {
             if (page !in listOf("chat", "support", "order_chat")) NavigationBar(
-                containerColor = Color.White, tonalElevation = 7.dp) {
+                containerColor = AliSurface, tonalElevation = 7.dp) {
                 data class Nav(val key: String, val title: String, val icon: @Composable () -> Unit)
                 val tabs = listOf(
                     Nav("home", "Asosiy") { Icon(Icons.Default.Home, null) },
@@ -486,7 +525,7 @@ private fun AliCustomerApp() {
                     Row(Modifier.fillMaxWidth().padding(9.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Text(message, modifier = Modifier.weight(1f),
-                            color = AliBlack, fontSize = 12.sp)
+                            color = Color(0xFF17171B), fontSize = 12.sp)
                         IconButton(onClick = { message = "" }, Modifier.size(27.dp)) {
                             Icon(Icons.Default.Close, "Yopish", modifier = Modifier.size(17.dp))
                         }
@@ -500,7 +539,7 @@ private fun AliCustomerApp() {
                 ) {
                     item {
                         Surface(onClick = { openSearch() }, shape = RoundedCornerShape(17.dp),
-                            color = Color.White, border = BorderStroke(1.dp, AliBorder)) {
+                            color = AliSurface, border = BorderStroke(1.dp, AliBorder)) {
                             Row(Modifier.fillMaxWidth().height(54.dp)
                                 .padding(horizontal = 16.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
@@ -528,7 +567,7 @@ private fun AliCustomerApp() {
                     }
                     item {
                         Surface(onClick = { page = "chat" },
-                            color = Color.White, shape = RoundedCornerShape(19.dp),
+                            color = AliSurface, shape = RoundedCornerShape(19.dp),
                             border = BorderStroke(1.dp, AliBorder)) {
                             Row(Modifier.fillMaxWidth().padding(14.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
@@ -553,7 +592,7 @@ private fun AliCustomerApp() {
                         Surface(
                             onClick = { openSupport() },
                             shape = RoundedCornerShape(18.dp),
-                            color = Color.White,
+                            color = AliSurface,
                             border = BorderStroke(1.dp, AliBorder)
                         ) {
                             Row(Modifier.fillMaxWidth().padding(16.dp),
@@ -625,7 +664,7 @@ private fun AliCustomerApp() {
                             items(matchingFoods, key = { "f-${it.restaurant.id}-${it.food.id}" }) { hit ->
                                 Surface(onClick = { selectRestaurant(hit.restaurant) },
                                     shape = RoundedCornerShape(17.dp),
-                                    color = Color.White, border = BorderStroke(1.dp, AliBorder)) {
+                                    color = AliSurface, border = BorderStroke(1.dp, AliBorder)) {
                                     Row(Modifier.fillMaxWidth().padding(15.dp),
                                         verticalAlignment = Alignment.CenterVertically) {
                                         Text("🍱", fontSize = 31.sp)
@@ -659,14 +698,14 @@ private fun AliCustomerApp() {
                 ) {
                     item {
                         Box(Modifier.fillMaxWidth()) {
-                            Surface(color = AliBlack, shape = RoundedCornerShape(24.dp)) {
+                            Surface(color = Color(0xFF17171B), shape = RoundedCornerShape(24.dp)) {
                                 Row(Modifier.fillMaxWidth().padding(20.dp),
                                     verticalAlignment = Alignment.CenterVertically) {
                                     Column(Modifier.weight(1f)) {
                                         Text("OSHXONA MENYUSI", color = Color(0xFFFF9EA8),
                                             fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         Spacer(Modifier.height(7.dp))
-                                        Text(selected?.name.orEmpty(), color = Color.White,
+                                        Text(selected?.name.orEmpty(), color = AliSurface,
                                             fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
                                         Spacer(Modifier.height(7.dp))
                                         Text(selected?.address.orEmpty(), color = Color.LightGray,
@@ -687,7 +726,7 @@ private fun AliCustomerApp() {
                                         onClick = { menuFilter = category },
                                         label = { Text(category) },
                                         colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = AliBlack,
+                                            selectedContainerColor = Color(0xFF17171B),
                                             selectedLabelColor = Color.White))
                                 }
                             }
@@ -750,7 +789,7 @@ private fun AliCustomerApp() {
                                 })
                         }
                         item {
-                            Surface(color = Color.White, shape = RoundedCornerShape(19.dp)) {
+                            Surface(color = AliSurface, shape = RoundedCornerShape(19.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(17.dp)) {
                                     Text("Buyurtma hisoboti", fontWeight = FontWeight.Bold,
                                         fontSize = 17.sp)
@@ -809,7 +848,7 @@ private fun AliCustomerApp() {
                                 shape = RoundedCornerShape(16.dp))
                         }
                         item {
-                            Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
+                            Surface(color = AliSurface, shape = RoundedCornerShape(17.dp)) {
                                 Column(Modifier.fillMaxWidth().padding(17.dp)) {
                                     Text("To‘lov: naqd", fontWeight = FontWeight.Bold)
                                     Spacer(Modifier.height(9.dp))
@@ -971,7 +1010,10 @@ private fun AliCustomerApp() {
                         AliSectionTitle("Mening profilim", "Ali Kuryer mijoz hisobi")
                     }
                     item {
-                        Surface(shape = RoundedCornerShape(21.dp), color = AliBlack) {
+                        AliAppearanceSelector(appearanceMode, onAppearanceChange)
+                    }
+                    item {
+                        Surface(shape = RoundedCornerShape(21.dp), color = Color(0xFF17171B)) {
                             Row(Modifier.fillMaxWidth().padding(18.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.AccountCircle, null, tint = Color.White,
@@ -1086,7 +1128,7 @@ private fun AliCustomerApp() {
                         }
                     } else {
                         item {
-                            Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
+                            Surface(color = AliSurface, shape = RoundedCornerShape(17.dp)) {
                                 Column(
                                     Modifier.fillMaxWidth().padding(15.dp),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -1136,7 +1178,7 @@ private fun AliCustomerApp() {
                     item {
                         HorizontalDivider(color = AliBorder)
                         Surface(onClick = { page = "chat" },
-                            color = Color.White, shape = RoundedCornerShape(16.dp)) {
+                            color = AliSurface, shape = RoundedCornerShape(16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.SmartToy, null, tint = AliRed)
@@ -1148,7 +1190,7 @@ private fun AliCustomerApp() {
                         }
                         Spacer(Modifier.height(7.dp))
                         Surface(onClick = { openSupport() },
-                            color = Color.White, shape = RoundedCornerShape(16.dp)) {
+                            color = AliSurface, shape = RoundedCornerShape(16.dp)) {
                             Row(Modifier.fillMaxWidth().padding(15.dp),
                                 verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.SupportAgent, null, tint = AliRed)
@@ -1169,7 +1211,7 @@ private fun AliCustomerApp() {
                     Spacer(Modifier.height(10.dp))
                     LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         item {
-                            Surface(color = Color.White,
+                            Surface(color = AliSurface,
                                 shape = RoundedCornerShape(16.dp)) {
                                 Text("Assalomu alaykum! Men Muhammadali. " +
                                     "Taom tanlashda yordam beraman. Nima haqida so‘ramoqchisiz?",
@@ -1181,7 +1223,7 @@ private fun AliCustomerApp() {
                             Row(Modifier.fillMaxWidth(),
                                 horizontalArrangement = if (item.first)
                                     Arrangement.End else Arrangement.Start) {
-                                Surface(color = if (item.first) AliRed else Color.White,
+                                Surface(color = if (item.first) AliRed else AliSurface,
                                     shape = RoundedCornerShape(17.dp),
                                     modifier = Modifier.fillMaxWidth(.87f)) {
                                     Text(item.second, modifier = Modifier.padding(13.dp),
