@@ -135,7 +135,10 @@ def consume_otp(db: Session, phone: str, code: str):
         challenge.attempts += 1
         db.commit()
         raise HTTPException(400, "Tasdiqlash kodi noto‘g‘ri")
-    db.delete(challenge)
+    # Keep the daily send counter even after consuming the code.
+    challenge.code_digest = None
+    challenge.nonce = None
+    challenge.expires_at = None
     db.flush()
 
 
