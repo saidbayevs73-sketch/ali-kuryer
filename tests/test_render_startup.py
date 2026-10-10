@@ -216,7 +216,7 @@ def test_owner_console_disabled_by_default_and_private_when_enabled(monkeypatch)
     assert client.get("/static/admin-console-v2.js").status_code == 200
     assert client.get("/static/admin-console-v2.css").status_code == 200
     assert 'ADMIN_PASSWORD' not in response.text
-    assert 'access_token' in response.text  # only generic JavaScript field name
+    assert 'access_token' in client.get("/static/admin-console-v2.js").text  # generic JSON field only
 
 
 def test_admin_bootstrap_rejects_weak_password(monkeypatch):
