@@ -115,7 +115,17 @@ internal fun AliTelegramLoginPanel(
                                 "So‘ng ilovaga avtomatik qaytasiz."
                         } catch (e: Exception) {
                             AliTelegramBridge.clear()
-                            error = e.message ?: "Telegram kirishni ochib bo‘lmadi"
+                            info = ""
+                            val reason = e.message.orEmpty()
+                            error = when {
+                                reason.contains("PostgreSQL", ignoreCase = true) ||
+                                    reason.contains("baza", ignoreCase = true) ->
+                                    "Hisobga kirish serveri sozlanmoqda. Birozdan keyin yana urinib ko‘ring."
+                                reason.contains("so zlanmagan", ignoreCase = true) ||
+                                    reason.contains("sozlanmagan", ignoreCase = true) ->
+                                    "Telegram orqali kirish xizmati hali faollashtirilmagan."
+                                else -> reason.ifBlank { "Telegram kirishni ochib bo‘lmadi." }
+                            }
                         } finally { busy = false }
                     }
                 },
