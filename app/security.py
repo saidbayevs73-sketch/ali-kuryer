@@ -1,5 +1,7 @@
 
 from datetime import datetime, timedelta, timezone
+import hmac
+import hashlib
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from app.config import settings
@@ -24,3 +26,18 @@ def decode_access_token(token: str):
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+def admin_password_version(password_hash: str) -> str:
+    """Bind each admin JWT to current password; changes revoke old admin JWTs."""
+    return hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        password_hash.encode("utf-8"), hashlib.sha256
+    ).hexdigest()[:32]
+
+
+def admin_access_token(user) -> str:
+    return create_access_token({
+        "sub": str(user.id), "role": "admin",
+        "admin_pwdv": admin_password_version(user.password_hash)
+    })

@@ -4,7 +4,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.security import decode_access_token
+from app.security import decode_access_token, admin_password_version
+import hmac
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -52,5 +53,14 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Foydalanuvchi topilmadi",
         )
-
+    if user.role == "admin":
+        actual = payload.get("admin_pwdv", "")
+        expected = admin_password_version(user.password_hash or "")
+        if not isinstance(actual, str) or not hmac.compare_digest(actual, expected):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Admin sessiyasi eskirgan. Qayta kiring.",
+            )
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Hisob faol emas")
     return user

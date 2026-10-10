@@ -205,3 +205,106 @@ def test_username_signup_never_accepts_reserved_name_or_unconfirmed_privacy(monk
     assert client.post("/api/auth/username/register", json={
         **body, "username":"ünicode_name"
     }).status_code == 422
+
+
+
+def test_admin_username_login_requires_real_admin_password_not_admin_admin(monkeypatch):
+    from app import security
+    monkeypatch.setenv("ADMIN_PHONE", "+998901290777")
+    monkeypatch.delenv("ALI_ADMIN_RESET_REQUEST_ID", raising=False)
+    password = "Safe-Temporary-Admin-Password987!"
+    with SessionLocal() as db:
+        user = db.query(models.User).filter_by(phone="+998901290777").first()
+        if user is None:
+            user = models.User(name="Staff admin test",
+                phone="+998901290777", password_hash=security.hash_password(password),
+                role="admin", is_active=True)
+            db.add(user)
+        else:
+            user.role="admin"
+            user.is_active=True
+            user.password_hash=security.hash_password(password)
+        db.commit()
+    assert client.post("/api/auth/admin/login",
+        json={"username":"admin","password":"admin"}).status_code == 401
+    assert client.post("/api/auth/admin/login",
+        json={"username":"other","password":password}).status_code == 401
+    good = client.post("/api/auth/admin/login",
+        json={"username":"admin","password":password})
+    assert good.status_code == 200, good.text
+    token = good.json()["access_token"]
+    assert good.json()["role"] == "admin"
+    assert client.get("/api/v1/admin/support/threads",
+        headers={"Authorization":"Bearer "+token}).status_code == 200
+    assert client.post("/api/auth/admin/change-password",
+        headers={"Authorization":"Bearer "+token},
+        json={"current_password":"bad", "new_password":"Other-Strong-Admin-Password543!"}).status_code == 401
+    assert client.post("/api/auth/admin/change-password",
+        headers={"Authorization":"Bearer "+token},
+        json={"current_password":password, "new_password":"admin"}).status_code == 422
+    update=client.post("/api/auth/admin/change-password",
+        headers={"Authorization":"Bearer "+token},
+        json={"current_password":password,
+              "new_password":"Other-Strong-Admin-Password543!"})
+    assert update.status_code == 200, update.text
+    # Changing password immediately revokes even unexpired admin JWTs.
+    assert client.get("/api/v1/admin/support/threads",
+        headers={"Authorization":"Bearer "+token}).status_code == 401
+    assert client.post("/api/auth/admin/login",
+        json={"username":"admin","password":password}).status_code == 401
+    relog = client.post("/api/auth/admin/login",
+        json={"username":"admin","password":"Other-Strong-Admin-Password543!"})
+    assert relog.status_code == 200
+    assert relog.json()["role"] == "admin"
+
+
+def test_one_time_admin_recovery_keeps_user_and_prevents_replay(monkeypatch):
+    from app.bootstrap import maybe_reset_existing_admin
+    from app import security
+    phone = "+998901290778"
+    newpassword = "Secure-New-Admin-Recovery-555!"
+    nonce = "OwnerRecoverOnce_20261010_BlockedReplay456"
+    monkeypatch.setenv("ALI_ADMIN_RESET_REQUEST_ID", nonce)
+    monkeypatch.setenv("ALI_ADMIN_RESET_PASSWORD", newpassword)
+    with SessionLocal() as db:
+        admin=db.query(models.User).filter_by(phone=phone).first()
+        if admin is None:
+            admin=models.User(name="Admin recovery test",
+                phone=phone, password_hash=security.hash_password("Previous-Strong-Admin-Password123!"),
+                role="admin",is_active=True)
+            db.add(admin)
+            db.commit()
+        else:
+            admin.password_hash=security.hash_password("Previous-Strong-Admin-Password123!")
+            db.commit()
+        maybe_reset_existing_admin(db, admin)
+        assert security.verify_password(newpassword, admin.password_hash)
+        admin.password_hash=security.hash_password("Changed-Within-Admin-Panel-234!")
+        db.commit()
+        maybe_reset_existing_admin(db, admin)
+        assert security.verify_password("Changed-Within-Admin-Panel-234!", admin.password_hash)
+        assert not security.verify_password(newpassword, admin.password_hash)
+    monkeypatch.delenv("ALI_ADMIN_RESET_REQUEST_ID")
+    monkeypatch.delenv("ALI_ADMIN_RESET_PASSWORD")
+
+
+def test_customer_token_cannot_change_admin_password(monkeypatch):
+    from app import security
+    phone="+998901290779"
+    with SessionLocal() as db:
+        user=db.query(models.User).filter_by(phone=phone).first()
+        if user is None:
+            user=models.User(name="Customer no admin access",phone=phone,
+                password_hash=security.hash_password("CustomerStrongPassword99!"),
+                role="customer",is_active=True)
+            db.add(user)
+            db.commit()
+        else:
+            user.role="customer"
+            db.commit()
+        token=security.create_access_token({"sub":str(user.id),"role":"customer"})
+    r=client.post("/api/auth/admin/change-password",
+       headers={"Authorization":"Bearer "+token},
+       json={"current_password":"CustomerStrongPassword99!",
+             "new_password":"NewStrongAdminPassword456!"})
+    assert r.status_code == 403
