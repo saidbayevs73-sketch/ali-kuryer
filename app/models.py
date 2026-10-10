@@ -32,6 +32,18 @@ class AdminPasswordResetEvent(Base):
     applied_at = Column(DateTime, server_default=func.now(), nullable=False)
 
 
+class UnverifiedCustomerContact(Base):
+    """A contact-only phone, never proof of ownership or a login identity.
+
+    Multiple users can provide the same contact number; this cannot reserve
+    phone ownership or block real Telegram/SMS-verified account creation.
+    """
+    __tablename__ = "unverified_customer_contacts"
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    phone = Column(String(20), nullable=False, index=True)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class Restaurant(Base):
     __tablename__ = "restaurants"
 
