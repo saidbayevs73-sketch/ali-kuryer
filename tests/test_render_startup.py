@@ -315,7 +315,7 @@ def test_legacy_central_admin_verifier_checks_role_and_token(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", open_fake)
     assert verify_central_admin("admin", "strong-example-password") is False
     def open_admin(request, timeout):
-        return FakeResponse({"role": "admin", "access_token": "signed-server-token"})
+        return FakeResponse({"role": "admin", "access_token": "x" * 40})
     monkeypatch.setattr(urllib.request, "urlopen", open_admin)
     assert verify_central_admin("admin", "strong-example-password") is True
     assert sent == [{"username": "admin", "password": "strong-example-password"}]
