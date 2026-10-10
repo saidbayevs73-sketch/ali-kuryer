@@ -208,6 +208,13 @@ def test_owner_console_disabled_by_default_and_private_when_enabled(monkeypatch)
     assert 'no-store' in response.headers.get("cache-control", "")
     assert 'noindex' in response.headers.get("x-robots-tag", "")
     assert "frame-ancestors 'none'" in response.headers.get("content-security-policy", "")
+    assert "'unsafe-inline'" not in response.headers.get("content-security-policy", "")
+    assert '<script src="/static/admin-console-v2.js" defer></script>' in response.text
+    assert '<link rel="stylesheet" href="/static/admin-console-v2.css">' in response.text
+    assert "<script>" not in response.text
+    assert "<style>" not in response.text
+    assert client.get("/static/admin-console-v2.js").status_code == 200
+    assert client.get("/static/admin-console-v2.css").status_code == 200
     assert 'ADMIN_PASSWORD' not in response.text
     assert 'access_token' in response.text  # only generic JavaScript field name
 
