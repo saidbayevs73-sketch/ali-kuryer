@@ -165,3 +165,11 @@ class VerifiedPhone(Base):
     phone = Column(String(30), primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     verified_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+class FirebasePhoneIdentity(Base):
+    """Immutable connection between a Firebase phone UID and a customer."""
+    __tablename__ = "firebase_phone_identities"
+    firebase_uid = Column(String(150), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    phone = Column(String(30), nullable=False, unique=True)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
