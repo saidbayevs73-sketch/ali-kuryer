@@ -122,3 +122,60 @@ def test_telegram_consent_verified_phone_and_replay(monkeypatch):
         assert user.role == "customer"
         assert db.get(models.VerifiedPhone, phone).user_id == user.id
         assert db.get(models.TelegramIdentity, sub).user_id == user.id
+
+
+def test_browser_telegram_flow_uses_fragment_and_device_bound_one_time_ticket(monkeypatch):
+    """Real Telegram phone proof is still required; provider response is mocked here."""
+    configure(monkeypatch)
+    start=client.post("/api/auth/telegram/start",json={
+        "device_secret": DEVICE, "channel": "web"
+    })
+    assert start.status_code == 200, start.text
+    qs=parse_qs(urlparse(start.json()["authorization_url"]).query)
+    state=qs["state"][0]
+    assert state.startswith("web_")
+    nonce=qs["nonce"][0]
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+        def json(self):
+            return {"id_token":"mock-only-telegram-id-token"}
+    monkeypatch.setattr(telegram_login.requests,"post",lambda *a,**kw:FakeResponse())
+    monkeypatch.setattr(telegram_login,"verify_telegram_id_token",
+        lambda raw, verified_nonce: {
+            "sub":"telegram-web-customer-unique-20261010",
+            "name":"Website Customer",
+            "phone_number":"+998901234658",
+            "phone_number_verified": True
+        } if verified_nonce==nonce else {})
+    result=client.get("/api/auth/telegram/callback",params={
+        "state":state, "code":"dummy-web-test-code"
+    })
+    assert result.status_code==303, result.text
+    location=urlparse(result.headers["location"])
+    assert location.scheme=="https"
+    assert location.netloc=="ali-kuryer.onrender.com"
+    assert "ali-telegram-ticket" in location.fragment
+    assert "ticket" not in location.query
+    ticket=location.fragment.split("ali-telegram-ticket=")[1]
+    invalid=client.post("/api/auth/telegram/finish",json={
+        "ticket":ticket,"device_secret":"B"*43
+    })
+    assert invalid.status_code==401
+    response=client.post("/api/auth/telegram/finish",json={
+        "ticket":ticket,"device_secret":DEVICE
+    })
+    assert response.status_code==200,response.text
+    assert response.json()["phone"]=="+998901234658"
+    replay=client.post("/api/auth/telegram/finish",json={
+        "ticket":ticket,"device_secret":DEVICE
+    })
+    assert replay.status_code==401
+
+
+def test_telegram_channel_rejects_untrusted_values(monkeypatch):
+    configure(monkeypatch)
+    resp=client.post("/api/auth/telegram/start",json={
+        "device_secret":DEVICE,"channel":"staff"
+    })
+    assert resp.status_code==422

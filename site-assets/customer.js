@@ -28,6 +28,7 @@
     const botURL = /^https:\/\/t\.me\/[A-Za-z0-9_]+(?:\?.*)?$/.test(config.bot_url) ? config.bot_url : defaultBot;
     for (const anchor of document.querySelectorAll(".ali-help-link")) anchor.href = botURL;
     setupGoogle();
+    setupTelegramReadiness();
     const status = $("#aliAiStatus");
     if (status) status.textContent =
       "Muhammadali taom, buyurtma va manzil bo‘yicha yordam beradi. AI xizmati vaqtincha uzilsa umumiy ma’lumot beriladi. Karta va kodlaringizni yubormang.";
@@ -145,6 +146,14 @@
         <p class="status" role="status" aria-live="polite"></p>
       </form>
       <div class="auth-divider">yoki</div>
+      <section id="telegramLoginArea" class="ali-telegram-login" aria-label="Telegram bilan tasdiqlash">
+        <button id="aliTelegramLogin" type="button" class="ali-telegram-btn" disabled>
+          Telegram orqali tasdiqlash
+        </button>
+        <p id="aliTelegramStatus" class="ali-telegram-hint" role="status">
+          Telegram tasdiqlash xizmati tekshirilmoqda...
+        </p>
+      </section>
       <div id="googleSignInBox" class="google-container"></div>
       <p id="googleSetupMessage" class="google-setup">Google hisob orqali kirish sozlanmoqda.</p>
       <div id="customerProfile" hidden></div>`;
@@ -153,6 +162,7 @@
     for(const button of d.querySelectorAll("[data-auth]")) button.addEventListener("click",()=>setAuthMode(button.dataset.auth==="register"));
     $("#customerAuthForm").addEventListener("submit", submitAuth);
     $("#authSmsSend").addEventListener("click", requestRegisterSms);
+    $("#aliTelegramLogin").addEventListener("click", startTelegramLogin);
   }
   function setAuthMode(register) {
     state.register = register;
@@ -174,6 +184,7 @@
       $("#customerAuthForm").hidden=true;
       $(".auth-switch",d).hidden=true;
       $(".auth-divider",d).hidden=true;
+      $("#telegramLoginArea").hidden=true;
       $("#googleSignInBox").hidden=true;
       $("#googleSetupMessage").hidden=true;
       const profile=$("#customerProfile");
@@ -231,6 +242,7 @@
       $("#customerAuthForm").hidden=false;
       $(".auth-switch",d).hidden=false;
       $(".auth-divider",d).hidden=false;
+      $("#telegramLoginArea").hidden=false;
       $("#googleSignInBox").hidden=false;
       $("#googleSetupMessage").hidden=false;
       $("#customerProfile").hidden=true;
@@ -300,6 +312,92 @@
     if (!token) return;
     try {await finishLogin(token);} catch (_) {sessionStorage.removeItem("ali_customer_token");}
   }
+
+  // Telegram OIDC authorization-code + PKCE, bound to the originating browser.
+  // No Telegram bot token, API secret, or SMS OTP is exposed in frontend JavaScript.
+  const telegramPending="ali_telegram_pending_device";
+  const telegramPendingAt="ali_telegram_pending_at";
+  function randomTelegramDeviceSecret() {
+    const bytes=new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return btoa(String.fromCharCode(...bytes))
+      .replace(/\+/g,"-").replace(/\//g,"_").replace(/=/g,"");
+  }
+  async function setupTelegramReadiness() {
+    const button=$("#aliTelegramLogin"),hint=$("#aliTelegramStatus");
+    if(!button||!hint)return;
+    button.disabled=true;
+    try {
+      const response=await api("/api/auth/telegram/status");
+      button.disabled=!response.available;
+      hint.textContent=response.available
+        ?"Telegram hisobingiz orqali tasdiqlash uchun bosing. Telefon raqamini ulashishga rozilik kerak."
+        :"Telegram tasdiqlash hozircha yoqilmagan. Ro‘yxatdan o‘tish uchun SMS kodni tanlang.";
+    }catch(_){
+      button.disabled=true;
+      hint.textContent="Telegram tasdiqlashni tekshirib bo‘lmadi. Hozircha SMS orqali ro‘yxatdan o‘ting.";
+    }
+  }
+  async function startTelegramLogin(){
+    const button=$("#aliTelegramLogin"),hint=$("#aliTelegramStatus");
+    if(!button||button.disabled)return;
+    if(!window.crypto?.getRandomValues){
+      hint.textContent="Xavfsiz brauzer kerak. HTTPS orqali oching.";
+      return;
+    }
+    button.disabled=true;
+    try {
+      const secret=randomTelegramDeviceSecret();
+      const response=await api("/api/auth/telegram/start",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({device_secret:secret,channel:"web"})
+      });
+      const authURL=new URL(response.authorization_url);
+      if(authURL.protocol!=="https:"||authURL.hostname!=="oauth.telegram.org"
+         ||authURL.pathname!=="/auth")throw new Error("Telegram manzili noto‘g‘ri.");
+      sessionStorage.setItem(telegramPending,secret);
+      sessionStorage.setItem(telegramPendingAt,String(Date.now()));
+      location.assign(authURL.href);
+    }catch(error){
+      hint.textContent=humanError(error)+
+        " Telegram hali ulanmagan bo‘lsa, SMS tasdiqlashni tanlang.";
+      button.disabled=false;
+    }
+  }
+  async function finishTelegramBrowserLogin(){
+    const fragment=new URLSearchParams(location.hash.replace(/^#/,""));
+    const ticket=fragment.get("ali-telegram-ticket");
+    if(!ticket)return;
+    // Immediately strip short-lived ticket from visible navigation/address bar.
+    history.replaceState(null,"",location.pathname+location.search);
+    const secret=sessionStorage.getItem(telegramPending);
+    const created=Number(sessionStorage.getItem(telegramPendingAt)||0);
+    sessionStorage.removeItem(telegramPending);
+    sessionStorage.removeItem(telegramPendingAt);
+    const dialog=$("#customerDialog"),hint=$("#aliTelegramStatus");
+    if(!/^[A-Za-z0-9_-]{43}$/.test(ticket)
+      ||!/^[A-Za-z0-9_-]{43}$/.test(secret||"")
+      ||!created || Date.now()-created>6*60*1000){
+      if(hint)hint.textContent="Telegram tasdiqlash vaqti tugagan. Qaytadan boshlang.";
+      if(dialog&&!dialog.open)dialog.showModal();
+      return;
+    }
+    try {
+      const result=await api("/api/auth/telegram/finish",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ticket,device_secret:secret})
+      });
+      await finishLogin(result.access_token);
+      if(dialog?.open)dialog.close();
+      // We never log or display ticket, token or Telegram identity.
+      const label=$("#customerLoginBtn");
+      if(label)label.setAttribute("title","Telegram orqali tasdiqlangan mijoz");
+    }catch(error){
+      if(hint)hint.textContent="Telegram kirishi yakunlanmadi: "+humanError(error);
+      if(dialog&&!dialog.open)dialog.showModal();
+    }
+  }
+
   function setupGoogle() {
     if (!config.google_client_id || !$("#googleSignInBox")) return;
     $("#googleSetupMessage").textContent="Google orqali xavfsiz kirish";
@@ -576,5 +674,6 @@
   buildAssistant();
   buildLegalLinks();
   loadConfig();
-  restoreLogin();
+  if(location.hash.includes("ali-telegram-ticket=")) finishTelegramBrowserLogin();
+  else restoreLogin();
 })();

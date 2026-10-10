@@ -280,6 +280,35 @@ def _photo_unavailable_result() -> dict:
     }
 
 
+def _upstream_basic_result(message: str, image_url: str | None,
+                           status: int | None = None, error_code: str = "") -> dict:
+    """Nonsecret provider status; never invent a food-photo analysis."""
+    result = _photo_unavailable_result() if image_url else assistant_basic_result(message)
+    if status == 429:
+        if error_code == "insufficient_quota":
+            reason = ("OpenAI hisobida balans yoki API to‘lov kvotasi tugagan. "
+                      "Muhammadali to‘liq AI rejimiga qaytishi uchun hisob egasi "
+                      "API Billing bo‘limini tekshirishi kerak.")
+            category = "quota"
+        elif error_code == "rate_limit_exceeded":
+            reason = ("Muhammadali AI so‘rovlar limiti vaqtincha to‘lgan. "
+                      "Birozdan keyin qayta urinib ko‘ring.")
+            category = "rate_limit"
+        else:
+            reason = ("AI xizmatida hisob yoki so‘rov limiti cheklovi bor. "
+                      "Hisob egasi API Billing va Usage Limits bo‘limlarini tekshirsin.")
+            category = "limit"
+        result["reply"] = reason + " " + result["reply"]
+        result["ai_issue"] = category
+    elif status in (401, 403):
+        result["reply"] = ("Muhammadali AI autentifikatsiyasi vaqtincha ishlamayapti. "
+                           "Operatorga murojaat qilishingiz mumkin. " + result["reply"])
+        result["ai_issue"] = "authorization"
+    else:
+        result["ai_issue"] = "unavailable"
+    return result
+
+
 def assistant_basic_result(message: str) -> dict:
     return {"reply": helpful_muhammadali_fallback(message),
             "mode": "basic"}
@@ -367,9 +396,18 @@ async def assistant_chat(data: AssistantChatIn):
         return {"reply": answer[:2200], "mode": "ai",
                 "image_analyzed": bool(image_url)}
     except httpx.HTTPStatusError as exc:
-        # Do not disclose tokens, provider output, or customer prompts in logs.
-        log.warning("Muhammadali upstream rejected request (HTTP %s)", exc.response.status_code)
-        return _photo_unavailable_result() if image_url else assistant_basic_result(data.message)
+        # Extract ONLY a known, nonsecret error code: never log response text.
+        code = ""
+        try:
+            body = exc.response.json()
+            candidate = body.get("error", {}).get("code", "") if isinstance(body, dict) else ""
+            if candidate in ("insufficient_quota", "rate_limit_exceeded"):
+                code = candidate
+        except (ValueError, TypeError, AttributeError):
+            pass
+        log.warning("Muhammadali upstream rejected HTTP %s category=%s",
+                    exc.response.status_code, code or "unknown")
+        return _upstream_basic_result(data.message, image_url, exc.response.status_code, code)
     except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as exc:
         log.warning("Muhammadali upstream unavailable category=%s", type(exc).__name__)
         return _photo_unavailable_result() if image_url else assistant_basic_result(data.message)
