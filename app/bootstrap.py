@@ -60,6 +60,17 @@ def ensure_admin():
     if os.getenv("ALI_ADMIN_BOOTSTRAP_ENABLED") != "1":
         return
 
+    # A transient account that disappears at the next Render restart is
+    # worse than a configuration error. Never create or rotate production
+    # administrator credentials on nonpersistent SQLite storage.
+    from app.auth import require_durable_admin_password_store
+    from fastapi import HTTPException
+    try:
+        require_durable_admin_password_store()
+    except HTTPException:
+        print("Ali Kuryer admin bootstrap: persistent PostgreSQL database required", flush=True)
+        return
+
     phone = os.getenv("ADMIN_PHONE", "").strip()
     password = os.getenv("ADMIN_PASSWORD", "")
     # An existing admin may recover via one-time reset even when the old
