@@ -18,11 +18,12 @@
   const ordersButton=document.createElement('button');ordersButton.className='btn btn-black desktop-orders';ordersButton.textContent='Buyurtmalar';ordersButton.onclick=()=>window.openAliOrders();document.querySelector('.header-buttons').prepend(ordersButton);
   document.querySelector('.hero-content').innerHTML='<span class="eyebrow">ALI KURYER • TAOM YETKAZISH</span><h1>Bugun nima<br><span>tanovul qilamiz?</span></h1><p>Oshxonani tanlang. Taomlarni savatga qo‘shing.<br>Buyurtmangiz holatini shu yerda kuzating.</p><button class="btn btn-red" onclick="document.getElementById(\'restaurants\').scrollIntoView({behavior:\'smooth\'})">Menyuni ko‘rish ↗</button><div class="hero-art" aria-hidden="true"><span>🍔</span><span>🍕</span><span>🥗</span><b>Yaxshi taom.<br>Yaxshi kayfiyat.</b></div>';
   document.querySelector('.features').innerHTML='<div class="feature"><b>01 · Tanlang</b>Oshxonalar va taomlar</div><div class="feature"><b>02 · Buyurtma bering</b>Summa oldindan ko‘rsatiladi</div><div class="feature"><b>03 · Kuzating</b>Oshxonadan eshigingizgacha</div>';
-  document.querySelector('.search-box').insertAdjacentHTML('afterend','<nav id="categories" class="categories" aria-label="Taom kategoriyalari"></nav><div class="catalog-tools"><button id="allRestaurants" class="filter-chip">Barcha oshxonalar</button><button id="favoriteFilter" class="filter-chip">♡ Sevimlilar</button><select id="menuSort" aria-label="Taomlarni saralash"><option value="default">Tavsiya etilgan tartib</option><option value="cheap">Avval arzonlari</option><option value="expensive">Avval qimmatlari</option></select></div>');
+  document.querySelector('.search-box').insertAdjacentHTML('afterend','<nav id="categories" class="categories" aria-label="Taom kategoriyalari"></nav><div class="catalog-tools"><button id="allRestaurants" class="filter-chip">Barcha oshxonalar</button><button id="favoriteFilter" class="filter-chip">♡ Sevimlilar</button><select id="menuSort" aria-label="Taomlarni saralash"><option value="default">Menyu tartibi</option><option value="cheap">Avval arzonlari</option><option value="expensive">Avval qimmatlari</option></select></div>');
   $('allRestaurants').onclick=()=>{selectedRestaurant=null;render()};
   $('favoriteFilter').onclick=()=>{favoriteOnly=!favoriteOnly;render()};
   $('menuSort').onchange=()=>render();
   window.render=function(){
+    if(!window.aliCatalogLoaded){$('restaurantGrid').innerHTML='<p class="empty">Oshxonalar yuklanmoqda…</p>';$('foodGrid').innerHTML='<p class="empty">Menyu yuklanmoqda…</p>';return}
     const q=$('search').value.trim().toLowerCase();
     const cats=[...new Set(foods.map(category))];
     $('categories').innerHTML=['',...cats].map(c=>`<button class="category-chip ${selectedCategory===c?'active':''}" data-category="${c}" aria-pressed="${selectedCategory===c}"><span>${symbols[c]||'✦'}</span>${labels[c]||'Hammasi'}</button>`).join('');
@@ -42,8 +43,9 @@
   window.addCart=function(...args){const item=cart.find(x=>x.id===args[0]);if(item&&item.qty>=30){toast('Bitta taomdan ko‘pi bilan 30 dona');return}originalAdd(...args)};
   window.changeQty=function(i,amount){if(!cart[i])return;const qty=cart[i].qty+amount;if(qty>30)return;if(qty<=0)cart.splice(i,1);else cart[i].qty=qty;saveCart()};
   const originalOpen=openCart,originalClose=closeCart;
-  window.openCart=function(){originalOpen();$('cartShade').hidden=false;document.body.classList.add('cart-visible')};
-  window.closeCart=function(){originalClose();$('cartShade').hidden=true;document.body.classList.remove('cart-visible')};
+  $('cart').inert=true;
+  window.openCart=function(){$('cart').inert=false;originalOpen();$('cartShade').hidden=false;document.body.classList.add('cart-visible')};
+  window.closeCart=function(){originalClose();$('cart').inert=true;$('cartShade').hidden=true;document.body.classList.remove('cart-visible')};
   $('cartTotal').insertAdjacentHTML('afterend','<div id="cartBreakdown" class="cart-breakdown" role="status"></div>');
   const originalRenderCart=renderCart;
   window.renderCart=function(){originalRenderCart();currentQuote=null;const sequence=++quoteSequence;if(!cart.length){$('cartBreakdown').textContent='Taom tanlashdan boshlang.';return}$('cartBreakdown').textContent='Yakuniy summa tekshirilmoqda…';post('/api/order-quote',{items:cart.map(x=>({id:Number(x.id),qty:x.qty}))}).then(q=>{if(sequence!==quoteSequence)return;currentQuote=q;$('cartTotal').textContent=money(q.total);$('cartBreakdown').innerHTML=`<div><span>Taomlar</span><b>${money(q.subtotal)}</b></div><div><span>Yetkazish</span><b>${money(q.delivery_fee)}</b></div><p>To‘lov: yetkazilganda naqd.</p>`}).catch(e=>{if(sequence===quoteSequence)$('cartBreakdown').textContent=e.message})};

@@ -4,3 +4,5 @@ body.marketplace{--red:#ef4c38;--bg:#f7f8fa;--ink:#17212c;--muted:#69717c;backgr
 @media(prefers-reduced-motion:reduce){.marketplace *{scroll-behavior:auto!important;transition:none!important}}
 
 @media(max-width:600px){.desktop-orders{display:none!important}}
+
+.marketplace .hero-content{width:100%;min-width:0}.marketplace .cart{right:-490px}.marketplace .cart.open{right:0}
