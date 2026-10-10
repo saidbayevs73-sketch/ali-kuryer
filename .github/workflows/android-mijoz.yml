@@ -4,6 +4,10 @@ on:
     paths:
       - "android/mijoz/**"
       - ".github/workflows/android-mijoz.yml"
+  pull_request:
+    paths:
+      - "android/mijoz/**"
+      - ".github/workflows/android-mijoz.yml"
   workflow_dispatch:
 jobs:
   build:
