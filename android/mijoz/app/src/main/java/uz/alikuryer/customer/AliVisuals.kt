@@ -25,11 +25,11 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import java.util.Locale
 
-internal val AliRed = Color(0xFFE02032)
-internal val AliBlack = Color(0xFF17171B)
-internal val AliMuted = Color(0xFF787981)
-internal val AliCanvas = Color(0xFFF7F7F9)
-internal val AliBorder = Color(0xFFEAEAF0)
+internal val AliRed = Color(0xFFB54852)
+internal val AliBlack = Color(0xFF27272B)
+internal val AliMuted = Color(0xFF6D7179)
+internal val AliCanvas = Color(0xFFF6F5F2)
+internal val AliBorder = Color(0xFFE7E4DF)
 
 internal fun priceText(value: Long): String =
     "%,d".format(Locale.US, value).replace(",", " ") + " so‘m"
@@ -52,9 +52,9 @@ internal fun AliWordmark(modifier: Modifier = Modifier, subtitle: Boolean = true
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("ALI", color = AliRed, fontWeight = FontWeight.Black,
-                    fontSize = 21.sp, letterSpacing = (-0.8).sp)
+                    fontSize = 20.sp, letterSpacing = (-0.8).sp)
                 Text(" KURYER", color = AliBlack, fontWeight = FontWeight.Black,
-                    fontSize = 21.sp, letterSpacing = (-0.8).sp)
+                    fontSize = 20.sp, letterSpacing = (-0.8).sp)
             }
             if (subtitle) Text("TEZ • QULAY • O‘ZIMIZNIKI",
                 color = AliMuted, fontSize = 9.sp,
@@ -82,17 +82,17 @@ internal fun AliSectionTitle(title: String, caption: String? = null, trailing: S
 internal fun AliPromoHero(onExplore: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(174.dp)
         .clip(RoundedCornerShape(25.dp))
-        .background(Brush.linearGradient(listOf(AliBlack, Color(0xFF3A1C24), AliRed)))) {
+        .background(Brush.linearGradient(listOf(AliBlack, Color(0xFF41373B), Color(0xFF765055))))) {
         AsyncImage(
             model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1100&q=85",
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            alpha = 0.25f
+            alpha = 0.16f
         )
         Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("BIR BOSISHDA", color = Color(0xFFFFB9BF), fontSize = 11.sp,
+                Text("BIR BOSISHDA", color = Color(0xFFF4B7BA), fontSize = 11.sp,
                     letterSpacing = 1.4.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(7.dp))
                 Text("Mazali taomlar\neshigingizgacha", color = Color.White,
@@ -237,7 +237,7 @@ internal fun AliFoodTile(food: Food, count: Int, onPlus: () -> Unit,
         Row(Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(102.dp).clip(RoundedCornerShape(16.dp))
-                .background(Color(0xFFFFF0EE)),
+                .background(Color(0xFFF5EFEC)),
                 contentAlignment = Alignment.Center) {
                 if (food.imageUrl != null) {
                     AsyncImage(model = food.imageUrl,
@@ -292,7 +292,7 @@ internal fun AliEmptyState(icon: String, title: String, subtitle: String,
     Column(Modifier.fillMaxWidth().padding(vertical = 31.dp, horizontal = 15.dp),
         horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(91.dp).clip(CircleShape)
-            .background(Color(0xFFFFE7EA)), contentAlignment = Alignment.Center) {
+            .background(Color(0xFFF6E9E9)), contentAlignment = Alignment.Center) {
             Text(icon, fontSize = 44.sp)
         }
         Spacer(Modifier.height(16.dp))
