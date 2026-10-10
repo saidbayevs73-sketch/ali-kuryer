@@ -380,3 +380,26 @@ def test_production_ephemeral_sqlite_never_provisions_admin(monkeypatch):
     ensure_admin()
     with SessionLocal() as session:
         assert session.query(User).filter_by(phone=phone).first() is None
+
+
+def test_production_rejects_weak_jwt_secret(monkeypatch):
+    from fastapi import HTTPException
+    from app import security
+    monkeypatch.setenv("RENDER", "true")
+    monkeypatch.setattr(security.settings, "SECRET_KEY", "")
+    try:
+        security.create_access_token({"sub": "test", "role": "admin"})
+    except HTTPException as error:
+        assert error.status_code == 503
+    else:
+        assert False, "Must not sign with an empty JWT key"
+    try:
+        security.decode_access_token("token-for-test")
+    except HTTPException as error:
+        assert error.status_code == 503
+    else:
+        assert False, "Must not decode JWTs with an empty key"
+
+    monkeypatch.setattr(security.settings, "SECRET_KEY", "Strong-test-configuration-secret-0123456789-ABCD")
+    token = security.create_access_token({"sub": "test", "role": "customer"})
+    assert security.decode_access_token(token)["role"] == "customer"
