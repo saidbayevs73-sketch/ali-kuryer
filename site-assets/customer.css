@@ -256,3 +256,42 @@ footer strong {color:#fff}
   .hero {background:linear-gradient(90deg,rgba(25,25,29,.96),rgba(25,25,29,.76) 55%,rgba(25,25,29,.35)),
     url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1600&q=82") center/cover}
 }
+
+
+/* Muhammadali: photo upload, preview, ready prompts, operator handoff */
+#chat .ali-photo-toolbar {
+  padding:8px 12px; border-top:1px solid var(--ali-stroke,#ddd);
+  background:var(--ali-surface,#fff); display:flex; flex-wrap:wrap;
+  gap:7px 10px; align-items:center; flex-shrink:0;
+}
+#chat .ali-photo-file[hidden], #chat .ali-photo-preview[hidden] {display:none!important}
+.ali-photo-trigger {
+  border:1px solid var(--ali-stroke,#ddd); padding:8px 12px;
+  border-radius:12px; background:var(--ali-surface,#fff);
+  color:var(--ali-ink,#333); font:inherit; font-size:13px; cursor:pointer;
+}
+.ali-photo-help {font-size:10px; color:var(--ali-muted,#666); flex:1 1 180px; line-height:1.35}
+.ali-photo-preview {
+  display:flex; align-items:center; gap:10px; width:100%;
+  padding:7px; background:var(--ali-canvas,#f4f4f4);border-radius:10px;
+  font-size:12px;
+}
+.ali-photo-thumb {height:48px;width:48px;object-fit:cover;border-radius:9px}
+.ali-photo-remove {
+  margin-left:auto;border:1px solid var(--ali-stroke,#ddd);
+  border-radius:8px;background:transparent;color:var(--ali-ink,#333);
+  cursor:pointer;padding:6px 8px;
+}
+.ali-photo-sent {display:block;font-size:11px;margin-top:5px;color:var(--ali-muted,#666)}
+.ali-quick-operator {
+  display:inline-flex;align-items:center;border:1px solid var(--ali-stroke,#ddd);
+  border-radius:20px;padding:8px;text-decoration:none;
+  font-size:13px;color:var(--ali-ink,#333);background:var(--ali-surface,#fff);
+}
+.ali-operator-open {display:block;margin-top:8px;font-weight:700;text-decoration:underline}
+#chat .chat-input button:disabled {opacity:.5;cursor:wait}
+@media(max-width:680px) {
+  #chat .ali-photo-toolbar {padding:6px 10px;gap:5px}
+  #chat .ali-photo-help {font-size:10px}
+  #chat .chat-body {min-height:80px;overflow:auto}
+}
