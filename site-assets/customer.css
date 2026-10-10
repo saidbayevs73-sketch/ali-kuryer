@@ -52,3 +52,27 @@
 .customer-dialog [hidden], .partner-callouts [hidden] {display:none!important}
 
 footer #contacts {display:none!important}
+
+/* Keep Muhammadali usable on narrow mobile browsers and short viewports. */
+.chat { flex-direction:column; max-height:min(690px, calc(100dvh - 105px)); }
+.chat-header { position:relative; flex-shrink:0; padding-right:55px; }
+.chat-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.chat-input, .ali-ai-status, .chat > .ali-help-link { flex-shrink:0; }
+.ali-chat-close {
+  position:absolute; top:13px; right:12px; border:1px solid #ffffff66;
+  border-radius:10px; background:#ffffff18; color:#fff;
+  width:37px; height:37px; font-size:23px; cursor:pointer;
+}
+@media (max-width:680px) {
+  .assistant .chat {
+    position:fixed; inset:12px 12px auto 12px; width:auto;
+    height:calc(100dvh - 24px); max-height:calc(100dvh - 24px);
+    border-radius:18px; box-shadow:0 14px 60px #0009;
+  }
+  .assistant .chat-body { max-height:none; flex:1 1 auto; }
+  .assistant .chat-header { padding:14px 54px 13px 17px; }
+  .assistant .chat-input { padding:9px; }
+  .assistant .chat-input input { min-width:0; }
+  .assistant .chat > .ali-help-link { font-size:13px; padding:12px 8px; }
+  .assistant .ali-ai-status { font-size:11px; padding:6px 10px; }
+}

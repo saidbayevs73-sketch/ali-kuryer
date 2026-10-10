@@ -333,7 +333,16 @@
       header.appendChild(el("div","ali-chip","Savolingizga javob va taom tanlashda ko‘mak"));
     }
     const chat=$("#chat");
-    if(chat){const status=el("div","ali-ai-status","Muhammadali yuklanmoqda...");status.id="aliAiStatus";chat.appendChild(status);}
+    if(chat){
+      const status=el("div","ali-ai-status","Muhammadali yuklanmoqda...");
+      status.id="aliAiStatus";chat.appendChild(status);
+      const close=el("button","ali-chat-close","×");
+      close.type="button";
+      close.setAttribute("aria-label","Muhammadali oynasini yopish");
+      close.addEventListener("click",()=>{chat.style.display="none";});
+      if(header)header.appendChild(close);
+      window.toggleAli=()=>{chat.style.display=chat.style.display==="flex"?"none":"flex";};
+    }
     const original=window.askAli;
     window.askAli=async function(question) {
       const input=$("#aliInput");

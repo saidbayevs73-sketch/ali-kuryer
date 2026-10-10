@@ -61,6 +61,30 @@ def test_ai_fallback_for_common_customer_questions(monkeypatch):
         assert expected in result.json()["reply"]
 
 
+def test_family_dinner_suggestions_are_relevant_and_clearly_sample(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    monkeypatch.delenv("AI_API_URL", raising=False)
+    result = client.post("/api/assistant/chat", json={
+        "message": "Menga oilaviy kechki ovqat uchun 3 xil menyu tavsiya qil."
+    })
+    assert result.status_code == 200
+    answer = result.json()
+    assert answer["mode"] == "basic"
+    assert "Uchta namunaviy" in answer["reply"]
+    assert "tovuq" in answer["reply"]
+    assert "haqiqiy menyusidan" in answer["reply"]
+
+
+def test_quick_food_suggestions_have_useful_fallback(monkeypatch):
+    monkeypatch.delenv("AI_API_KEY", raising=False)
+    monkeypatch.delenv("AI_API_URL", raising=False)
+    for message in ("Bugun nima yesam?", "Yengil ovqat", "Oqsilli ovqat"):
+        result = client.post("/api/assistant/chat", json={"message": message})
+        assert result.status_code == 200
+        assert result.json()["mode"] == "basic"
+        assert "oshxona" in result.json()["reply"] or "oshxonalar" in result.json()["reply"]
+
+
 def test_ai_provider_401_does_not_leave_customer_without_help(monkeypatch):
     import httpx
     from app.routers import customer_experience
