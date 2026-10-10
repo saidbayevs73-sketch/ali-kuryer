@@ -280,7 +280,7 @@ def admin_username_login(data: AdminUsernameLogin,
     if data.username.strip().lower() != "admin":
         raise HTTPException(401, "Login yoki parol noto‘g‘ri")
     owner_phone = os.getenv("ADMIN_PHONE", "").strip()
-    if not re.fullmatch(r"\\+998[0-9]{9}", owner_phone):
+    if not re.fullmatch(r"\+998[0-9]{9}", owner_phone):
         raise HTTPException(503, "Admin hisobi sozlanmagan. Render sozlamalarini tekshiring.")
     user = db.query(models.User).filter_by(phone=owner_phone).first()
     if not user or user.role != "admin" or not user.is_active or not user.password_hash or (
