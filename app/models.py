@@ -173,3 +173,27 @@ class FirebasePhoneIdentity(Base):
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     phone = Column(String(30), nullable=False, unique=True)
     created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class TelegramIdentity(Base):
+    """Telegram OIDC subject bound one-to-one to a customer account."""
+    __tablename__ = "telegram_identities"
+    telegram_sub = Column(String(160), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class TelegramLoginAttempt(Base):
+    """Short-lived OIDC PKCE state and a single-use device-bound login ticket."""
+    __tablename__ = "telegram_login_attempts"
+    state = Column(String(100), primary_key=True)
+    nonce = Column(String(100), nullable=False)
+    code_verifier = Column(String(160), nullable=False)
+    device_hash = Column(String(64), nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    created_at = Column(DateTime, server_default=func.now(), nullable=False)
+    ticket_hash = Column(String(64), unique=True, nullable=True)
+    telegram_sub = Column(String(160), nullable=True)
+    display_name = Column(String(150), nullable=True)
+    verified_phone = Column(String(30), nullable=True)
+    redeemed_at = Column(DateTime, nullable=True)
