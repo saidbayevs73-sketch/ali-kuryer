@@ -151,6 +151,24 @@ def helpful_muhammadali_fallback(message: str) -> str:
     particular businesses, prices, payment settlements, or order statuses.
     """
     text = " ".join(message.casefold().strip().split())
+    # Do not confuse sample menu ideas with actual restaurant inventory.
+    if (("menyu" in text or "ovqat" in text or "yesam" in text) and
+            any(phrase in text for phrase in (
+                "tavsiya", "taklif", "g‘oya", "g'oya", "3 xil", "uch xil",
+                "nima yesam", "kechki ovqat uchun", "oilaviy kechki"
+            ))):
+        return ("Uchta namunaviy ovqat g‘oyasi:\n"
+                "1) Oilaviy: tovuq dimlama, guruch va sabzavot salati.\n"
+                "2) Milliy: manti, qatiq va achchiq-chuchuk.\n"
+                "3) Yengil: sabzavotli sho‘rva, non va meva.\n"
+                "Bular umumiy tavsiyalar; oshxonalar taklifi va narxlarini ilovaning haqiqiy menyusidan tekshiring.")
+    if any(phrase in text for phrase in (
+        "yengil ovqat", "oqsilli ovqat", "sabzavotli ovqat",
+        "to‘g‘ri ovqatlanish", "sog‘lom tanlov"
+    )):
+        return ("Yengil va muvozanatli tanlov uchun sabzavot, oqsil manbai "
+                "(masalan, tovuq yoki loviya) va me’yoriy garnirni birlashtirish mumkin. "
+                "Aniq taomlar va narxlarni oshxona menyusidan ko‘ring.")
     if any(word in text for word in ("buyurtma", "zakaz", "order", "qanday buyur", "taom ol")):
         if any(word in text for word in ("qayer", "holat", "yetib", "kuzat", "kelad", "status")):
             return ("Buyurtmangizni ilovadagi «Buyurtmalar» bo‘limidan tekshiring. "
