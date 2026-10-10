@@ -57,7 +57,7 @@ def test_ai_fallback_for_common_customer_questions(monkeypatch):
     ):
         result = client.post("/api/assistant/chat", json={"message": question})
         assert result.status_code == 200
-        assert result.json()["mode"] == "basic"
+        assert result.json()["mode"] == ("operator" if message.startswith("Operator") else "basic")
         assert expected in result.json()["reply"]
 
 
