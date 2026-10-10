@@ -175,7 +175,7 @@ def helpful_muhammadali_fallback(message: str) -> str:
     if any(word in text for word in ("operator", "aloqa", "qo'ng", "qo‘ng", "yordam", "support", "murojaat")):
         return ("Operatorga murojaat qilish uchun ilovadagi «Operator bilan bog‘lanish» "
                 "bo‘limini oching yoki Telegram orqali yozing: https://t.me/AliKuryerYordamBot")
-    if any(word in text for word in ("ovqat", "taom", "menyu", "pizza", "burger", "osh", "lavash", "narx")):
+    if any(word in text for word in ("ovqat", "taom", "menyu", "pizza", "burger", "osh", "lavash", "narx", "restoran", "oshxona")):
         return ("Taomlar va narxlarni bosh sahifadagi oshxonalar menyusidan tekshiring. "
                 "Men real vaqtdagi mavjudlik yoki narxni tasdiqlay olmayman. "
                 "Kerakli taomni qidiruvga yozishingiz mumkin.")
