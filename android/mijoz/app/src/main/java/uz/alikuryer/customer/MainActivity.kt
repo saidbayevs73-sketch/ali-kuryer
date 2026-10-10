@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AliTelegramBridge.handle(intent)
         // Android 15 edge-to-edge: use window insets so content never overlaps clock/notch.
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(android.graphics.Color.WHITE, android.graphics.Color.BLACK),
@@ -67,8 +68,13 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        AliTelegramBridge.handle(intent)
+    }
 }
-
+    
 @Composable
 private fun AliSplash() {
     Surface(color = Color.White, modifier = Modifier.fillMaxSize()) {
@@ -990,6 +996,15 @@ private fun AliCustomerApp() {
                         }
                     }
                     if (session == null) {
+                        item {
+                            AliTelegramLoginPanel { result ->
+                                session = result.session
+                                phoneVerified = true
+                                if (result.phone.isNotBlank()) phone = result.phone
+                                password = ""
+                                message = "Telegram orqali muvaffaqiyatli kirdingiz"
+                            }
+                        }
                         item {
                             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                                 FilterChip(
