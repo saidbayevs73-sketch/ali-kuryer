@@ -1,5 +1,5 @@
 :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#192128;background:#f5f6f8}
-*{box-sizing:border-box}body{margin:0}button,input{font:inherit}
+*{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}
 button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
 :focus-visible{outline:3px solid #ed4f56;outline-offset:2px}
 .hidden{display:none!important}.muted{color:#66717e}.small{font-size:12px}.danger{color:#b42334}.success{color:#047857}
@@ -8,7 +8,7 @@ button{cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
 .brand{font-size:22px;font-weight:900;letter-spacing:-.04em;color:#111d27}.brand span{color:#eb333d}
 .login h1{font-size:28px;letter-spacing:-.04em;margin:32px 0 8px}.login p{line-height:1.55}
 label{font-weight:650;font-size:13px;display:block;margin:16px 0 7px}
-input{width:100%;border:1px solid #d3d9e0;border-radius:12px;padding:12px 14px;background:white;color:#18202b}
+input,select{width:100%;border:1px solid #d3d9e0;border-radius:12px;padding:12px 14px;background:white;color:#18202b}
 input:disabled{background:#f2f3f5}
 .primary{background:#d91b30;color:white;border:1px solid #d91b30}
 .btn{border-radius:11px;padding:11px 15px;font-weight:750;min-height:44px}
@@ -41,3 +41,7 @@ h1{font-size:clamp(25px,3vw,36px);letter-spacing:-.04em;margin:4px 0 0}
 @media(max-width:660px){.app{display:block}aside{padding:14px;gap:7px}aside .brand{margin:0 0 8px}.side-bottom{display:none}nav{display:flex;overflow-x:auto}nav button{white-space:nowrap}main{padding:24px 15px}.stats{gap:9px}.stat,.panel{padding:15px}.stat b{font-size:27px}.top{align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 #password-form{max-width:440px}
+
+.narrow-form{max-width:460px}
+.narrow-form .full{margin-top:22px}
+.narrow-form select{appearance:auto}
