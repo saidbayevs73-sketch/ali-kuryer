@@ -67,7 +67,7 @@ fun AliCustomerWebsite() {
                     // so that its PKCE completion remains bound to this device.
                     val trusted = uri.scheme == "https" &&
                         (uri.host == "ali-kuryer.onrender.com" ||
-                         (uri.host == "oauth.telegram.org" && uri.path == "/auth"))
+                         uri.host == "oauth.telegram.org")
                     if (trusted) return false
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                     catch (_: ActivityNotFoundException) { /* avoid crashing */ }
