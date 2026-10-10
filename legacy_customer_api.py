@@ -19,8 +19,34 @@ ALLOWED_ORIGINS = {
 }
 
 
+def _strong_legacy_admin_password(value):
+    """Accept only owner-configured strong passwords, never bundled defaults."""
+    return (isinstance(value, str) and 14 <= len(value) <= 72
+            and len(value.encode("utf-8")) <= 72
+            and any(c.isupper() for c in value)
+            and any(c.islower() for c in value)
+            and any(c.isdigit() for c in value)
+            and any(not c.isalnum() for c in value)
+            and value != "ChangeMe_123!")
+
+
+def _protect_missing_legacy_admin(legacy):
+    """Disable admin login without taking the public storefront offline.
+
+    The old entrypoint otherwise calls sys.exit when ADMIN_PASSWORD is
+    absent/default. Assign a cryptographically random unknown secret in RAM,
+    allowing the customer and order services to start but not a default login.
+    """
+    if _strong_legacy_admin_password(legacy.get("ADMIN_PASSWORD")):
+        return True
+    legacy["ADMIN_PASSWORD"] = secrets.token_urlsafe(48)
+    print("Ali Kuryer: legacy admin login disabled until a private strong ADMIN_PASSWORD is configured.", flush=True)
+    return False
+
+
 def install(legacy):
     """Patch the existing handler without replacing orders, users or passwords."""
+    _protect_missing_legacy_admin(legacy)
     Handler = legacy['H']
     old_get, old_post = Handler.do_GET, Handler.do_POST
     old_init = legacy['init_db']
