@@ -12,8 +12,8 @@ android {
         applicationId = "uz.alikuryer.customer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.5.0"
+        versionCode = 8
+        versionName = "1.6.0"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
     }
 
@@ -66,5 +66,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("com.google.android.gms:play-services-auth-api-phone:18.2.0")
+    // Firebase phone authentication is initialized ONLY for the mijoz flavor
+    // using its src/mijoz/assets/google-services.json config.
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
