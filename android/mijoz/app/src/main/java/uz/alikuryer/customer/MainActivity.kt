@@ -1014,6 +1014,9 @@ private fun AliCustomerApp() {
                             }
                         }
                     }
+                    session?.token?.let { customerToken ->
+                        item { AliCustomerSummary(customerToken) }
+                    }
                     if (session == null) {
                         item {
                             AliTelegramLoginPanel { result ->
