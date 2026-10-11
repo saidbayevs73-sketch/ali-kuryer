@@ -138,6 +138,9 @@ private fun AliCustomerApp() {
     var editAddress by remember { mutableStateOf(false) }
     var session by remember { mutableStateOf<Session?>(null) }
     var fullName by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var profileCompleted by remember { mutableStateOf(false) }
     var phone by remember { mutableStateOf("+998") }
     var password by remember { mutableStateOf("") }
     var registerMode by remember { mutableStateOf(false) }
@@ -156,10 +159,20 @@ private fun AliCustomerApp() {
     var conversationText by remember { mutableStateOf("") }
 
     LaunchedEffect(session?.token) {
-        phoneVerified = null
-        val currentToken = session?.token ?: return@LaunchedEffect
-        try { phoneVerified = AliApi.isPhoneVerified(currentToken) }
-        catch (_: Exception) { phoneVerified = null }
+        val token = session?.token ?: return@LaunchedEffect
+        try {
+            val profile = AliApi.getContactProfile(token)
+            if (profile.complete) {
+                firstName = profile.firstName
+                lastName = profile.lastName
+                fullName = profile.firstName + " " + profile.lastName
+                phone = profile.phone
+            }
+            profileCompleted = profile.complete
+        } catch (e: Exception) {
+            profileCompleted = false
+            message = e.message ?: "Profil ma’lumotlarini serverdan olishda xatolik"
+        }
     }
 
     fun openSupport() {
@@ -812,11 +825,11 @@ private fun AliCustomerApp() {
                 ) {
                     item { AliSectionTitle("Buyurtmani rasmiylashtirish",
                         "Taomlar, manzil va telefonni tekshiring") }
-                    if (session == null) {
+                    if (session == null || !profileCompleted) {
                         item {
                             AliEmptyState("🔐", "Tizimga kiring",
-                                "Buyurtma berish uchun mijoz hisobi kerak.",
-                                "Kirish") { page = "profile" }
+                                "Buyurtma uchun Google/Telegram hisobi va ism, familiya, telefon talab etiladi.",
+                                "Profilni to‘ldirish") { page = "profile" }
                         }
                     } else {
                         item {
@@ -1016,151 +1029,86 @@ private fun AliCustomerApp() {
                     }
                     if (session == null) {
                         item {
-                            AliTelegramLoginPanel { result ->
-                                session = result.session
-                                phoneVerified = true
-                                if (result.phone.isNotBlank()) phone = result.phone
-                                password = ""
-                                message = "Telegram orqali muvaffaqiyatli kirdingiz"
-                            }
-                        }
-                        item {
-                            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                                FilterChip(
-                                    selected = !registerMode && !firebaseLoginMode,
-                                    onClick = { registerMode = false; firebaseLoginMode = false },
-                                    label = { Text("Parol bilan") }
-                                )
-                                FilterChip(
-                                    selected = firebaseLoginMode,
-                                    onClick = { registerMode = false; firebaseLoginMode = true },
-                                    label = { Text("SMS bilan") }
-                                )
-                                FilterChip(
-                                    selected = registerMode,
-                                    onClick = { registerMode = true; firebaseLoginMode = false },
-                                    label = { Text("Ro‘yxatdan o‘tish") }
-                                )
-                            }
-                        }
-                        if (registerMode) item {
-                            OutlinedTextField(
-                                fullName, { fullName = it },
-                                label = { Text("Ism va familiya") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp)
-                            )
-                        }
-                        if (registerMode || firebaseLoginMode) {
-                            item {
-                                AliFirebasePhonePanel(
-                                    phone = phone,
-                                    onPhoneChange = { phone = it },
-                                    onTokenVerified = { firebaseToken ->
-                                        scope.launch {
-                                            busy = true
-                                            try {
-                                                session = AliApi.firebasePhoneLogin(
-                                                    firebaseToken, fullName.trim()
-                                                )
-                                                phoneVerified = true
-                                                password = ""
-                                                message = "Telefon Firebase orqali tasdiqlandi"
-                                            } catch (e: Exception) {
-                                                message = e.message ?: "SMS tekshiruvini server qabul qilmadi"
-                                            } finally {
-                                                busy = false
-                                            }
-                                        }
-                                    }
-                                )
-                                if (busy) LinearProgressIndicator(
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
-                        } else {
-                            item {
-                                OutlinedTextField(phone, { phone = it },
-                                    label = { Text("Telefon: +998XXXXXXXXX") },
-                                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                                    shape = RoundedCornerShape(14.dp))
-                            }
-                            item {
-                                OutlinedTextField(password, { password = it },
-                                    label = { Text("Parol (kamida 8 belgi)") },
-                                    modifier = Modifier.fillMaxWidth(), singleLine = true,
-                                    visualTransformation = PasswordVisualTransformation(),
-                                    shape = RoundedCornerShape(14.dp))
-                            }
-                            item {
-                                Button(onClick = {
-                                    if (!Regex("^\\+998[0-9]{9}$").matches(phone) ||
-                                        password.length < 8) {
-                                        message = "Telefon yoki parol noto‘g‘ri."
-                                    } else {
-                                        scope.launch {
-                                            busy = true
-                                            try {
-                                                session = AliApi.login(phone, password)
-                                                phoneVerified = AliApi.isPhoneVerified(session!!.token)
-                                                message = "Mijoz hisobiga muvaffaqiyatli kirdingiz"
-                                                password = ""
-                                            } catch (e: Exception) {
-                                                message = e.message ?: "Tizimga kirish amalga oshmadi"
-                                            } finally {
-                                                busy = false
-                                            }
-                                        }
-                                    }
-                                }, modifier = Modifier.fillMaxWidth().height(51.dp),
-                                    enabled = !busy, shape = RoundedCornerShape(15.dp)) {
-                                    Text("Kirish", fontWeight = FontWeight.Bold)
+                            AliSocialLogin { newSession, providerName, providerPhone ->
+                                session = newSession
+                                profileCompleted = false
+                                if (providerName.isNotBlank()) {
+                                    val parts = providerName.trim().split(Regex("\\s+"), limit = 2)
+                                    firstName = parts.firstOrNull().orEmpty()
+                                    lastName = parts.getOrNull(1).orEmpty()
+                                    fullName = providerName
                                 }
+                                if (providerPhone.isNotBlank()) phone = providerPhone
+                                message = "Xush kelibsiz! Ism, familiya va raqamingizni saqlang."
                             }
                         }
                     } else {
                         item {
-                            Surface(color = Color.White, shape = RoundedCornerShape(17.dp)) {
-                                Column(
-                                    Modifier.fillMaxWidth().padding(15.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Text("Telefon raqami xavfsizligi", fontWeight = FontWeight.Bold)
-                                    Text(when (phoneVerified) {
-                                        true -> "✓ Telefon raqamingiz tasdiqlangan"
-                                        false -> "⚠️ Telefoningizni SMS orqali tasdiqlang"
-                                        null -> "Telefon raqami tekshirilmoqda..."
-                                    }, fontSize = 12.sp, color = AliMuted)
-                                }
-                            }
-                        }
-                        if (phoneVerified == false) item {
-                            AliFirebasePhonePanel(
-                                phone = phone, onPhoneChange = { phone = it },
-                                onTokenVerified = { firebaseToken ->
-                                    scope.launch {
-                                        busy = true
-                                        try {
-                                            val newSession = AliApi.firebasePhoneLogin(
-                                                firebaseToken, fullName.trim()
-                                            )
-                                            session = newSession
-                                            phoneVerified = true
-                                            message = "Telefoningiz SMS orqali tasdiqlandi"
-                                        } catch (e: Exception) {
-                                            message = e.message ?: "Raqam tasdiqlanmadi"
-                                        } finally {
-                                            busy = false
+                            Surface(color = Color.White, shape = RoundedCornerShape(21.dp)) {
+                                Column(Modifier.fillMaxWidth().padding(18.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Text(
+                                        if (profileCompleted) "Mening ma’lumotlarim"
+                                        else "Ro‘yxatdan o‘tishni yakunlash",
+                                        color = Color(0xFF19202D), fontSize = 19.sp,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                    Text("SMS-kod kerak emas. Telefon raqami yetkazish uchun aloqa raqami sifatida saqlanadi.",
+                                        color = AliMuted, fontSize = 12.sp)
+                                    OutlinedTextField(firstName, { firstName = it },
+                                        label = { Text("Ismingiz") },
+                                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp))
+                                    OutlinedTextField(lastName, { lastName = it },
+                                        label = { Text("Familiyangiz") },
+                                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp))
+                                    OutlinedTextField(phone, { phone = it },
+                                        label = { Text("Telefon: +998XXXXXXXXX") },
+                                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(14.dp))
+                                    Button(onClick = {
+                                        if (firstName.trim().length < 2 || lastName.trim().length < 2 ||
+                                            !Regex("^\\+998[0-9]{9}$").matches(phone.trim())) {
+                                            message = "Ism, familiya va telefon raqamini to‘g‘ri kiriting."
+                                        } else {
+                                            scope.launch {
+                                                busy = true
+                                                try {
+                                                    val profile = AliApi.saveContactProfile(
+                                                        session!!.token, firstName, lastName, phone
+                                                    )
+                                                    profileCompleted = profile.complete
+                                                    fullName = profile.firstName + " " + profile.lastName
+                                                    phone = profile.phone
+                                                    message = "Profil saqlandi. SMS-kod talab qilinmaydi."
+                                                } catch (e: Exception) {
+                                                    message = e.message ?: "Profilni saqlab bo‘lmadi"
+                                                } finally { busy = false }
+                                            }
                                         }
+                                    }, modifier = Modifier.fillMaxWidth().height(53.dp),
+                                        enabled = !busy, shape = RoundedCornerShape(15.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFEC1733)
+                                        )) {
+                                        Text("Saqlash va davom etish", fontWeight = FontWeight.Bold)
+                                    }
+                                    if (profileCompleted) {
+                                        Text("✓ Ma’lumotlaringiz saqlangan", color = Color(0xFF159566),
+                                            fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                     }
                                 }
-                            )
+                            }
                         }
                         item {
                             OutlinedButton(onClick = {
                                 session = null
-                                phoneVerified = null
-                                firebaseLoginMode = false
+                                profileCompleted = false
+                                firstName = ""
+                                lastName = ""
+                                fullName = ""
+                                phone = "+998"
                             }, modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(14.dp)) {
                                 Text("Hisobdan chiqish", color = AliRed)
