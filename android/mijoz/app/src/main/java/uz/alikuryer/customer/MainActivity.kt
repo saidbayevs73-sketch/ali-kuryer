@@ -114,7 +114,7 @@ private fun AliCustomerApp() {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
-    var page by remember { mutableStateOf("home") }
+    var page by remember { mutableStateOf("profile") }
     val profileScroll = rememberLazyListState()
     LaunchedEffect(page) {
         if (page == "profile") profileScroll.scrollToItem(0)
@@ -1082,6 +1082,7 @@ private fun AliCustomerApp() {
                                                     fullName = profile.firstName + " " + profile.lastName
                                                     phone = profile.phone
                                                     message = "Profil saqlandi. SMS-kod talab qilinmaydi."
+                                                    page = "home"
                                                 } catch (e: Exception) {
                                                     message = e.message ?: "Profilni saqlab bo‘lmadi"
                                                 } finally { busy = false }
