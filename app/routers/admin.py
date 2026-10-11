@@ -149,7 +149,11 @@ def review_application(
     record = db.get(models.PartnerApplication, application_id)
     if record is None:
         raise HTTPException(404, "Ariza topilmadi")
+    previous = record.status
     record.status = data.status
+    from app.routers.platform_control import audit
+    audit(db, _admin.id, "application_review", "application:" + str(application_id),
+          previous + "->" + data.status)
     db.commit()
     # Approving an application does not create a staff login automatically.
     return {"id": record.id, "status": record.status}
