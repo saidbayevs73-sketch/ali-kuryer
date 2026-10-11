@@ -28,21 +28,21 @@ import java.util.Locale
 // Ali Kuryer palette shared with site-assets/customer.css.
 // Automatically follows the Android light/dark appearance setting.
 internal val AliRed: Color
-    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFE1A3AA) else Color(0xFFB54852)
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFFF637C) else Color(0xFFEC1733)
 internal val AliBlack: Color
     @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFF0EDE9) else Color(0xFF27272B)
 internal val AliMuted: Color
     @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFFB7B5B9) else Color(0xFF6D7179)
 internal val AliCanvas: Color
-    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF19191D) else Color(0xFFF6F5F2)
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF19191D) else Color(0xFFFFF8F9)
 internal val AliBorder: Color
     @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF39383E) else Color(0xFFE7E4DF)
 internal val AliSurface: Color
     @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF25252B) else Color.White
 internal val AliRose: Color
-    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF48363C) else Color(0xFFF6E9E9)
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF48363C) else Color(0xFFFFEDF0)
 internal val AliWelcome: Color
-    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF313036) else Color(0xFFEDE8E3)
+    @Composable get() = if (androidx.compose.foundation.isSystemInDarkTheme()) Color(0xFF313036) else Color(0xFFFFE8ED)
 
 internal fun priceText(value: Long): String =
     "%,d".format(Locale.US, value).replace(",", " ") + " so‘m"
@@ -95,7 +95,7 @@ internal fun AliSectionTitle(title: String, caption: String? = null, trailing: S
 internal fun AliPromoHero(onExplore: () -> Unit) {
     Box(Modifier.fillMaxWidth().height(174.dp)
         .clip(RoundedCornerShape(25.dp))
-        .background(Brush.linearGradient(listOf(AliBlack, Color(0xFF41373B), Color(0xFF765055))))) {
+        .background(Brush.linearGradient(listOf(Color(0xFFB9001F), Color(0xFFEC1733), Color(0xFFFF6671))))) {
         AsyncImage(
             model = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1100&q=85",
             contentDescription = null,
@@ -105,7 +105,7 @@ internal fun AliPromoHero(onExplore: () -> Unit) {
         )
         Row(Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("BIR BOSISHDA", color = Color(0xFFF4B7BA), fontSize = 11.sp,
+                Text("BIR BOSISHDA", color = Color(0xFFFFE3E9), fontSize = 11.sp,
                     letterSpacing = 1.4.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(7.dp))
                 Text("Mazali taomlar\neshigingizgacha", color = Color.White,
