@@ -94,14 +94,22 @@ def health():
 
 
 def _panel(request: Request):
+    # Keep the admin page opt-in and separate from public static files.
+    # All business data is fetched only through admin-only API endpoints.
     if os.getenv("ENABLE_STAFF_WEB_PANELS", "0") != "1":
         raise HTTPException(status_code=404, detail="Topilmadi")
-    # Existing deployments do not include the panel template yet.
-    # Do not return a false-success page or crash with TemplateNotFound.
-    if templates is None or not (TEMPLATE_DIR / "panel.html").is_file():
-        raise HTTPException(status_code=404, detail="Panel hozircha mavjud emas")
-    return templates.TemplateResponse(request=request, name="panel.html")
-
+    portal = ROOT_DIR / "app" / "admin_portal.html"
+    if not portal.is_file():
+        raise HTTPException(status_code=503, detail="Admin panel fayli topilmadi")
+    return FileResponse(str(portal), media_type="text/html", headers={
+        "Cache-Control": "no-store",
+        "Content-Security-Policy": (
+            "default-src 'none'; base-uri 'none'; form-action 'self'; "
+            "connect-src 'self'; img-src 'self' data:; "
+            "style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+            "frame-ancestors 'none'"
+        ),
+    })
 
 @app.get("/admin", include_in_schema=False)
 def admin_panel(request: Request):
