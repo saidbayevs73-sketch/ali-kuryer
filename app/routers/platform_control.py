@@ -246,13 +246,14 @@ def my_summary(db: Session = Depends(get_db), user=Depends(customer_required)):
     orders = db.query(models.Order).filter(
         models.Order.customer_id == user.id
     ).order_by(models.Order.id.desc()).limit(100).all()
-    delivered_count = 0
-    bonus_points = 0
-    for order in orders:
-        if order.status == "delivered":
-            delivered_count += 1
-            # Simple rule: 1 point for each whole 10 000 so‘m on completed orders.
-            bonus_points += int(max(0, float(order.total or 0)) // 10000)
+    # Bonus is computed over ALL completed orders, not only the 100 shown in history.
+    completed_amounts = db.query(models.Order.total).filter(
+        models.Order.customer_id == user.id,
+        models.Order.status == "delivered"
+    ).yield_per(250)
+    bonus_points = sum(
+        int(max(0.0, float(total or 0)) // 10000) for (total,) in completed_amounts
+    )
     # Do not falsely call points money. No deposit/wallet accounting system exists.
     return {
         "user": {"id": user.id, "name": user.name, "phone": user.phone},
@@ -264,7 +265,7 @@ def my_summary(db: Session = Depends(get_db), user=Depends(customer_required)):
         ],
         "bonus": {"points": bonus_points,
                   "rule": "Yetkazilgan har 10 000 so‘mlik xarid uchun 1 ball",
-                  "basis": "Oxirgi 100 ta buyurtma",
+                  "basis": "Barcha yakunlangan buyurtmalar",
                   "redeemable": False},
         "wallet": {"available": False, "display": "Hali ulanmagan",
                    "message": "Pul balansi va pul o‘tkazish tizimi hali ishga tushmagan"},
