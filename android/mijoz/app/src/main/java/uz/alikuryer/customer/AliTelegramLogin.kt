@@ -104,8 +104,7 @@ internal fun AliTelegramLoginPanel(
                     "Telegram hisobingizni tasdiqlang va telefon raqamingizni ulashishga rozilik bering."
                 } else {
                     "Telegram orqali kirish serverda hali to‘liq sozlanmagan. " +
-                    "Ro‘yxatdan o‘tish uchun pastdagi SMS tasdiqlashni tanlang. " +
-                    "Sizga ishlamaydigan tugmani bosishni taklif qilmaymiz."
+                    "Google orqali kirishni tanlang yoki Telegram sozlangach qayta urinib ko‘ring."
                 },
                 color = AliMuted, fontSize = 12.sp
             )
