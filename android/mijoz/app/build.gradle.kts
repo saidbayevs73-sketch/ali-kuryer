@@ -15,6 +15,8 @@ android {
         versionCode = 9
         versionName = "1.6.1"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
+        val googleWebId = (project.findProperty("GOOGLE_WEB_CLIENT_ID") as String? ?: "")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebId}\"")
     }
 
     flavorDimensions += "audience"
@@ -57,6 +59,7 @@ dependencies {
     val bom = platform("androidx.compose:compose-bom:2024.12.01")
     implementation(bom)
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
