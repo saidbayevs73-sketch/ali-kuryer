@@ -60,14 +60,14 @@ class MainActivity : ComponentActivity() {
             val dark = androidx.compose.foundation.isSystemInDarkTheme()
             MaterialTheme(
                 colorScheme = if (dark) darkColorScheme(
-                    primary = Color(0xFFE1A3AA), onPrimary = Color(0xFF371A22),
+                    primary = Color(0xFFFF637C), onPrimary = Color(0xFF371A22),
                     background = Color(0xFF19191D), surface = Color(0xFF25252B),
                     onSurface = Color(0xFFF0EDE9), surfaceVariant = Color(0xFF313036),
                     outline = Color(0xFF39383E)
                 ) else lightColorScheme(
-                    primary = Color(0xFFB54852), onPrimary = Color.White,
-                    background = Color(0xFFF6F5F2), surface = Color.White,
-                    onSurface = Color(0xFF27272B), surfaceVariant = Color(0xFFF6E9E9),
+                    primary = Color(0xFFEC1733), onPrimary = Color.White,
+                    background = Color(0xFFFFF8F9), surface = Color.White,
+                    onSurface = Color(0xFF27272B), surfaceVariant = Color(0xFFFFEDF0),
                     outline = Color(0xFFE7E4DF)
                 )
             ) {
