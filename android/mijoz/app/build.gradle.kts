@@ -12,8 +12,8 @@ android {
         applicationId = "uz.alikuryer.customer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.6.1"
+        versionCode = 10
+        versionName = "1.7.0"
         buildConfigField("String", "API_BASE_URL", "\"https://ali-kuryer.onrender.com\"")
         val googleWebId = (project.findProperty("GOOGLE_WEB_CLIENT_ID") as String? ?: "")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${googleWebId}\"")
