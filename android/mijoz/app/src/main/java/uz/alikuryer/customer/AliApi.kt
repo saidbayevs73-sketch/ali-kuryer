@@ -224,6 +224,18 @@ object AliApi {
         return parseOrder(JSONObject(request("POST", "/api/v1/orders", data, token)))
     }
 
+    suspend fun publicFeatureFlags(): Map<String, Boolean> {
+        val obj = JSONObject(request("GET", "/api/platform/public"))
+            .optJSONObject("features") ?: JSONObject()
+        val result = mutableMapOf<String, Boolean>()
+        val keys = obj.keys()
+        while (keys.hasNext()) {
+            val key = keys.next()
+            result[key] = obj.optBoolean(key, true)
+        }
+        return result
+    }
+
     suspend fun customerSummary(token: String): JSONObject =
         JSONObject(request("GET", "/api/customer/me/summary", token = token))
 
