@@ -115,9 +115,14 @@ private fun AliCustomerApp() {
     val context = LocalContext.current
 
     var page by remember { mutableStateOf("home") }
+    var remoteFeatures by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
     val profileScroll = rememberLazyListState()
     LaunchedEffect(page) {
         if (page == "profile") profileScroll.scrollToItem(0)
+        // Refresh small, safe public config on navigation; server always enforces
+        // checkout permission independently of the Android UI.
+        try { remoteFeatures = AliApi.publicFeatureFlags() }
+        catch (_: Exception) { /* Last known/default visible while offline */ }
     }
     var restaurants by remember { mutableStateOf<List<Restaurant>>(emptyList()) }
     var foods by remember { mutableStateOf<List<Food>>(emptyList()) }
@@ -536,7 +541,7 @@ private fun AliCustomerApp() {
                             }
                         }
                     }
-                    item { AliPromoHero(onExplore = {
+                    if (remoteFeatures["promotions"] != false) item { AliPromoHero(onExplore = {
                         if (restaurants.isNotEmpty()) {
                             selectRestaurant(restaurants.first())
                         } else { message = "Hozircha oshxonalar mavjud emas" }
@@ -812,7 +817,13 @@ private fun AliCustomerApp() {
                 ) {
                     item { AliSectionTitle("Buyurtmani rasmiylashtirish",
                         "Taomlar, manzil va telefonni tekshiring") }
-                    if (session == null) {
+                    if (remoteFeatures["orders"] == false) {
+                        item {
+                            AliEmptyState("⏸", "Buyurtmalar vaqtincha to‘xtatilgan",
+                                "Super Admin xizmatni vaqtincha to‘xtatgan. Keyinroq qayta urinib ko‘ring.",
+                                "Savatga qaytish") { page = "cart" }
+                        }
+                    } else if (session == null) {
                         item {
                             AliEmptyState("🔐", "Tizimga kiring",
                                 "Buyurtma berish uchun mijoz hisobi kerak.",
@@ -1015,7 +1026,9 @@ private fun AliCustomerApp() {
                         }
                     }
                     session?.token?.let { customerToken ->
-                        item { AliCustomerSummary(customerToken) }
+                        if (remoteFeatures["bonus"] != false) {
+                            item { AliCustomerSummary(customerToken) }
+                        }
                     }
                     if (session == null) {
                         item {
