@@ -168,8 +168,27 @@ def create_order(data: NewOrderIn, db: Session = Depends(get_db), user=Depends(m
         raise HTTPException(422, "Telefon +998XXXXXXXXX shaklida bo‘lishi kerak")
     if os.getenv("ENVIRONMENT", "").lower() == "production" or os.getenv("RENDER", "").lower() in {"true", "1", "yes"}:
         proof = db.get(models.VerifiedPhone, data.phone)
-        if user.phone != data.phone or not proof or proof.user_id != user.id:
-            raise HTTPException(403, "Buyurtmadan avval telefoningizni SMS orqali tasdiqlang")
+        verified = bool(user.phone == data.phone and proof and proof.user_id == user.id)
+        if not verified:
+            # Social OAuth verifies account ownership, NOT the typed telephone.
+            # Accept it as a reachable delivery contact with a strict new-order cap.
+            from app.routers.customer_profile import CustomerContactProfile
+            social = (
+                db.query(models.GoogleIdentity).filter_by(user_id=user.id).first() is not None
+                or db.query(models.TelegramIdentity).filter_by(user_id=user.id).first() is not None
+            )
+            contact = db.get(CustomerContactProfile, user.id)
+            if not social or contact is None or contact.contact_phone != data.phone:
+                raise HTTPException(403, "Google yoki Telegram orqali kiring va telefonni profilingizga kiriting")
+            # Reduce abuse from unchecked contact numbers. Cash-on-delivery only.
+            day_ago = datetime.utcnow() - timedelta(hours=24)
+            recent = db.query(models.Order).filter(
+                models.Order.customer_id == user.id,
+                models.Order.created_at >= day_ago,
+                models.Order.status.notin_(["cancelled", "delivered"])
+            ).count()
+            if recent >= 3:
+                raise HTTPException(429, "Tasdiqlanmagan raqam bilan 3 ta faol buyurtma limiti tugadi")
     if (data.latitude is None) != (data.longitude is None):
         raise HTTPException(422, "GPS kenglik va uzunlik birga berilishi kerak")
     if data.latitude is not None:
