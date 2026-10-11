@@ -22,6 +22,7 @@ data class Food(
 )
 data class FoodHit(val restaurant: Restaurant, val food: Food)
 data class Session(val token: String, val role: String)
+data class CustomerContact(val firstName: String, val lastName: String, val phone: String, val complete: Boolean)
 data class TelegramSession(val session: Session, val phone: String)
 data class AliOrder(
     val id: Int, val status: String, val total: Long,
@@ -69,6 +70,41 @@ object AliApi {
                 conn.disconnect()
             }
         }
+
+
+    suspend fun googleLogin(googleIdToken: String): Session {
+        val result = JSONObject(request("POST", "/api/auth/google",
+            JSONObject().put("credential", googleIdToken)))
+        if (result.optString("role") != "customer") {
+            throw IllegalStateException("Faqat mijozlar hisobiga ruxsat berilgan")
+        }
+        val access = result.optString("access_token")
+        if (access.isBlank()) throw IllegalStateException("Google kirish tokeni qaytmadi")
+        return Session(access, "customer")
+    }
+
+    suspend fun getContactProfile(token: String): CustomerContact {
+        val obj = JSONObject(request("GET", "/api/customer/account/profile", token = token))
+        return CustomerContact(
+            obj.optString("first_name", ""), obj.optString("last_name", ""),
+            obj.optString("contact_phone", ""), obj.optBoolean("complete", false)
+        )
+    }
+
+    suspend fun saveContactProfile(
+        token: String, firstName: String, lastName: String, phone: String
+    ): CustomerContact {
+        val obj = JSONObject(request("PUT", "/api/customer/account/profile",
+            JSONObject()
+                .put("first_name", firstName.trim())
+                .put("last_name", lastName.trim())
+                .put("contact_phone", phone.trim()),
+            token))
+        return CustomerContact(
+            obj.optString("first_name", ""), obj.optString("last_name", ""),
+            obj.optString("contact_phone", ""), obj.optBoolean("complete", false)
+        )
+    }
 
     suspend fun restaurants(): List<Restaurant> {
         val arr = JSONArray(request("GET", "/api/customer/restaurants"))
