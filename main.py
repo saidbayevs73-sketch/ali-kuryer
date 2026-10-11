@@ -21,7 +21,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth, telegram_login
 from app.routers import support_bot
-from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
+from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce, customer_profile
 
 ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
@@ -64,13 +64,14 @@ app.add_middleware(
         "https://ali-kuryer.onrender.com",
         "https://ali-kuryer-1.onrender.com",
     ],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(auth.router)
 app.include_router(telegram_login.router)
 app.include_router(customer_experience.router)
 app.include_router(customer.router)
+app.include_router(customer_profile.router)
 app.include_router(panels.router)
 app.include_router(restaurant.router)
 app.include_router(orders.router)
