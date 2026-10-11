@@ -286,6 +286,9 @@ def finish_telegram_login(data: TelegramFinish, db: Session = Depends(get_db)):
             db.add(user)
             db.flush()
         db.add(models.TelegramIdentity(telegram_sub=attempt.telegram_sub, user_id=user.id))
+        from app.routers.platform_control import audit
+        audit(db, user.id, "customer_registration", "customer:" + str(user.id),
+              "provider=telegram")
     proof = db.get(models.VerifiedPhone, attempt.verified_phone)
     if proof and proof.user_id != user.id:
         raise HTTPException(409, "Telefon boshqa hisobga bog‘langan")

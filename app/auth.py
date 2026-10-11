@@ -486,6 +486,11 @@ def google_login(data: GoogleCredentialRequest, db: Session = Depends(get_db)):
         try:
             db.flush()
             db.add(models.GoogleIdentity(google_sub=subject, user_id=user.id))
+            # Safe registration event: record provider and internal ID only.
+            # Never log the provider subject, email, ID token or OAuth credentials.
+            from app.routers.platform_control import audit
+            audit(db, user.id, "customer_registration", "customer:" + str(user.id),
+                  "provider=google")
             db.commit()
         except IntegrityError:
             db.rollback()

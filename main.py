@@ -21,7 +21,7 @@ from app.bootstrap import ensure_admin
 from app.config import settings
 from app import auth, telegram_login
 from app.routers import support_bot
-from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce
+from app.routers import customer, panels, restaurant, orders, admin, courier, customer_experience, commerce, platform_control
 
 ROOT_DIR = Path(__file__).resolve().parent
 STATIC_DIR = ROOT_DIR / "app" / "static"
@@ -64,7 +64,7 @@ app.add_middleware(
         "https://ali-kuryer.onrender.com",
         "https://ali-kuryer-1.onrender.com",
     ],
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
 app.include_router(auth.router)
@@ -76,6 +76,7 @@ app.include_router(restaurant.router)
 app.include_router(orders.router)
 app.include_router(commerce.router)
 app.include_router(admin.router)
+app.include_router(platform_control.router)
 app.include_router(courier.router)
 app.include_router(support_bot.router)
 
@@ -94,14 +95,22 @@ def health():
 
 
 def _panel(request: Request):
+    # Keep the admin page opt-in and separate from public static files.
+    # All business data is fetched only through admin-only API endpoints.
     if os.getenv("ENABLE_STAFF_WEB_PANELS", "0") != "1":
         raise HTTPException(status_code=404, detail="Topilmadi")
-    # Existing deployments do not include the panel template yet.
-    # Do not return a false-success page or crash with TemplateNotFound.
-    if templates is None or not (TEMPLATE_DIR / "panel.html").is_file():
-        raise HTTPException(status_code=404, detail="Panel hozircha mavjud emas")
-    return templates.TemplateResponse(request=request, name="panel.html")
-
+    portal = ROOT_DIR / "app" / "admin_portal.html"
+    if not portal.is_file():
+        raise HTTPException(status_code=503, detail="Admin panel fayli topilmadi")
+    return FileResponse(str(portal), media_type="text/html", headers={
+        "Cache-Control": "no-store",
+        "Content-Security-Policy": (
+            "default-src 'none'; base-uri 'none'; form-action 'self'; "
+            "connect-src 'self'; img-src 'self' data:; "
+            "style-src 'unsafe-inline'; script-src 'unsafe-inline'; "
+            "frame-ancestors 'none'"
+        ),
+    })
 
 @app.get("/admin", include_in_schema=False)
 def admin_panel(request: Request):

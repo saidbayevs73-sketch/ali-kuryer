@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ed1634"><title>Ali Kuryer | Super Admin</title>
+<style>
+:root{--red:#e91536;--red-dark:#bf0d2c;--ink:#1b2333;--muted:#8992a1;--stroke:#e9edf2;--bg:#f5f6fa;--white:#fff;--green:#109c65;--orange:#e48b21}
+*{box-sizing:border-box}html{font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Arial,sans-serif}body{margin:0;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}
+.hidden{display:none!important}.login-screen{min-height:100dvh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 0 0,#ffdde4,transparent 40%),linear-gradient(120deg,#fff,#f6f7fb)}
+.login-card{width:min(100%,445px);border:1px solid #eee;background:white;border-radius:28px;box-shadow:0 32px 95px #21091218;padding:36px}
+.brand{display:flex;align-items:center;gap:12px;white-space:nowrap;font-weight:950;letter-spacing:-.7px;font-size:22px}
+.brand-mark{width:46px;height:46px;display:grid;place-items:center;background:linear-gradient(130deg,#ed1839,#ac0b2a);color:#fff;border-radius:15px;font-size:24px;box-shadow:0 12px 22px #ed18392a}
+.brand em{color:var(--red);font-style:normal}.subtitle{color:var(--muted);font-size:13px;line-height:1.6}.login-card h1{font-size:29px;letter-spacing:-1px;margin:38px 0 8px}.field{display:grid;gap:8px;color:#596272;font-size:13px;font-weight:700;margin:20px 0 0}
+.field input,.field select,.field textarea,.form-input{border:1px solid #e3e7ef;padding:13px 15px;border-radius:13px;outline:0;width:100%;background:#fff;color:#222d3a}
+.field input:focus,.field select:focus,.form-input:focus{border-color:var(--red);box-shadow:0 0 0 3px #ed183916}
+.btn{border:0;border-radius:12px;padding:12px 17px;font-size:13px;font-weight:850;background:#f1f3f7;color:#3e485b;transition:.15s}
+.btn:hover{filter:brightness(.97)}.btn.primary{background:var(--red);color:#fff}.btn.dark{background:#192235;color:#fff}.btn.outline{border:1px solid var(--stroke);background:white}.btn.small{padding:8px 11px;font-size:12px}.btn.full{width:100%;margin-top:25px;padding:15px}.btn:focus-visible,a:focus-visible{outline:3px solid #f495a3}
+.line{height:1px;background:var(--stroke);margin:23px 0}.login-footer{text-align:center;margin:22px 0 0;color:#89919d;font-size:12px}
+.shell{min-height:100vh}.sidebar{position:fixed;inset:0 auto 0 0;width:245px;background:#fff;border-right:1px solid #ecedf0;z-index:20;display:flex;flex-direction:column;padding:27px 15px}
+.sidebar .brand{padding:4px 11px 26px;font-size:19px}.sidebar .brand-mark{width:42px;height:42px}
+.side-label{padding:18px 15px 8px;font-size:10px;color:#a2aab6;letter-spacing:1.6px;font-weight:900}
+.nav{border:0;background:none;text-align:left;width:100%;border-radius:13px;display:flex;align-items:center;gap:12px;padding:13px 15px;color:#657084;font-weight:700;font-size:13px;margin:2px 0;position:relative}
+.nav:hover{background:#fff3f5;color:var(--red)}.nav.active{background:#ffecef;color:var(--red)}.nav.active:before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:3px;background:var(--red);border-radius:4px}
+.nav .ico{width:22px;text-align:center;font-size:19px}.sidebar-foot{margin-top:auto;padding:15px 10px}.profilechip{padding:13px;border:1px solid var(--stroke);border-radius:16px;display:flex;gap:11px;align-items:center}
+.avatar{width:39px;height:39px;display:grid;place-items:center;border-radius:13px;background:#1d2537;color:white;font-weight:900}.profilechip small{display:block;color:#9ba4ae;font-weight:400;margin-top:3px}
+.main{margin-left:245px;min-height:100vh}.topbar{height:84px;border-bottom:1px solid var(--stroke);background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:space-between;gap:15px;padding:0 36px;position:sticky;top:0;z-index:10;backdrop-filter:blur(16px)}
+.topbar h2{font-size:20px;letter-spacing:-.6px;margin:0}.topbar small{display:block;color:var(--muted);margin-top:5px}.right{display:flex;align-items:center;gap:10px}
+.iconbtn{width:40px;height:40px;border:1px solid var(--stroke);border-radius:12px;background:#fff;font-size:17px}
+.content{max-width:1480px;padding:30px 36px 70px;margin:0 auto}.welcome{display:flex;align-items:center;justify-content:space-between;margin-bottom:23px;gap:15px}
+.welcome h1{font-size:26px;letter-spacing:-1px;margin:0 0 6px}.muted{color:var(--muted)}.demo-flag{background:#fff3cf;color:#9b6b00;border-radius:100px;padding:7px 11px;font-size:11px;font-weight:900;letter-spacing:.4px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:17px;margin-bottom:20px}
+.card{background:#fff;border:1px solid var(--stroke);border-radius:20px;box-shadow:0 5px 22px #14243d06}.metric{padding:23px}
+.metric .head{display:flex;align-items:center;justify-content:space-between;color:#7f8898;font-size:12px;font-weight:750}.metric .bubble{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;background:#fff0f3}
+.metric:nth-child(2) .bubble{background:#edfbf3}.metric:nth-child(3) .bubble{background:#eef2ff}.metric:nth-child(4) .bubble{background:#fff6e9}
+.metric strong{display:block;font-size:30px;font-weight:950;letter-spacing:-1.3px;margin:15px 0 4px}.metric small{color:#8993a0;font-size:11px}
+.cols{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;margin-top:20px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:21px 23px 14px;gap:10px;flex-wrap:wrap}
+.panel-head h3{margin:0;font-size:16px;letter-spacing:-.4px}.panel-head small{color:#9ca4b0;font-size:12px}
+.pad{padding:22px}.chart{height:226px;display:flex;align-items:flex-end;gap:16px;padding:20px 12px 0;border-bottom:1px solid #e7ebf2}
+.chart-col{flex:1;height:100%;display:flex;align-items:center;justify-content:flex-end;flex-direction:column;gap:8px;min-width:0}
+.bar{width:min(100%,37px);border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,#fc4e69,#e91536);min-height:5px;position:relative}.bar:hover{filter:brightness(.94)}.chart-col span{font-size:11px;color:#9aa3af;text-align:center}
+.chartnote{font-size:11px;color:#96a1af;margin:9px 23px 21px}.vlist{padding:0 18px 18px}.vrow{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #f0f1f4;padding:14px 5px;gap:12px;font-size:13px}
+.vrow:first-child{border-top:none}.vrow strong{font-size:13px}.vrow small{display:block;font-size:11px;color:#9aa1af;margin-top:4px}
+.pill{display:inline-flex;align-items:center;padding:5px 9px;border-radius:50px;background:#f1f3f7;color:#617082;font-size:11px;font-weight:850}
+.pill.good{background:#e7f9ef;color:#0e955f}.pill.wait{background:#fff5e6;color:#c48215}.pill.bad{background:#ffebee;color:#d42e48}.pill.info{background:#ebf0ff;color:#5873c2}
+.tablewrap{overflow-x:auto}.table{width:100%;border-collapse:collapse;min-width:620px;font-size:12px}.table th{text-align:left;color:#929dad;font-size:11px;background:#fbfcfe;padding:15px 19px;font-weight:850;white-space:nowrap}.table td{padding:17px 19px;border-top:1px solid #f0f1f5;vertical-align:middle}.table strong{font-size:12px}.table small{display:block;color:#9ba3af;margin-top:4px}
+.filterbar{display:flex;gap:11px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 19px}.filterbar input,.filterbar select,.inline-select{border:1px solid var(--stroke);border-radius:11px;padding:10px 12px;background:white;color:#3b4553;max-width:100%;outline:0;font-size:12px}
+.empty{text-align:center;padding:55px 20px;color:#919bab;font-size:13px}.empty b{display:block;font-size:30px;margin:0 0 12px}
+.notice{padding:13px 16px;background:#fff6e8;color:#8e620b;border:1px solid #ffe6ba;border-radius:13px;font-size:12px;margin-bottom:18px}
+#toast{position:fixed;right:20px;bottom:20px;z-index:101;background:#182032;color:#fff;box-shadow:0 16px 40px #13223833;border-radius:14px;padding:15px 20px;max-width:min(420px,calc(100% - 40px));font-size:13px;display:none}
+#modalShade{position:fixed;inset:0;background:#14182588;z-index:30;display:none;align-items:center;justify-content:center;padding:16px}#modal{width:min(520px,100%);max-height:87vh;overflow:auto;background:#fff;border-radius:24px;padding:26px;box-shadow:0 22px 85px #15192433}#modal h3{margin:0 0 10px;font-size:21px}
+.support-messages{height:250px;overflow:auto;background:#f8f9fc;padding:13px;border-radius:14px;display:flex;flex-direction:column;gap:9px}
+.msg{padding:9px 12px;border-radius:12px;max-width:88%;font-size:12px;line-height:1.5;background:#fff;border:1px solid #eff0f2;align-self:flex-start;overflow-wrap:anywhere}.msg.own{align-self:flex-end;background:#ffe6ea;color:#9b1431;border:none}
+.menu-trigger{display:none}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}}
+@media(max-width:850px){.sidebar{transform:translateX(-100%);transition:transform .2s;box-shadow:0 22px 60px #131a2533}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.menu-trigger{display:inline-grid;place-items:center}.topbar{height:73px;padding:0 18px}.content{padding:23px 17px 60px}.welcome h1{font-size:22px}.right .btn{padding:10px}.metrics{gap:10px}.metric{padding:16px}.metric strong{font-size:25px}.metric .head{font-size:11px}.metric .bubble{width:34px;height:34px;font-size:16px}}
+@media(max-width:440px){.login-card{padding:24px}.content{padding:18px 12px 55px}.metric{padding:14px}.metric strong{font-size:24px}.metric .head{display:block}.metric .bubble{margin-top:9px}.panel-head{padding:17px 15px}.topbar h2{font-size:17px}.right{gap:5px}.right .btn{font-size:11px}.topbar .iconbtn{width:33px;height:33px}}
+ .flag-switch{white-space:nowrap;font-size:12px;font-weight:800;color:#5d6878;display:flex;align-items:center;gap:7px}
+ .flag-switch input{width:20px;height:20px;accent-color:#e91536;cursor:pointer}
+</style></head>
+<body>
+<section id="loginView" class="login-screen">
+  <div class="login-card">
+    <div class="brand"><div class="brand-mark">➤</div><span>ALI <em>KURYER</em></span></div>
+    <h1>Super Admin <span style="color:var(--red)">Panel</span></h1>
+    <p class="subtitle">Barcha buyurtmalar, hamkorlar va kuryerlar — yagona boshqaruv markazida.</p>
+    <form id="loginForm">
+      <label class="field">Admin login<input name="username" value="admin" autocomplete="username" required maxlength="32"></label>
+      <label class="field">Parol<input name="password" type="password" autocomplete="current-password" required placeholder="Admin paroli"></label>
+      <button class="btn primary full" type="submit">🔐 &nbsp; Himoyalangan kirish</button>
+    </form>
+    <div class="line"></div>
+    <button id="demoBtn" class="btn outline full" type="button" style="margin-top:0">👁 &nbsp; Namoyish rejimini ko‘rish</button>
+    <p class="login-footer">Haqiqiy ma’lumotlar faqat administrator tasdiqlangandan so‘ng yuklanadi. Demo ma’lumotlari sun’iy.</p>
+  </div>
+</section>
+<div id="appView" class="shell hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><div class="brand-mark">➤</div><span>ALI <em>KURYER</em></span></div>
+    <div class="side-label">BOSHQARUV</div>
+    <button class="nav active" data-page="dashboard"><span class="ico">▦</span> Bosh sahifa</button>
+    <button class="nav" data-page="orders"><span class="ico">▣</span> Buyurtmalar</button>
+    <button class="nav" data-page="restaurants"><span class="ico">▤</span> Oshxonalar</button>
+    <button class="nav" data-page="couriers"><span class="ico">◈</span> Kuryerlar</button>
+    <button class="nav" data-page="customers"><span class="ico">♙</span> Mijozlar</button>
+    <div class="side-label">MARKAZ</div>
+    <button class="nav" data-page="applications"><span class="ico">✉</span> Hamkorlik arizalari</button>
+    <button class="nav" data-page="support"><span class="ico">☏</span> Operator chatlari</button>
+    <button class="nav" data-page="reports"><span class="ico">▥</span> Hisobotlar</button>
+    <button class="nav" data-page="features"><span class="ico">⚙</span> Ilova funksiyalari</button>
+    <button class="nav" data-page="banners"><span class="ico">▧</span> Banner va reklama</button>
+    <button class="nav" data-page="accounts"><span class="ico">◈</span> Google / Telegram</button>
+    <button class="nav" data-page="audit"><span class="ico">☷</span> O‘zgarishlar jurnali</button>
+    <button class="nav" data-page="settings"><span class="ico">◉</span> Sozlamalar</button>
+    <div class="sidebar-foot"><div class="profilechip"><div class="avatar">AK</div><div><b style="font-size:12px">Bosh administrator</b><small id="sessionLabel">Xavfsiz sessiya</small></div></div></div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:12px"><button class="iconbtn menu-trigger" id="menuBtn">☰</button><div><h2 id="pageTitle">Boshqaruv paneli</h2><small>ALI KURYER / <span id="pageCrumb">Umumiy ko‘rinish</span></small></div></div>
+      <div class="right"><button class="iconbtn" id="refreshBtn" title="Yangilash" aria-label="Yangilash">↻</button><button class="btn dark" id="logoutBtn">Chiqish ↗</button></div>
+    </header>
+    <div class="content">
+      <div class="welcome"><div><h1 id="welcomeTitle">Assalomu alaykum, Administrator 👋</h1><div class="subtitle" id="welcomeText">Ali Kuryer faoliyatining umumiy ko‘rinishi</div></div><span id="demoFlag" class="demo-flag hidden">● DEMO MA’LUMOTLARI</span></div>
+      <div id="alertBox"></div><div id="screen"></div>
+    </div>
+  </main>
+</div>
+<div id="modalShade" role="dialog" aria-modal="true" aria-label="Boshqaruv oynasi"><div id="modal"></div></div><div id="toast" role="status"></div>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>new Intl.NumberFormat('uz-UZ').format(Number(n||0))+' so‘m';
+const title={dashboard:'Boshqaruv paneli',orders:'Buyurtmalar',restaurants:'Oshxonalar',couriers:'Kuryerlar',customers:'Mijozlar',applications:'Hamkorlik arizalari',support:'Operator chatlari',reports:'Hisobotlar',features:'Ilova funksiyalari',banners:'Banner va reklama',accounts:'Google / Telegram',audit:'O‘zgarishlar jurnali',settings:'Sozlamalar'};
+const stnames={pending:'Qabul qilindi',preparing:'Tayyorlanmoqda',ready:'Tayyor',assigned:'Kuryer biriktirilgan',delivering:'Yo‘lda',delivered:'Yetkazildi',cancelled:'Bekor qilindi',new:'Yangi',reviewing:'Ko‘rilmoqda',approved:'Tasdiqlangan',rejected:'Rad etilgan'};
+const statuses=['pending','preparing','ready','assigned','delivering','delivered','cancelled'];
+const demoOrders=[
+{id:1248,restaurant_id:1,status:'delivered',total:92000,address:'Namangan, Navoiy ko‘chasi',created_at:'2026-10-11T09:16:00',phone:'+998901234567'},
+{id:1247,restaurant_id:2,status:'delivering',total:69000,address:'Namangan, Bog‘ishamol',created_at:'2026-10-11T09:02:00',phone:'+998901234568'},
+{id:1246,restaurant_id:3,status:'preparing',total:134000,address:'Namangan, Davlatobod',created_at:'2026-10-11T08:42:00',phone:'+998901234569'},
+{id:1245,restaurant_id:1,status:'pending',total:38000,address:'Namangan, Chorsu',created_at:'2026-10-11T08:21:00',phone:'+998901234570'},
+{id:1244,restaurant_id:4,status:'ready',total:115000,address:'Namangan, Istiqlol',created_at:'2026-10-10T18:10:00',phone:'+998901234571'},
+{id:1243,restaurant_id:2,status:'delivered',total:155000,address:'Namangan, Yangi Namangan',created_at:'2026-10-10T17:40:00',phone:'+998901234572'},
+{id:1242,restaurant_id:3,status:'cancelled',total:67000,address:'Namangan, Guliston',created_at:'2026-10-09T11:30:00',phone:'+998901234573'}];
+const demoRestaurants=[{id:1,name:'Ali Burger',address:'Namangan, markaz',is_approved:true},{id:2,name:'Osh Markazi',address:'Namangan, Chorsu',is_approved:true},{id:3,name:'Pizza House',address:'Namangan, Davlatobod',is_approved:true},{id:4,name:'Milliy Taomlar',address:'Namangan, Bog‘ishamol',is_approved:false}];
+const demoCouriers=[{id:5,name:'Akmal Karimov',phone:'+998901114455',is_active:true,is_online:true},{id:7,name:'Diyorbek Aliyev',phone:'+998902224466',is_active:true,is_online:false},{id:8,name:'Zafar Ergashev',phone:'+998903334477',is_active:true,is_online:true}];
+const demoCustomers=[{id:1,name:'Muhammadali S.',phone:'+998901111111',is_active:true,order_count:8},{id:2,name:'Dilnoza M.',phone:'+998902222222',is_active:true,order_count:3},{id:3,name:'Ziyoda A.',phone:'+998903333333',is_active:true,order_count:5}];
+const demoApps=[{id:2,kind:'courier',full_name:'Jasurbek Yo‘ldoshev',phone:'+998901112233',city:'Namangan',detail:'Mototsikl mavjud',status:'new'},{id:3,kind:'restaurant',full_name:'Farrux Rahmonov',phone:'+998907778899',city:'Namangan',detail:'Oshxona hamkorligi',status:'reviewing'}];
+const demoThreads=[{customer_id:1,last_message_id:15},{customer_id:2,last_message_id:18}];
+let token='',demo=false,page='dashboard',rowsFilter='',orderStatusFilter='all',data={};
+function toast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.style.display='none',4500)}
+function seed(){const days=[12,17,9,23,16,26,19].map((n,i)=>({date:new Date(Date.now()-(6-i)*86400000).toISOString().slice(0,10),count:n,delivered_value:n*50000}));return{
+ overview:{total_orders:427,active_orders:28,delivered_orders:392,delivered_order_value:32480000,restaurants_total:12,restaurants_pending:2,customers_total:1034,couriers_total:34,applications_pending:5,last_7_days:days},
+ orders:structuredClone(demoOrders),restaurants:structuredClone(demoRestaurants),couriers:structuredClone(demoCouriers),customers:structuredClone(demoCustomers),applications:structuredClone(demoApps),threads:structuredClone(demoThreads),
+  features:[{key:'orders',label:'Buyurtma berish',enabled:true,available:true},{key:'bonus',label:'Bonus ballar',enabled:true,available:true},
+    {key:'promotions',label:'Aksiyalar',enabled:true,available:true},{key:'ai_assistant',label:'Muhammadali AI',enabled:true,available:true},
+    {key:'support_chat',label:'Yordam markazi',enabled:true,available:true},{key:'courier_tracking',label:'Buyurtma kuzatuvi',enabled:true,available:true},
+    {key:'reviews',label:'Reyting va sharhlar (hali ulanmagan)',enabled:false,available:false},
+    {key:'wallet',label:'Haqiqiy pul hamyoni (hali ulanmagan)',enabled:false,available:false}],
+  banners:[{id:1,title:'Ali Burger — chegirmalar',subtitle:'Namoyish aksiyasi',image_url:'',cta_label:'Ko‘rish',is_active:true}],
+  audit:[{id:1,actor_id:1,action:'feature_changed',target:'promotions',detail:'enabled=true',created_at:new Date().toISOString()}],
+  google:[{user_id:1,name:'Aziza Karimova',phone:'',provider:'google',active:true,linked_at:new Date().toISOString()}],
+  telegram:[{user_id:2,name:'Jasurbek Yo‘ldoshev',phone:'',provider:'telegram',active:true,linked_at:new Date().toISOString()}]
+ }}
+async function api(path,method='GET',body){const headers={'Accept':'application/json'};if(token)headers.Authorization='Bearer '+token;if(body!==undefined)headers['Content-Type']='application/json';const response=await fetch(path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});let payload;try{payload=await response.json()}catch{payload={}}if(!response.ok)throw Error(typeof payload.detail==='string'?payload.detail:'Server javobida xato ('+response.status+')');return payload}
+async function refresh(){if(demo){render();return}const target=[['overview','/api/admin/overview'],['orders','/api/v1/staff/orders'],['restaurants','/api/v1/staff/restaurants'],['couriers','/api/admin/people?role=courier'],['customers','/api/admin/people?role=customer'],['applications','/api/admin/partner-applications'],['threads','/api/v1/admin/support/threads'],['features','/api/admin/platform/features'],
+['banners','/api/admin/platform/banners'],['audit','/api/admin/platform/audit'],
+['google','/api/admin/platform/linked-accounts?provider=google'],
+['telegram','/api/admin/platform/linked-accounts?provider=telegram']];const errors=[];const result=await Promise.allSettled(target.map(async([name,url])=>[name,await api(url)]));result.forEach((x,i)=>{if(x.status==='fulfilled')data[x.value[0]]=x.value[1];else errors.push(target[i][0]+': '+x.reason.message)});$('#alertBox').innerHTML=errors.length?'<div class="notice">Ba’zi ma’lumotlar yuklanmadi: '+esc(errors.join('; '))+'</div>':'';render()}
+function start(isDemo){demo=isDemo;data=isDemo?seed():{};$('#loginView').classList.add('hidden');$('#appView').classList.remove('hidden');$('#demoFlag').classList.toggle('hidden',!isDemo);$('#sessionLabel').textContent=isDemo?'Namoyish rejimi':'Himoyalangan kirish';if(isDemo)render();else refresh().catch(e=>toast(e.message))}
+$('#demoBtn').addEventListener('click',()=>start(true));
+$('#loginForm').addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(e.target);const b=e.target.querySelector('button[type=submit]');b.disabled=true;try{const answer=await api('/api/auth/admin/login','POST',{username:fd.get('username'),password:fd.get('password')});if(answer.role!=='admin'||!answer.access_token)throw Error('Admin huquqi tasdiqlanmadi');token=answer.access_token;const me=await api('/api/auth/me');if(me.role!=='admin')throw Error('Admin hisobi mos emas');e.target.reset();start(false)}catch(err){token='';toast(err.message)}finally{b.disabled=false}});
+$('#logoutBtn').onclick=()=>{token='';demo=false;data={};$('#loginView').classList.remove('hidden');$('#appView').classList.add('hidden');$('#loginForm').reset();$('#modalShade').style.display='none';toast('Sessiya yakunlandi')};
+$('#menuBtn').onclick=()=>$('#sidebar').classList.toggle('open');
+$('#refreshBtn').onclick=()=>refresh().then(()=>toast(demo?'Demo ko‘rinishi yangilandi':'Ma’lumotlar yangilandi')).catch(e=>toast(e.message));
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page=b.dataset.page;rowsFilter='';orderStatusFilter='all';$('#sidebar').classList.remove('open');render()});
+function changePage(p){page=p;document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===p));$('#pageTitle').textContent=title[p];$('#pageCrumb').textContent=title[p];render()}
+const pill=s=>{let cls=['delivered','approved'].includes(s)?'good':['pending','new','reviewing','preparing','ready'].includes(s)?'wait':['cancelled','rejected'].includes(s)?'bad':'info';return '<span class="pill '+cls+'">'+esc(stnames[s]||s||'—')+'</span>'};
+const restaurantName=id=>(data.restaurants||[]).find(r=>r.id===id)?.name||('Oshxona #'+id);
+const time=s=>s?new Date(s).toLocaleString('uz-UZ',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+const card=(title,body)=>'<section class="card"><div class="panel-head"><h3>'+esc(title)+'</h3></div>'+body+'</section>';
+const empty=msg=>'<div class="empty"><b>◌</b>'+esc(msg)+'</div>';
+const select=(name,values,current,id)=>'<select class="inline-select" data-field="'+name+'" data-id="'+Number(id)+'">'+values.map(x=>'<option value="'+esc(x)+'" '+(x===current?'selected':'')+'>'+esc(stnames[x]||x)+'</option>').join('')+'</select>';
+function table(headers,rows){return '<div class="tablewrap"><table class="table"><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>'}
+function dashboard(){const o=data.overview||{},numbers=[['Jami buyurtmalar',o.total_orders,'▣','Barcha vaqtdagi buyurtmalar'],['Faol buyurtmalar',o.active_orders,'◉','Jarayondagi buyurtmalar'],['Yetkazilganlar',o.delivered_orders,'✓','Muvaffaqiyatli yakunlangan'],['Yakunlangan summa',money(o.delivered_order_value),'▥','Daromad emas, buyurtma qiymati']];
+const cards='<div class="metrics">'+numbers.map(n=>'<div class="card metric"><div class="head"><span>'+esc(n[0])+'</span><div class="bubble">'+n[2]+'</div></div><strong>'+esc(n[1]??'—')+'</strong><small>'+esc(n[3])+'</small></div>').join('')+'</div>';
+const trend=o.last_7_days||[],max=Math.max(1,...trend.map(x=>x.count||0)),chart='<div class="chart">'+trend.map(d=>'<div class="chart-col"><div class="bar" title="'+esc(d.count)+' ta" style="height:'+Math.max(4,Math.round((d.count||0)/max*175))+'px"></div><span>'+esc((d.date||'').slice(5))+'</span></div>').join('')+'</div><div class="chartnote">So‘nggi 7 kun ichidagi buyurtmalar soni (UTC sanalariga ko‘ra)</div>';
+const recent=(data.orders||[]).slice(0,6).map(x=>'<div class="vrow"><div><strong>#'+x.id+' · '+esc(restaurantName(x.restaurant_id))+'</strong><small>'+esc(time(x.created_at))+' · '+esc(x.address||'')+'</small></div><div style="text-align:right">'+pill(x.status)+'<small>'+money(x.total)+'</small></div></div>').join('');
+const overview='<div class="cols">'+card('📈 Buyurtmalar dinamikasi',chart)+card('🕒 Oxirgi buyurtmalar','<div class="vlist">'+(recent||empty('Buyurtma hali yo‘q'))+'</div>')+'</div>';
+const pending=(data.restaurants||[]).filter(x=>!x.is_approved).slice(0,4).map(x=>'<div class="vrow"><div><strong>'+esc(x.name)+'</strong><small>'+esc(x.address)+'</small></div><button class="btn primary small" data-action="approve" data-id="'+x.id+'">Tasdiqlash</button></div>').join('');
+return cards+overview+'<div class="cols">'+card('🏪 Tasdiq kutayotgan oshxonalar','<div class="vlist">'+(pending||empty('Barcha oshxonalar ko‘rib chiqilgan'))+'</div>')+card('⚡ Tezkor ma’lumotlar','<div class="vlist"><div class="vrow">Ro‘yxatdan o‘tgan mijozlar <strong>'+esc(o.customers_total??0)+'</strong></div><div class="vrow">Kuryerlar <strong>'+esc(o.couriers_total??0)+'</strong></div><div class="vrow">Hamkorlik arizalari <strong>'+esc(o.applications_pending??0)+'</strong></div><div class="vrow">Tasdiqsiz oshxonalar <strong>'+esc(o.restaurants_pending??0)+'</strong></div></div>')+'</div>'}
+function orders(){let arr=(data.orders||[]).filter(x=>(orderStatusFilter==='all'||x.status===orderStatusFilter)&&(!rowsFilter||JSON.stringify(x).toLowerCase().includes(rowsFilter)));const rows=arr.map(x=>'<tr><td><strong>#'+x.id+'</strong><small>'+esc(time(x.created_at))+'</small></td><td>'+esc(restaurantName(x.restaurant_id))+'</td><td>'+esc(x.address||'—')+'<small>'+esc(x.phone||'')+'</small></td><td><strong>'+money(x.total)+'</strong></td><td>'+pill(x.status)+'</td><td>'+select('status',statuses,x.status,x.id)+'</td></tr>');return '<div class="filterbar"><input id="q" placeholder="Buyurtma qidirish..." value="'+esc(rowsFilter)+'" aria-label="Buyurtma qidirish"><select id="orderFilter"><option value="all">Barcha holatlar</option>'+statuses.map(s=>'<option value="'+s+'" '+(orderStatusFilter===s?'selected':'')+'>'+stnames[s]+'</option>').join('')+'</select></div>'+card('Buyurtmalar — oxirgi 100 ta',rows.length?table(['ID va vaqt','Oshxona','Yetkazish manzili','Summa','Holat','Boshqarish'],rows):empty('Buyurtma topilmadi'))}
+function restaurants(){const rows=(data.restaurants||[]).filter(x=>!rowsFilter||JSON.stringify(x).toLowerCase().includes(rowsFilter)).map(x=>'<tr><td><strong>'+esc(x.name)+'</strong><small>#'+x.id+'</small></td><td>'+esc(x.address||'—')+'</td><td>'+pill(x.is_approved?'approved':'new')+'</td><td><button class="btn '+(x.is_approved?'outline':'primary')+' small" data-action="approve" data-id="'+x.id+'">'+(x.is_approved?'Tasdiqni bekor qilish':'Tasdiqlash')+'</button> <button class="btn small outline" data-action="menu" data-id="'+x.id+'">Menyu / haqiqiy fotosuratlar</button></td></tr>');return '<div class="filterbar"><input id="q" placeholder="Oshxona qidirish..." value="'+esc(rowsFilter)+'"></div>'+card('Barcha oshxonalar',rows.length?table(['Oshxona','Manzil','Holat','Amal'],rows):empty('Oshxona topilmadi'))}
+function people(kind){const arr=data[kind]||[];let list=arr.filter(x=>!rowsFilter||JSON.stringify(x).toLowerCase().includes(rowsFilter));const rows=list.map(x=>'<tr><td><strong>'+esc(x.name)+'</strong><small>Foydalanuvchi #'+x.id+'</small></td><td>'+esc(x.phone||'Ko‘rsatilmagan')+'</td><td>'+pill(x.is_active?'approved':'rejected')+'</td><td>'+(kind==='couriers'?pill(x.is_online?'delivering':'pending'):esc(String(x.order_count||0)+' ta'))+'</td></tr>');return '<div class="filterbar"><input id="q" placeholder="Ism yoki telefon qidirish..." value="'+esc(rowsFilter)+'">'+(kind==='couriers'?'<button class="btn primary" data-action="newstaff">+ Kuryer qo‘shish</button>':'')+'</div>'+card(kind==='couriers'?'Kuryerlar':'Mijozlar',rows.length?table(['Ism-familiya','Telefon','Hisob',''+(kind==='couriers'?'Faollik':'Buyurtmalar')],rows):empty('Ma’lumot yo‘q'))}
+function applications(){let rows=(data.applications||[]).filter(x=>!rowsFilter||JSON.stringify(x).toLowerCase().includes(rowsFilter)).map(x=>'<tr><td><strong>'+esc(x.full_name)+'</strong><small>#'+x.id+'</small></td><td>'+esc(x.kind==='courier'?'Kuryer':'Oshxona')+'</td><td>'+esc(x.phone||'')+'</td><td>'+esc(x.city||'')+'<small>'+esc(x.detail||'').slice(0,95)+'</small></td><td>'+select('application',['new','reviewing','approved','rejected'],x.status,x.id)+'</td></tr>');return '<div class="filterbar"><input id="q" placeholder="Hamkorlik arizalarini qidirish..." value="'+esc(rowsFilter)+'"></div><div class="notice">Arizani tasdiqlash xodim akkauntini avtomatik yaratmaydi. Xodimni alohida admin huquqi bilan qo‘shing.</div>'+card('Kelgan arizalar',rows.length?table(['Arizachi','Tur','Telefon','Hudud / izoh','Holat'],rows):empty('Arizalar yo‘q'))}
+function support(){const arr=data.threads||[];return '<div class="notice">Operator yozishmalari faqat admin hisobida ochiladi. Xabarlarni tekshirib javob yozishingiz mumkin.</div>'+card('Suhbatlar',arr.length?'<div class="vlist">'+arr.map(x=>'<div class="vrow"><div><strong>Mijoz #'+x.customer_id+'</strong><small>Oxirgi xabar #'+x.last_message_id+'</small></div><button class="btn primary small" data-action="chat" data-id="'+x.customer_id+'">Suhbatni ochish</button></div>').join('')+'</div>':empty('Operator chatlari topilmadi'))}
+function reports(){const o=data.overview||{};return '<div class="metrics">'+[['Jami buyurtmalar',o.total_orders],['Faol buyurtmalar',o.active_orders],['Yetkazilganlar',o.delivered_orders],['Yakunlangan qiymat',money(o.delivered_order_value)]].map(([n,v])=>'<div class="card metric"><div class="head">'+esc(n)+'</div><strong>'+esc(v??'—')+'</strong></div>').join('')+'</div>'+card('Eksport','<div class="pad"><p class="subtitle">Oxirgi yuklangan 100 ta buyurtma bo‘yicha CSV hisobotni yuklab olish mumkin. Hisob-kitob foyda yoki bank tushumi emas.</p><button class="btn primary" data-action="csv">↓ Buyurtmalarni CSV yuklash</button></div>')}
+
+
+async function menuEditor(restId) {
+ const restaurant=(data.restaurants||[]).find(r=>r.id===restId);
+ if(!restaurant)return;
+ if(demo){modal('<h3>'+esc(restaurant.name)+' · Menyu</h3><div class="notice">Demo rejimida real oshxona fotosuratlari yo‘q. Restoran tasdiqlangach o‘z taomining haqiqiy fotosuratini yuklaydi.</div><button class="btn outline" onclick="closeModal()">Yopish</button>');return}
+ try{
+  const items=await api('/api/v1/restaurants/'+restId+'/manage-menu');
+  const rows=items.map(it=>{
+    let photo='';
+    if(typeof it.image_url==='string'&&it.image_url.startsWith('https://')){
+      photo='<img src="'+esc(it.image_url)+'" alt="'+esc(it.name)+' foto" loading="lazy" style="width:58px;height:52px;object-fit:cover;border-radius:11px" referrerpolicy="no-referrer">';
+    }else photo='<span class="pill">Rasm yo‘q</span>';
+    return '<div class="vrow" style="align-items:flex-start;flex-wrap:wrap">'+photo+
+      '<div style="flex:1;min-width:150px"><strong>'+esc(it.name)+'</strong><small>'+money(it.price)+' · '+(it.is_available?'Mavjud':'Mavjud emas')+'</small>'+
+      '<input class="form-input" data-photo-url="'+Number(it.id)+'" placeholder="HTTPS haqiqiy foto URL" value="'+esc(it.image_url||'')+'" style="margin-top:8px;font-size:11px"></div>'+
+      '<div style="display:grid;gap:6px"><button class="btn small" data-action="photoUrlSave" data-id="'+Number(it.id)+'" data-rest="'+restId+'">URLni saqlash</button>'+
+      '<input type="file" accept="image/jpeg,image/png,image/webp" data-photo-file="'+Number(it.id)+'" aria-label="Taomning haqiqiy fotosuratini tanlash" style="width:145px;font-size:10px">'+
+      '<button class="btn primary small" data-action="photoFileSave" data-id="'+Number(it.id)+'" data-rest="'+restId+'">Suratni yuklash</button></div></div>'
+  }).join('');
+  modal('<h3>'+esc(restaurant.name)+' — Taom rasmlari</h3><p class="subtitle">Faqat oshxonadan olingan haqiqiy, ruxsatli suratlarni yuklang. Format JPG, PNG yoki WebP, hajm 2 MB gacha. Har bir o‘zgarish uchun server ruxsatni tekshiradi.</p><div class="vlist">'+(rows||empty('Menyuda mahsulot yo‘q'))+'</div>');
+ }catch(e){toast('Menyu yuklanmadi: '+e.message)}
+}
+async function uploadPhoto(restId,itemId){
+ const input=document.querySelector('[data-photo-file="'+itemId+'"]'),file=input?.files?.[0];
+ if(!file){toast('Avval taomning haqiqiy fotosuratini tanlang');return}
+ if(file.size>2000000){toast('Rasm 2 MB dan oshmasin');return}
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)){toast('JPG, PNG yoki WebP rasm kerak');return}
+ const form=new FormData();form.append('file',file);
+ try{
+  const res=await fetch('/api/v1/restaurants/'+restId+'/menu/'+itemId+'/photo',{method:'POST',headers:{Authorization:'Bearer '+token},body:form,cache:'no-store'});
+  if(!res.ok)throw Error('Server rasmni qabul qilmadi ('+res.status+')');
+  toast('Fotosurat yuklandi');await menuEditor(restId);
+ }catch(e){toast(e.message)}
+}
+
+function features(){
+ const items=(data.features||[]);
+ const body=items.map(x=>'<div class="vrow"><div><strong>'+esc(x.label)+'</strong><small>'+esc(x.key)+' · '+(x.available?'Ilova versiyasi qo‘llasa sozlama ishlaydi':'Haqiqiy xizmat hali ulanmagan')+'</small></div><label class="flag-switch"><input type="checkbox" data-feature="'+esc(x.key)+'" '+(x.enabled?'checked ':'')+(!x.available?'disabled':'')+'><span> '+(x.enabled?'Faol':'O‘chiq')+'</span></label></div>').join('');
+ return '<div class="notice">Bu yerdan ruxsat etilgan funksiyalarni masofadan boshqarasiz. Telefonning o‘zini nazorat qilish yoki ilovaga yashirin kod yuborish mumkin emas. O‘zgarishlar jurnalga yoziladi. Yangi imkoniyatlar uchun Android va server yangilanishi kerak.</div>'+card('🧩 Mijoz ilovasi — funksiyalar','<div class="vlist">'+(body||empty('Ma’lumot mavjud emas'))+'</div>');
+}
+function banners(){
+ const rows=(data.banners||[]).map(x=>'<tr><td><strong>'+esc(x.title)+'</strong><small>'+esc(x.subtitle||'')+'</small></td><td>'+esc(x.cta_label)+'</td><td>'+pill(x.is_active?'approved':'rejected')+'</td><td><button class="btn small outline" data-action="bannerEdit" data-id="'+Number(x.id)+'">Tahrirlash</button></td></tr>');
+ return '<div class="filterbar"><div class="subtitle">Reklama faqat mijozga ko‘rsatiladigan sarlavha, rasm va tugmani boshqaradi.</div><button class="btn primary" data-action="bannerNew">+ Banner qo‘shish</button></div>'+card('📣 Reklama va bannerlar',rows.length?table(['Banner','Tugma','Holat','Boshqarish'],rows):empty('Banner yo‘q'));
+}
+let providerFilter='google';
+function accounts(){
+ const people=(data[providerFilter]||[]);
+ const rows=people.map(x=>'<tr><td><strong>#'+Number(x.user_id)+'</strong></td><td>'+esc(x.name)+'</td><td>'+esc(x.phone||'Telefon saqlanmagan')+'</td><td>'+esc(x.provider.toUpperCase())+'</td><td>'+esc(time(x.linked_at))+'</td></tr>');
+ return '<div class="filterbar"><div class="subtitle">Faqat Ali Kuryerga bog‘langan hisoblar. Google pochtasi, paroli, kontaktlari va tokenlari ochilmaydi.</div><select id="providerFilter"><option value="google" '+(providerFilter==='google'?'selected':'')+'>Google</option><option value="telegram" '+(providerFilter==='telegram'?'selected':'')+'>Telegram</option></select></div>'+card('🔗 Bog‘langan hisoblar',rows.length?table(['Mijoz ID','Ism','Telefon','Kirish usuli','Bog‘langan vaqt'],rows):empty('Bog‘langan hisob yo‘q'));
+}
+function audit(){
+ const rows=(data.audit||[]).map(x=>'<tr><td>#'+Number(x.id)+'</td><td>'+esc(x.action)+'</td><td>'+esc(x.target)+'</td><td>'+esc(x.detail||'')+'</td><td>#'+Number(x.actor_id)+'</td><td>'+esc(time(x.created_at))+'</td></tr>');
+ return '<div class="notice">Muhim admin o‘zgarishlari serverda qayd etiladi. Xavfsizlik sababli maxfiy kalitlar va parollar jurnalga yozilmaydi.</div>'+card('📒 So‘nggi amallar',rows.length?table(['ID','Amal','Nishon','Tafsilot','Kim bajardi','Vaqt'],rows):empty('Hali jurnal yozuvi yo‘q'));
+}
+function bannerForm(record){
+ const x=record||{id:0,title:'',subtitle:'',image_url:'',cta_label:'Ko‘rish',is_active:false};
+ modal('<h3>Reklama banneri '+(x.id?'#'+Number(x.id):'yaratish')+'</h3><p class="subtitle">Haqiqiy taom surati faqat oshxona egasi yuklagan yoki ruxsat bilan olingan foto bo‘lsin.</p><form id="bannerForm"><input type="hidden" name="id" value="'+Number(x.id||0)+'"><label class="field">Sarlavha<input name="title" required minlength="3" maxlength="100" value="'+esc(x.title)+'"></label><label class="field">Izoh<input name="subtitle" maxlength="220" value="'+esc(x.subtitle)+'"></label><label class="field">Haqiqiy foto URL (HTTPS)<input name="image_url" type="url" maxlength="600" placeholder="https://..." value="'+esc(x.image_url)+'"></label><label class="field">Tugma matni<input name="cta_label" required maxlength="35" value="'+esc(x.cta_label)+'"></label><label class="field" style="display:flex;align-items:center"><input type="checkbox" name="is_active" style="width:auto" '+(x.is_active?'checked':'')+'> &nbsp; Ko‘rsatish</label><button class="btn primary full">Saqlash</button></form>');
+}
+
+function settings(){return '<div class="cols">'+card('🔐 Admin parolini yangilash','<div class="pad"><form id="passwordForm"><label class="field">Joriy parol<input type="password" name="current" required autocomplete="current-password"></label><label class="field">Yangi kuchli parol<input type="password" name="next" minlength="14" required autocomplete="new-password" placeholder="14+ belgi, katta-kichik harf, raqam va belgi"></label><button class="btn primary full">Parolni almashtirish</button></form></div>')+card('🛡️ Xavfsizlik','<div class="pad"><p class="subtitle">Admin login: <b>admin</b>. Administrator huquqi serverda tekshiriladi; sayt brauzerda parolni yoki sessiya kalitini doimiy saqlamaydi.</p><p class="subtitle">Bu panel yordamida maxfiy API kalitlarini boshqarmang. Ular faqat Render server sozlamalarida saqlanishi kerak.</p></div>')+'</div>'}
+function render(){document.querySelectorAll('.nav').forEach(n=>n.classList.toggle('active',n.dataset.page===page));$('#pageTitle').textContent=title[page];$('#pageCrumb').textContent=title[page];$('#welcomeTitle').textContent=page==='dashboard'?'Assalomu alaykum, Administrator 👋':title[page];$('#welcomeText').textContent=demo?'Bu sinov ma’lumotlari. Haqiqiy ma’lumotlarga ulanmagan.':'Ma’lumotlar himoyalangan Ali Kuryer serveridan olinadi.';const fn={dashboard,orders,restaurants,couriers:()=>people('couriers'),customers:()=>people('customers'),applications,support,reports,features,banners,accounts,audit,settings}[page];$('#screen').innerHTML=fn?fn():empty('Sahifa topilmadi');const q=$('#q');if(q){q.addEventListener('input',e=>{const cursor=e.target.selectionStart;rowsFilter=e.target.value.toLowerCase();render();const input=$('#q');input.focus();input.setSelectionRange(cursor,cursor)})}const f=$('#orderFilter');if(f)f.onchange=e=>{orderStatusFilter=e.target.value;render()};const pf=$('#providerFilter');if(pf)pf.onchange=e=>{providerFilter=e.target.value;render()}}
+function modal(html){$('#modal').innerHTML=html;$('#modalShade').style.display='flex'}
+function closeModal(){$('#modalShade').style.display='none';$('#modal').innerHTML=''}
+$('#modalShade').addEventListener('click',e=>{if(e.target===$('#modalShade'))closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+async function mutate(path,method,body,apply){if(demo){apply?.();render();toast('Faqat demo ma’lumoti o‘zgardi');return}try{await api(path,method,body);await refresh();toast('Serverdagi o‘zgarish saqlandi')}catch(e){toast('Saqlanmadi: '+e.message)}}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-action]');if(!b)return;const action=b.dataset.action,id=Number(b.dataset.id);
+if(action==='approve'){const x=(data.restaurants||[]).find(r=>r.id===id);if(!x)return;await mutate('/api/v1/admin/restaurants/'+id+'/approval','POST',{approved:!x.is_approved},()=>x.is_approved=!x.is_approved)}
+if(action==='chat'){if(demo){modal('<h3>Operator chat • Demo</h3><div class="support-messages"><div class="msg">Assalomu alaykum, buyurtmam qachon keladi?</div><div class="msg own">Salom! Kuryer siz tomon yo‘lda.</div></div><div class="field"><textarea id="chatText" rows="3" placeholder="Javob yozing..."></textarea></div><button class="btn primary full" data-action="sendChat" data-id="'+id+'">Demo javob</button>');return}try{const msgs=await api('/api/v1/support/messages?customer_id='+id);modal('<h3>Operator chat · Mijoz #'+id+'</h3><div class="support-messages">'+(msgs.length?msgs.map(m=>'<div class="msg '+(m.sender_role==='admin'?'own':'')+'"><small>'+esc(m.sender_name||'Foydalanuvchi')+'</small><div>'+esc(m.body)+'</div></div>').join(''):empty('Xabar yo‘q'))+'</div><div class="field"><textarea class="form-input" id="chatText" rows="3" maxlength="1000" placeholder="Javob yozing..."></textarea></div><button class="btn primary full" data-action="sendChat" data-id="'+id+'">Xabar yuborish</button>')}catch(e){toast(e.message)}}
+if(action==='sendChat'){const msg=$('#chatText')?.value.trim();if(!msg){toast('Xabar kiriting');return}if(demo){toast('Demo xabar jo‘natilganday ko‘rsatildi');closeModal();return}try{await api('/api/v1/support/messages?customer_id='+id,'POST',{body:msg});closeModal();toast('Xabar yuborildi')}catch(e){toast(e.message)}}
+if(action==='newstaff'){modal('<h3>Yangi kuryer</h3><p class="subtitle">Faqat administrator yangi xodim hisobini yaratishi mumkin.</p><form id="staffForm"><label class="field">To‘liq ism<input name="name" required minlength="2" maxlength="150"></label><label class="field">Telefon<input name="phone" required placeholder="+998901234567" pattern="\\+998[0-9]{9}"></label><label class="field">Vaqtinchalik kuchli parol<input name="password" type="password" required minlength="12" autocomplete="new-password"></label><button class="btn primary full">Kuryerni yaratish</button></form>')}
+if(action==='menu') await menuEditor(id);
+if(action==='photoFileSave') await uploadPhoto(Number(b.dataset.rest),id);
+if(action==='photoUrlSave') {
+ const restId=Number(b.dataset.rest),input=document.querySelector('[data-photo-url="'+id+'"]'),url=(input?.value||'').trim();
+ if(url&&!url.startsWith('https://')){toast('Faqat HTTPS manzilini kiriting');return}
+ try{await api('/api/v1/restaurants/'+restId+'/menu/'+id,'PATCH',{image_url:url});toast('Rasm URL saqlandi');await menuEditor(restId)}
+ catch(e){toast('Rasm saqlanmadi: '+e.message)}
+}
+if(action==='bannerNew') bannerForm(null);
+if(action==='bannerEdit'){const banner=(data.banners||[]).find(x=>x.id===id);if(banner)bannerForm(banner)}
+if(action==='csv'){const arr=data.orders||[],cells=[['ID','Oshxona ID','Holat','Summa','Manzil','Sana'],...arr.map(o=>[o.id,o.restaurant_id,o.status,o.total,o.address,o.created_at])];const csv='\uFEFF'+cells.map(line=>line.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='AliKuryer-buyurtmalar.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);toast(demo?'Demo hisobot yuklandi':'Yuklangan buyurtmalar CSV hisoboti tayyor')}
+});
+document.addEventListener('change',async e=>{
+ const toggle=e.target.closest('[data-feature]');
+ if(toggle){const key=toggle.dataset.feature;const feature=(data.features||[]).find(x=>x.key===key);if(!feature||!feature.available)return;
+  const desired=toggle.checked;
+  await mutate('/api/admin/platform/features/'+encodeURIComponent(key),'PUT',{enabled:desired},()=>{feature.enabled=desired;
+     if(demo)data.audit.unshift({id:data.audit.length+1,actor_id:1,action:'feature_changed',target:key,detail:'enabled='+desired,created_at:new Date().toISOString()});
+  }); return;
+ }
+ const select=e.target.closest('[data-field]');if(!select)return;const id=Number(select.dataset.id),v=select.value;
+if(select.dataset.field==='status'){const x=(data.orders||[]).find(o=>o.id===id);if(!x)return;const before=x.status;await mutate('/api/v1/orders/'+id+'/status','POST',{status:v},()=>x.status=v);if(!demo && x.status===before)render()}
+if(select.dataset.field==='application'){const x=(data.applications||[]).find(a=>a.id===id);if(!x)return;await mutate('/api/admin/partner-applications/'+id,'PATCH',{status:v},()=>x.status=v)}
+});
+document.addEventListener('submit',async e=>{
+ if(e.target.id==='bannerForm'){e.preventDefault();const form=e.target,f=new FormData(form),id=Number(f.get('id')||0);
+ const payload={title:String(f.get('title')||''),subtitle:String(f.get('subtitle')||''),image_url:String(f.get('image_url')||''),cta_label:String(f.get('cta_label')||''),is_active:f.has('is_active')};
+ if(demo){if(id){Object.assign(data.banners.find(x=>x.id===id),payload)}else data.banners.unshift({id:Date.now(),...payload});closeModal();render();toast('Demo banner saqlandi');return}
+ try{await api('/api/admin/platform/banners'+(id?'/'+id:''),id?'PUT':'POST',payload);closeModal();await refresh();toast('Banner saqlandi')}catch(err){toast(err.message)}
+ return}
+ if(e.target.id==='staffForm'){e.preventDefault();let f=new FormData(e.target),v={name:f.get('name'),phone:f.get('phone'),password:f.get('password'),role:'courier'};if(demo){data.couriers.unshift({id:Date.now(),name:v.name,phone:v.phone,is_active:true,is_online:false});closeModal();render();toast('Demo kuryer qo‘shildi');return}try{await api('/api/v1/admin/staff','POST',v);closeModal();await refresh();toast('Kuryer hisobiga qo‘shildi')}catch(err){toast(err.message)}}
+if(e.target.id==='passwordForm'){e.preventDefault();if(demo){toast('Demo rejimida haqiqiy parol o‘zgartirilmaydi');return}const f=new FormData(e.target);try{await api('/api/auth/admin/change-password','POST',{current_password:f.get('current'),new_password:f.get('next')});toast('Parol o‘zgardi. Qayta kiring.');$('#logoutBtn').click()}catch(err){toast(err.message)}}});
+</script></body></html>
