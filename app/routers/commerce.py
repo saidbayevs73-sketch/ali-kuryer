@@ -161,6 +161,9 @@ def serialize_order(db, order):
 @router.post("/orders", status_code=201)
 def create_order(data: NewOrderIn, db: Session = Depends(get_db), user=Depends(me)):
     role(user, "customer")
+    from app.routers.platform_control import flags
+    if not flags(db)["orders"]:
+        raise HTTPException(503, "Buyurtmalar vaqtincha Super Admin tomonidan to‘xtatilgan")
     require_durable_storage()
     if not data.privacy_accepted:
         raise HTTPException(400, "Buyurtma va suhbatlar qayta ishlanishiga rozilik kerak")
@@ -260,7 +263,11 @@ def change_status(order_id: int, data: ChangeStatusIn,
         }
         if data.status not in allowed.get((user.role, order.status), set()):
             raise HTTPException(409, "Buyurtma holatini bu bosqichda o‘zgartirib bo‘lmaydi")
+    previous_status = order.status
     order.status = data.status
+    from app.routers.platform_control import audit
+    audit(db, user.id, "order_status", "order:" + str(order_id),
+          previous_status + "->" + data.status)
     db.commit()
     return serialize_order(db, order)
 
@@ -681,6 +688,9 @@ def approve_restaurant(restaurant_id: int, data: RestaurantApproval,
     if not r:
         raise HTTPException(404, "Oshxona topilmadi")
     r.is_approved = data.approved
+    from app.routers.platform_control import audit
+    audit(db, user.id, "restaurant_approval", "restaurant:" + str(restaurant_id),
+          "approved=" + str(data.approved).lower())
     db.commit()
     return {"ok": True, "is_approved": r.is_approved}
 
