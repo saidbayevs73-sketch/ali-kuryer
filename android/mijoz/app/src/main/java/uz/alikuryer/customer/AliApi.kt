@@ -224,6 +224,9 @@ object AliApi {
         return parseOrder(JSONObject(request("POST", "/api/v1/orders", data, token)))
     }
 
+    suspend fun customerSummary(token: String): JSONObject =
+        JSONObject(request("GET", "/api/customer/me/summary", token = token))
+
     suspend fun myOrders(token: String): List<AliOrder> {
         val arr = JSONArray(request("GET", "/api/v1/orders/my", token = token))
         return (0 until arr.length()).map { parseOrder(arr.getJSONObject(it)) }
