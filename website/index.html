@@ -1,47 +1,59 @@
 <!doctype html>
 <html lang="uz"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#6c35c9"><meta name="description" content="Ali Kuryer — sevimli mahsulotlaringiz tez va qulay yetkaziladi.">
-<title>Ali Kuryer — Tezkor market</title>
+<meta name="theme-color" content="#ffffff"><meta name="description" content="Ali Kuryer — tezkor yetkazib berish xizmati.">
+<title>Ali Kuryer — Tezkor yetkazib berish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=13"><link rel="manifest" href="manifest.webmanifest">
-</head><body>
-<header class="topbar"><div class="topbar-inner">
-<a class="logo" href="#"><span class="logo-symbol">A</span><span>ali<span class="logo-accent">kuryer</span></span></a>
-<button class="address" id="locationBtn"><span class="address-pin">⌖</span><span><small>Yetkazib berish manzili</small><b id="locationText">Namangan, manzilni tanlang</b></span><span class="down">⌄</span></button>
-<div class="top-search"><span>⌕</span><input id="searchInput" placeholder="Mahsulot yoki do‘konni qidiring"><kbd>⌕</kbd></div>
-<div class="top-actions"><button class="icon-action favorite-jump" aria-label="Sevimlilar">♡</button><button class="icon-action cart-jump" id="cartJump" aria-label="Savat">🛒<i id="cartCount">0</i></button><button class="account-action" id="loginBtn">Kirish</button></div>
-</div></header>
-<main class="page">
-<section class="hero-grid">
-<div class="hero-main"><div class="hero-copy"><span class="eyebrow">ALI KURYER • TEZKOR YETKAZISH</span><h1>Taomlaringizni tez va<br><em>ishonchli</em> yetkazib beramiz!</h1><p>Taomlar, market mahsulotlari va kundalik xaridlar — eshigingizgacha.</p><a href="#catalog" class="hero-button">Boshlash <span>→</span></a></div><div class="hero-visual"><div class="hero-orbit"></div><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Ali Kuryer yetkazib berish kuryeri"></div><div class="hero-note"><b>⚡</b> Tez va qulay yetkazib berish</div></div>
-<aside class="hero-side"><div class="side-promo purple"><span class="promo-tag">BUGUNGI TAKLIF</span><h3>Sevimli taomingiz<br>yaqinroq!</h3><a href="#catalog" data-quick-filter="food">Buyurtma berish <b>↗</b></a><div class="promo-emoji">🍔</div></div><div class="side-promo yellow"><span class="promo-tag">KUNDALIK XARID</span><h3>Marketdan kerakli<br>hammasi shu yerda</h3><a href="#catalog" data-quick-filter="grocery">Xarid qilish <b>↗</b></a><div class="promo-emoji">🛍️</div></div></aside>
+<link rel="stylesheet" href="styles.css?v=20"><link rel="manifest" href="manifest.webmanifest"></head>
+<body>
+<header class="site-header"><div class="header-inner">
+<a class="brand" href="#"><span class="brand-mark"><i></i><b>A</b></span><strong>Ali Kuryer</strong></a>
+<button class="location-pill" id="locationBtn"><span class="pin">●</span><span>Joylashuv: <b id="locationText">O‘zbekiston (avtomatik)</b></span><span class="chevron">⌄</span></button>
+<div class="header-actions">
+<button class="header-icon search-focus" aria-label="Qidiruv" onclick="document.querySelector('#searchInput').focus()">⌕</button>
+<button class="header-icon favorite-jump" aria-label="Sevimlilar">♡</button>
+<button class="header-icon cart-jump" id="cartJump" aria-label="Savat">🛒<i id="cartCount">0</i></button>
+<button class="login-button" id="loginBtn">♙ <span>Kirish</span></button>
+</div></div></header>
+<main class="main-shell">
+<section class="hero">
+<div class="hero-sky"></div><div class="hero-copy">
+<div class="hero-brand"><span class="brand-mark hero-mark"><i></i><b>A</b></span><strong>Ali <em>Kuryer</em></strong></div>
+<h1>Buyurtma bering —<br>tez yetkazamiz!</h1>
+<div class="hero-benefits"><span>⚡ Tez yetkazib berish</span><span>♢ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
+<a class="hero-cta" href="#catalog">Hozir buyurtma bering <b>→</b></a>
+</div>
+<div class="hero-rider"><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Qizil skuterdagi Ali Kuryer 3D kuryeri"></div>
+<div class="hero-glow"></div>
 </section>
-<section class="category-section"><div class="section-title"><div><span class="overline">KATALOG</span><h2>Nimani izlayapsiz?</h2></div><button class="text-button" data-quick-filter="all">Barchasi <span>→</span></button></div>
-<div class="category-rail">
-<button class="category-tile active" data-filter="all"><span class="category-art all-art">✦</span><b>Barchasi</b></button>
-<button class="category-tile" data-filter="food"><span class="category-art food-art">🍔</span><b>Taomlar</b></button>
-<button class="category-tile" data-filter="grocery"><span class="category-art grocery-art">🧺</span><b>Market</b></button>
-<button class="category-tile" data-filter="fruit"><span class="category-art fruit-art">🍎</span><b>Meva-sabzavot</b></button>
-<button class="category-tile" data-filter="drink"><span class="category-art drink-art">🥤</span><b>Ichimliklar</b></button>
-<button class="category-tile" data-filter="sweet"><span class="category-art sweet-art">🧁</span><b>Shirinliklar</b></button>
-<button class="category-tile" data-filter="home"><span class="category-art home-art">🧼</span><b>Uy-ro‘zg‘or</b></button>
-<button class="category-tile" data-filter="beauty"><span class="category-art beauty-art">🧴</span><b>Parvarish</b></button>
-<button class="category-tile" data-filter="pharmacy"><span class="category-art pharmacy-art">🩹</span><b>Gigiyena</b></button>
-<button class="category-tile" data-filter="electronics"><span class="category-art tech-art">🎧</span><b>Elektronika</b></button>
+<div class="search-wrap"><span class="search-symbol">⌕</span><input id="searchInput" placeholder="Nima buyurtma qilmoqchisiz?"><button aria-label="Qidiruvni tozalash" onclick="document.querySelector('#searchInput').value='';document.querySelector('#searchInput').dispatchEvent(new Event('input'))">▣</button></div>
+<section class="categories-section"><div class="category-list">
+<button class="category-tile" data-filter="food"><span class="category-picture food-picture">🍔</span><b>Restoranlar<br>va taomlar</b></button>
+<button class="category-tile" data-filter="grocery"><span class="category-picture market-picture">🧺</span><b>Market<br>mahsulotlari</b></button>
+<button class="category-tile" data-filter="fruit"><span class="category-picture fruit-picture">🍎</span><b>Meva-sabzavot</b></button>
+<button class="category-tile" data-filter="pharmacy"><span class="category-picture pharmacy-picture">🧴</span><b>Gigiyena</b></button>
+<button class="category-tile" data-filter="beauty"><span class="category-picture beauty-picture">🧴</span><b>Go‘zallik<br>va parvarish</b></button>
+<button class="category-tile" data-filter="home"><span class="category-picture home-picture">🧼</span><b>Uy-ro‘zg‘or<br>buyumlari</b></button>
+<button class="category-tile" data-filter="electronics"><span class="category-picture tech-picture">🎧</span><b>Elektronika<br>va aksessuar</b></button>
+<button class="category-tile all-categories" data-filter="all"><span class="category-picture all-picture"><i></i><i></i><i></i><i></i></span><b>Barcha<br>kategoriyalar</b></button>
 </div></section>
-<section class="store-section"><div class="section-title"><div><span class="overline">TANLANGANLAR</span><h2>Mashhur do‘konlar</h2></div><a class="text-button" href="#catalog">Barchasini ko‘rish →</a></div>
-<div class="store-grid">
-<article class="store-card"><div class="store-cover store-kfc"><span>🍗</span><small>20–30 daq</small></div><div class="store-info"><b>KFC</b><span>★ 4.9 · Fast food</span></div></article>
-<article class="store-card"><div class="store-cover store-evos"><span>🌯</span><small>20–30 daq</small></div><div class="store-info"><b>EVOS</b><span>★ 4.8 · Fast food</span></div></article>
-<article class="store-card"><div class="store-cover store-market"><span>🥬</span><small>15–25 daq</small></div><div class="store-info"><b>Yaqin Market</b><span>★ 4.9 · Oziq-ovqat</span></div></article>
-<article class="store-card"><div class="store-cover store-sweet"><span>🍰</span><small>25–35 daq</small></div><div class="store-info"><b>Shirinliklar</b><span>★ 4.8 · Desert</span></div></article>
+<section class="promo-row">
+<a class="promo promo-food" href="#catalog" data-quick-filter="food"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><span>Buyurtma berish <b>→</b></span></div><img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=90" alt="Burger va taomlar"></a>
+<a class="promo promo-market" href="#catalog" data-quick-filter="grocery"><div><h2>Kundalik xaridlaringiz<br>bir joyda!</h2><span>Hozir xarid qilish <b>→</b></span></div><img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=90" alt="Yangi sabzavotlar va market savati"></a>
+</section>
+<div class="slider-dots"><i class="active"></i><i></i><i></i><i></i></div>
+<section class="restaurants-section"><div class="section-heading"><h2><span>🔥</span> Mashhur restoranlar</h2><a href="#catalog">Barchasini ko‘rish →</a></div>
+<div class="restaurant-list">
+<article class="restaurant-card"><img src="https://www.afisha.uz/uploads/media/2023/01/4e6c68a95b60f2cbf9fed5afc4712188_l.jpg" alt="KFC restorani"><div><b>KFC</b><p><strong>★ 4.9</strong><span>◷ 20–30 daq</span></p></div></article>
+<article class="restaurant-card"><img src="https://www.afisha.uz/uploads/media/2022/12/4cc430c20430ddf64df55e8206bdbbc7_xlf.jpg" alt="EVOS restorani"><div><b>EVOS®</b><p><strong>★ 4.8</strong><span>◷ 20–30 daq</span></p></div></article>
+<article class="restaurant-card"><img src="https://www.spot.uz/media/img/2025/10/VYvvFM17617361774719_l.webp" alt="Oqtepa Lavash restorani"><div><b>Qatepa Lavash®</b><p><strong>★ 4.7</strong><span>◷ 25–35 daq</span></p></div></article>
+<article class="restaurant-card"><img src="https://uznews.uz/storage/uploads/68/0f/fa/file_680ffa981e814_orig.jpg" alt="FeedUp restorani"><div><b>FeedUp®</b><p><strong>★ 4.8</strong><span>◷ 20–30 daq</span></p></div></article>
 </div></section>
-<section class="catalog-section" id="catalog"><div class="section-title"><div><span class="overline">ALI KURYER TANLOVI</span><h2 id="catalogTitle">Ommabop mahsulotlar</h2></div><span class="delivery-chip">⚡ Tez yetkazish</span></div><div class="product-grid" id="foodGrid"></div></section>
-<section class="cart-section" id="checkout"><div class="section-title"><div><span class="overline">BUYURTMANGIZ</span><h2>Savatcha</h2></div><span class="delivery-chip">Yetkazilganda to‘lov</span></div><div class="cart-layout"><div id="cartItems" class="cart-items"></div><form id="orderForm" class="order-form"><h3>Yetkazib berish</h3><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Manzil<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami to‘lov</span><b id="grandTotal">0 so‘m</b></div><button class="submit-order" type="submit">Buyurtmani tasdiqlash <span>→</span></button><small class="demo-note">Hozircha demo buyurtma — ma’lumotlar ushbu qurilmada saqlanadi.</small><p id="orderNotice"></p></form></div></section>
-<section class="account-panel" id="accountPanel" hidden></section>
+<section class="catalog-section" id="catalog"><div class="section-heading"><h2>Ommabop mahsulotlar</h2><span class="fast-label">⚡ Tez yetkazish</span></div><div class="product-grid" id="foodGrid"></div></section>
+<section class="cart-section" id="checkout"><div class="section-heading"><h2>Savatcha va buyurtma</h2></div><div class="cart-layout"><div id="cartItems" class="cart-items"></div><form id="orderForm" class="order-form"><h3>Yetkazib berish ma’lumotlari</h3><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Manzil<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="submit-order" type="submit">Buyurtmani tasdiqlash →</button><small class="demo-note">Demo rejim: buyurtma ushbu qurilmada saqlanadi.</small><p id="orderNotice"></p></form></div></section>
+<section id="accountPanel" class="account-panel" hidden></section>
 </main>
-<nav class="mobile-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Katalog</a><a href="#checkout"><span>🛒</span>Savatcha</a><a href="#favorites" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#profile" data-action="profile"><span>♙</span>Profil</a></nav>
-<footer><div class="footer-logo">ali<span>kuryer</span></div><p>Tez, qulay va ishonchli yetkazib berish.</p><small>© 2026 Ali Kuryer</small></footer>
+<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#checkout"><span>♧</span>Buyurtmalar</a><a href="#catalog" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#accountPanel" data-action="profile"><span>♙</span>Profil</a></nav>
+<footer><b>Ali Kuryer</b><span>Tez va ishonchli yetkazib berish</span></footer>
 <script src="app.js?v=11"></script></body></html>
