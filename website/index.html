@@ -3,20 +3,21 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#df1728"><meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Ali Kuryer — Namanganda taom, oziq-ovqat, uy-ro‘zg‘or va kundalik mahsulotlarni tez yetkazib berish.">
-<title>Ali Kuryer — Hammasi tez yetkaziladi</title><link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Ali Kuryer — O‘zbekiston bo‘ylab taomlar va kundalik mahsulotlarni tez yetkazib berish.">
+<title>Ali Kuryer — O‘zbekiston bo‘ylab tez yetkazib berish</title><link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header class="app-header">
  <a class="brand" href="#"><span class="brand-icon">A</span><span><i>Ali</i> Kuryer</span></a>
- <button class="location" type="button" id="locationBtn"><span>📍</span><span><small>Yetkazib berish manzili</small><b>Namangan <span class="chevron">⌄</span></b></span></button>
+ <button class="location" type="button" id="locationBtn"><span>📍</span><span><small>Yetkazib berish manzili</small><b id="locationText">O‘zbekiston (avtomatik) <span class="chevron">⌄</span></b></span></button>
  <div class="header-actions"><button class="icon-btn" aria-label="Bildirishnomalar">♧</button><button class="icon-btn" id="cartJump" aria-label="Savat">🛒<span id="cartCount" class="count">0</span></button></div>
 </header>
 <main>
 <section class="welcome">
- <div class="welcome-copy"><span class="eyebrow">ALI KURYER • NAMANGAN</span><h1>Kerakli hamma narsa<br><em>tez yetkaziladi!</em></h1><p>Taomlar, meva-sabzavot, market va kundalik mahsulotlar — bir ilovada.</p><a href="#catalog" class="primary-btn">Xaridni boshlash <span>→</span></a></div>
- <div class="mascot" aria-label="Yetkazib berish kuryeri">🛵<span>ALI<br>KURYER</span></div>
- <div class="hero-orbit"></div>
+ <div class="welcome-copy"><div class="hero-brand"><span class="hero-mark">A</span><span>Ali <em>Kuryer</em></span></div><h1>Buyurtma bering —<br>tez yetkazamiz!</h1>
+ <div class="hero-benefits"><span>⚡ Tez yetkazib berish</span><span>♧ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
+ <a href="#catalog" class="primary-btn">Hozir buyurtma bering <span>→</span></a></div>
+ <div class="mascot" aria-label="Skuterda ketayotgan Ali Kuryer"><div class="mascot-sky"></div><div class="mascot-rider"><span class="helmet">A</span><span class="rider-face">☺</span><span class="rider-body">A</span><span class="rider-pack">A<br>Ali Kuryer</span><span class="scooter">🛵</span></div></div>
 </section>
 <section class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Mahsulot, do‘kon yoki taom qidiring..." aria-label="Qidiruv"><kbd>⌕</kbd></section>
 <section class="section categories-section">
@@ -41,7 +42,8 @@
   <a class="store-card store-health" href="#catalog" data-store-filter="pharmacy"><span class="store-emoji">✚</span><span><b>Dorixona</b><small>Gigiyena va kundalik parvarish</small></span><i>→</i></a>
  </div>
 </section>
-<section class="promo-strip"><div><small>ALI KURYER XIZMATI</small><h2>Vaqtingizni tejang.<br>Buyurtmangiz eshigingizda.</h2><p>Namangan bo‘ylab qulay yetkazib berish.</p></div><span>🛵</span></section>
+<section class="promo-banners"><a class="promo-food" href="#catalog"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><b>Buyurtma berish →</b></div><span>🍕 🍔 🥤</span></a><a class="promo-market" href="#catalog"><div><h2>Kundalik xaridlaringiz<br>bir joyda!</h2><b>Hozir xarid qilish →</b></div><span>🛒 🥬 🍎</span></a></section>
+<section class="section restaurants"><div class="section-title"><h2>🔥 Mashhur restoranlar</h2><a href="#catalog" class="see-all">Barchasini ko‘rish →</a></div><div class="restaurant-grid"><article class="restaurant-card kfc"><div class="restaurant-photo">KFC</div><b>KFC</b><small>⭐ 4.9　◷ 20–30 daq</small></article><article class="restaurant-card evos"><div class="restaurant-photo">EVOS</div><b>EVOS</b><small>⭐ 4.8　◷ 20–30 daq</small></article><article class="restaurant-card oqtepa"><div class="restaurant-photo">Oqtepa Lavash</div><b>Oqtepa Lavash</b><small>⭐ 4.7　◷ 25–35 daq</small></article><article class="restaurant-card feedup"><div class="restaurant-photo">FeedUp</div><b>FeedUp</b><small>⭐ 4.8　◷ 20–30 daq</small></article></div></section>
 <section class="section" id="catalog">
  <div class="section-title"><div><small class="eyebrow">SIZ UCHUN TANLADIK</small><h2 id="catalogTitle">Mashhur mahsulotlar</h2></div><span class="secure-note">Tez yetkazish</span></div>
  <div class="food-grid" id="foodGrid"></div>
