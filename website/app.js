@@ -57,7 +57,7 @@ function showAccount(type){
  panel.querySelector(".panel-close").onclick=()=>panel.hidden=true;panel.scrollIntoView({behavior:"smooth",block:"center"});
 }
 document.querySelector("#loginBtn").onclick=()=>showAccount("profile");
-document.querySelectorAll("[data-action]").forEach(a=>a.onclick=e=>{e.preventDefault();if(a.dataset.action==="favorites"){favoritesOnly=true;renderProducts("all");document.querySelector("#catalog").scrollIntoView({behavior:"smooth"});}else showAccount("profile");});
+document.querySelectorAll("[data-action]").forEach(a=>a.onclick=e=>{e.preventDefault();if(a.dataset.action==="favorites"){favoritesOnly=true;renderProducts("all");document.querySelector("#catalog").scrollIntoView({behavior:"smooth"});}else if(a.dataset.action==="orders"){showAccount("orders");}else showAccount("profile");});
 const loc=document.querySelector("#locationText");
 const savedLoc=localStorage.getItem("aliLocationName");if(savedLoc)loc.textContent=savedLoc;
 document.querySelector("#locationBtn").onclick=()=>{
