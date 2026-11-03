@@ -16,7 +16,11 @@ const products=[
 {id:15,name:"Birinchi yordam bintlari",price:9000,cat:"pharmacy",emoji:"🩹",desc:"Uy aptechkasi uchun oddiy buyum",tag:""},
 {id:16,name:"Qo‘l antiseptigi",price:15000,cat:"pharmacy",emoji:"🧴",desc:"Qo‘l gigiyenasi uchun",tag:""},
 {id:17,name:"Keks",price:12000,cat:"sweet",emoji:"🧁",desc:"Yangi pishirilgan shirinlik",tag:""},
-{id:18,name:"Shokolad",price:17000,cat:"sweet",emoji:"🍫",desc:"Shirinlik",tag:""}
+{id:18,name:"Shokolad",price:17000,cat:"sweet",emoji:"🍫",desc:"Shirinlik",tag:""},
+{id:19,name:"Shampun",price:28000,cat:"beauty",emoji:"🧴",desc:"Soch parvarishi uchun",tag:""},
+{id:20,name:"Yuz kremi",price:35000,cat:"beauty",emoji:"🧴",desc:"Kundalik parvarish vositasi",tag:""},
+{id:21,name:"Quloqchin",price:85000,cat:"electronics",emoji:"🎧",desc:"Kundalik foydalanish uchun",tag:""},
+{id:22,name:"Zaryad kabeli",price:25000,cat:"electronics",emoji:"🔌",desc:"Telefon uchun aksessuar",tag:""}
 ];
 let cart=JSON.parse(localStorage.getItem("aliCart")||"{}");
 let favorites=JSON.parse(localStorage.getItem("aliFavorites")||"[]");
@@ -26,7 +30,7 @@ let activeFilter="all";
 function renderProducts(filter=activeFilter,query=""){
  activeFilter=filter;
  const list=products.filter(p=>(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
- const titleMap={all:"Mashhur mahsulotlar",food:"Taomlar",fruit:"Meva va sabzavotlar",grocery:"Oziq-ovqat",home:"Uy-ro‘zg‘or mahsulotlari",pharmacy:"Dorixona va gigiyena",drink:"Ichimliklar",sweet:"Shirinliklar"};
+ const titleMap={all:"Mashhur mahsulotlar",food:"Taomlar",fruit:"Meva va sabzavotlar",grocery:"Oziq-ovqat",home:"Uy-ro‘zg‘or mahsulotlari",pharmacy:"Dorixona va gigiyena",drink:"Ichimliklar",sweet:"Shirinliklar",beauty:"Go‘zallik va parvarish",electronics:"Elektronika va aksessuar"};
  document.querySelector("#catalogTitle").textContent=titleMap[filter]||"Mahsulotlar";
  grid.innerHTML=list.length?list.map(p=>'<article class="food-card"><div class="food-picture cat-'+p.cat+'"><span class="food-tag">'+(p.tag||"")+'</span><span class="product-emoji">'+p.emoji+'</span><button class="favorite-toggle" data-fav="'+p.id+'" aria-label="Sevimlilarga qo‘shish">'+(favorites.includes(p.id)?"♥":"♡")+'</button></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="food-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'" aria-label="Savatga qo‘shish">+</button></div></article>').join(""):'<div class="empty-results">Mahsulot topilmadi. Boshqa nom bilan qidirib ko‘ring.</div>';
  grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;save();});
@@ -87,4 +91,5 @@ document.querySelector("#orderForm").onsubmit=e=>{
  const orders=JSON.parse(localStorage.getItem("aliOrders")||"[]");orders.unshift(order);localStorage.setItem("aliOrders",JSON.stringify(orders));cart={};save();e.target.reset();document.querySelector("#orderNotice").textContent="Demo buyurtma "+order.id+" saqlandi. Real operatorga yuborilmadi.";
 };
 renderProducts();renderCart();
+if(!savedLocation){setTimeout(()=>detectDeliveryLocation(),700);}
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("/sw.js").catch(()=>{}));}
