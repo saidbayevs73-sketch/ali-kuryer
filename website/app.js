@@ -10,13 +10,13 @@ const products=[
 {id:9,name:"Shirinlik",price:22000,cat:"other",emoji:"🧁",desc:"Yangi tayyorlangan desert",tag:"Yangi"},
 {id:10,name:"Market to‘plami",price:35000,cat:"market",emoji:"🛍️",desc:"Kundalik kerakli mahsulotlar",tag:""}
 ];
-let cart=JSON.parse(localStorage.getItem("aliCart")||"{}");
+let cart=JSON.parse(localStorage.getItem("aliCart")||"{}");\nlet favorites=JSON.parse(localStorage.getItem("aliFavorites")||"[]");
 const money=n=>new Intl.NumberFormat("uz-UZ").format(n)+" so‘m";
 const grid=document.querySelector("#foodGrid");
 function renderProducts(filter="all",query=""){
  const list=products.filter(p=>(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
  grid.innerHTML=list.length?list.map(p=>'<article class="food-card"><div class="food-picture"><span class="food-tag">'+(p.tag||"")+'</span>'+p.emoji+'</div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="food-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'" aria-label="Savatga qo‘shish">+</button></div></article>').join(""):'<div class="empty-results">Hech narsa topilmadi. Boshqa nom bilan qidirib ko‘ring.</div>';
- grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;save();});
+ grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;save();});\n grid.querySelectorAll(".food-picture").forEach((picture,index)=>{const product=list[index];const button=document.createElement("button");button.className="favorite-toggle";button.type="button";button.textContent=favorites.includes(product.id)?"♥":"♡";button.setAttribute("aria-label","Sevimlilarga qo‘shish");button.onclick=()=>{favorites=favorites.includes(product.id)?favorites.filter(id=>id!==product.id):[...favorites,product.id];localStorage.setItem("aliFavorites",JSON.stringify(favorites));button.textContent=favorites.includes(product.id)?"♥":"♡";};picture.appendChild(button);});
 }
 function save(){localStorage.setItem("aliCart",JSON.stringify(cart));renderCart();}
 function renderCart(){
