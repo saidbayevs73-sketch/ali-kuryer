@@ -20,3 +20,33 @@ body:has(#orders),body:has(#tasks){background:#f6f7f9}body:has(#orders) .section
 @media(max-width:760px){.top{height:64px;padding:0 15px}.top nav{display:none}.top .eyebrow{font-size:8px;letter-spacing:.8px}}
 
 .favorite-toggle{position:absolute;right:9px;top:9px;width:31px;height:31px;border:0;border-radius:50%;background:#fff;color:#df1728;font-size:19px;box-shadow:0 3px 10px #17191f20;z-index:2}.food-picture{position:relative}
+
+/* Marketplace refresh: grocery, home essentials and pharmacy departments */
+.welcome{background:linear-gradient(112deg,#a90019 0%,#e20d27 57%,#ff665d 100%);min-height:260px}
+.welcome:before{content:"";position:absolute;inset:auto -5% -190px auto;width:430px;height:430px;border:1px solid #ffffff25;border-radius:50%;box-shadow:0 0 0 34px #ffffff0b,0 0 0 70px #ffffff09}
+.hero-orbit{position:absolute;width:290px;height:290px;right:4%;top:-130px;border:1px solid #ffffff25;border-radius:50%;pointer-events:none}
+.mascot{background:linear-gradient(145deg,#ffffff35,#ffffff12);border:1px solid #ffffff55;box-shadow:0 18px 45px #70001438}
+.categories{grid-template-columns:repeat(8,minmax(0,1fr))}
+.category{min-height:105px;justify-content:center}
+.category span{width:52px;height:52px}
+.store-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+.store-card{display:flex;align-items:center;gap:12px;padding:16px 13px;border:1px solid var(--line);border-radius:16px;text-decoration:none;color:var(--ink);min-width:0;transition:.2s;background:#fff}
+.store-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.store-emoji{width:48px;height:48px;flex:0 0 48px;border-radius:14px;background:#fff1f1;display:grid;place-items:center;font-size:26px}
+.store-card span:nth-child(2){display:grid;gap:4px;min-width:0}
+.store-card b{font-size:12px}.store-card small{font-size:9px;color:var(--muted);line-height:1.4}
+.store-card i{margin-left:auto;color:var(--red);font-style:normal;font-size:18px}
+.store-market .store-emoji{background:#edf8ed}.store-home .store-emoji{background:#edf4ff}.store-health .store-emoji{background:#fff1f2;color:var(--red)}
+.promo-strip{margin:4px 0 10px;padding:25px 30px;border-radius:20px;background:linear-gradient(105deg,#fff1e7,#fff8f1 58%,#ffe1dd);display:flex;align-items:center;justify-content:space-between;overflow:hidden}
+.promo-strip small{font-size:9px;letter-spacing:1.5px;color:#bb3b2d;font-weight:900}.promo-strip h2{font-size:24px;line-height:1.12;letter-spacing:-1px;margin:8px 0}.promo-strip p{font-size:11px;color:#79645d;margin:0}.promo-strip>span{font-size:76px;filter:drop-shadow(0 8px 7px #9a352833);margin-right:8%}
+.product-emoji{font-size:68px;filter:drop-shadow(0 8px 8px #29292912)}
+.food-picture.cat-fruit{background:linear-gradient(145deg,#f0fae9,#fff8df)}
+.food-picture.cat-grocery{background:linear-gradient(145deg,#eef7ff,#f5f7ff)}
+.food-picture.cat-home{background:linear-gradient(145deg,#edf4ff,#f8f7ff)}
+.food-picture.cat-pharmacy{background:linear-gradient(145deg,#fff0f2,#f8f5ff)}
+.food-picture.cat-drink{background:linear-gradient(145deg,#e9f7ff,#f4faff)}
+.food-picture.cat-sweet{background:linear-gradient(145deg,#fff0f5,#fff8e9)}
+.food-picture.cat-food{background:linear-gradient(145deg,#fff0e8,#f8f2ee)}
+@media(max-width:900px){.categories{grid-template-columns:repeat(4,minmax(0,1fr))}.store-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.welcome{min-height:215px}.categories{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.category{min-height:88px;padding:9px 4px}.category span{width:39px;height:39px;font-size:21px}.category b{font-size:9px}.store-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.store-card{padding:11px 9px;gap:8px}.store-emoji{width:38px;height:38px;flex-basis:38px;font-size:21px}.store-card b{font-size:10px}.store-card small{font-size:8px}.store-card i{font-size:15px}.promo-strip{padding:19px 17px}.promo-strip h2{font-size:19px}.promo-strip>span{font-size:54px;margin-right:2%}.product-emoji{font-size:55px}}
+@media(max-width:390px){.categories{grid-template-columns:repeat(4,minmax(0,1fr))}.store-card small{display:none}.store-card{min-height:62px}}
