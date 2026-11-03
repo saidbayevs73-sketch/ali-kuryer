@@ -1,8 +1,52 @@
 <!doctype html>
-<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#e50919"><meta name="description" content="Ali Kuryer — Namanganda taomlarni tez va qulay buyurtma qiling."><title>Ali Kuryer — Buyurtma berish</title><link rel="stylesheet" href="styles.css"></head>
-<body><header class="top"><a class="brand" href="index.html"><span class="brand-mark">A</span><span>ALI <b>KURYER</b></span></a><nav><a href="#menu">Menyu</a><a href="#how">Qanday ishlaydi</a><a href="courier.html">Kuryer</a><a href="admin.html">Admin</a></nav><button class="cart-pill" id="cartJump">Savat <span id="cartCount">0</span></button></header>
-<main><section class="hero"><div class="hero-copy"><span class="eyebrow">NAMANGAN BO‘YLAB YETKAZAMIZ</span><h1>Sevimli taomingiz<br><em>eshigingizgacha.</em></h1><p>Restoran tanlang, buyurtma bering — qolganini Ali Kuryer hal qiladi.</p><a class="btn" href="#menu">Buyurtma berish <span>→</span></a><div class="hero-stats"><div><b>Tez</b><small>yetkazib berish</small></div><div><b>Oson</b><small>buyurtma berish</small></div><div><b>Naqd</b><small>to‘lov imkoniyati</small></div></div></div><div class="hero-art"><div class="sun"></div><div class="food-emoji">🍔</div><div class="delivery-tag">🛵 <span>Ali Kuryer</span></div><div class="floating-chip">Issiq va mazali!</div></div></section>
-<section class="section" id="menu"><div class="section-head"><div><span class="eyebrow">TANLANG VA BUYURTMA QILING</span><h2>Ommabop taomlar</h2></div><span class="muted">Narxlar so‘mda</span></div><div class="filters"><button class="filter active" data-filter="all">Barchasi</button><button class="filter" data-filter="burger">Burger</button><button class="filter" data-filter="pizza">Pitsa</button><button class="filter" data-filter="drink">Ichimlik</button></div><div class="food-grid" id="foodGrid"></div></section>
-<section class="checkout section" id="checkout"><div><span class="eyebrow">BUYURTMANI YAKUNLASH</span><h2>Savat va manzil</h2><p class="muted">Hozircha demo rejim: buyurtmalar ushbu brauzerda saqlanadi.</p><div id="cartItems" class="cart-items"><p class="muted">Savatingiz hozircha bo‘sh.</p></div></div><form id="orderForm" class="order-form"><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Yetkazib berish manzili<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="btn full" type="submit">Buyurtma berish</button><small class="muted">To‘lov: yetkazilganda naqd pul. Onlayn to‘lov hozircha ulanmagan.</small><p id="orderNotice" class="notice" aria-live="polite"></p></form></section>
-<section class="how section" id="how"><span class="eyebrow">3 OSON QADAM</span><h2>Buyurtma berish juda oson</h2><div class="steps"><article><b>01</b><h3>Taomni tanlang</h3><p>Menyudan yoqtirgan taomingizni savatga qo‘shing.</p></article><article><b>02</b><h3>Manzilni kiriting</h3><p>Telefon va yetkazib berish manzilini yozing.</p></article><article><b>03</b><h3>Qabul qilib oling</h3><p>Kuryer buyurtmangizni manzilingizga olib boradi.</p></article></div></section></main>
-<footer><a class="brand" href="#"><span class="brand-mark">A</span><span>ALI <b>KURYER</b></span></a><span>© 2026 Ali Kuryer · Namangan</span><span>Tez. Oson. Ishonchli.</span></footer><script src="app.js"></script></body></html>
+<html lang="uz">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#df1728"><meta name="description" content="Ali Kuryer — Namanganda tez va qulay yetkazib berish.">
+<title>Ali Kuryer — Tez yetkazib berish</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="app-header">
+  <a class="brand" href="#"><span class="brand-icon">▣</span><span><i>Ali</i> Kuryer</span></a>
+  <button class="location" type="button" id="locationBtn"><span>📍</span><span><small>Yetkazib berish manzili</small><b>Namangan <span class="chevron">⌄</span></b></span></button>
+  <div class="header-actions"><button class="icon-btn" aria-label="Bildirishnomalar">♧</button><button class="icon-btn" id="cartJump" aria-label="Savat">🛒<span id="cartCount" class="count">0</span></button></div>
+</header>
+<main>
+<section class="welcome">
+  <div class="welcome-copy"><span class="eyebrow">ALI KURYER • NAMANGAN</span><h1>Yoqtirganingiz<br><em>tez yetkaziladi!</em></h1><p>Taom, ichimlik va kundalik mahsulotlar — bir joyda.</p><a href="#catalog" class="primary-btn">Buyurtma berish <span>→</span></a></div>
+  <div class="mascot" aria-label="Kuryer belgisi">🛵<span>ALI<br>KURYER</span></div>
+</section>
+<section class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Restoran, taom yoki mahsulot qidiring..." aria-label="Qidiruv"><kbd>⌘ K</kbd></section>
+<section class="section categories-section">
+  <div class="section-title"><div><small class="eyebrow">KATEGORIYALAR</small><h2>Nimani xohlaysiz?</h2></div></div>
+  <div class="categories">
+    <button class="category active" data-filter="all"><span>🍽️</span><b>Barchasi</b></button>
+    <button class="category" data-filter="burger"><span>🍔</span><b>Burger</b></button>
+    <button class="category" data-filter="pizza"><span>🍕</span><b>Pitsa</b></button>
+    <button class="category" data-filter="drink"><span>🥤</span><b>Ichimlik</b></button>
+    <button class="category" data-filter="market"><span>🛍️</span><b>Market</b></button>
+    <button class="category" data-filter="other"><span>＋</span><b>Boshqalar</b></button>
+  </div>
+</section>
+<section class="section" id="catalog">
+  <div class="section-title"><div><small class="eyebrow">SIZ UCHUN TANLADIK</small><h2>Mashhur taomlar</h2></div><a href="#catalog" class="see-all">Barchasi <span>→</span></a></div>
+  <div class="food-grid" id="foodGrid"></div>
+</section>
+<section class="section order-section" id="checkout">
+  <div class="section-title"><div><small class="eyebrow">BUYURTMANI YAKUNLASH</small><h2>Savat</h2></div><span class="secure-note">Naqd to‘lov</span></div>
+  <div class="checkout-grid"><div id="cartItems" class="cart-items"><div class="empty-cart">🛍️<b>Savatingiz hozircha bo‘sh</b><span>Yoqtirgan taomingizni tanlang.</span></div></div>
+  <form id="orderForm" class="order-form">
+    <label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label>
+    <label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label>
+    <label>Yetkazib berish manzili<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label>
+    <div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div>
+    <button class="primary-btn full" type="submit">Buyurtma berish <span>→</span></button>
+    <small class="demo-note">Demo versiya: buyurtma hozircha shu brauzerda saqlanadi. To‘lov — yetkazilganda naqd.</small><p id="orderNotice" class="notice" aria-live="polite"></p>
+  </form></div>
+</section>
+<section class="section how-section"><small class="eyebrow">3 OSON QADAM</small><h2>Buyurtma berish juda oson</h2><div class="steps"><article><b>01</b><h3>Tanlang</h3><p>Menyudan yoqtirgan mahsulotingizni tanlang.</p></article><article><b>02</b><h3>Manzilni kiriting</h3><p>Yetkazib berish manzilingizni ko‘rsating.</p></article><article><b>03</b><h3>Qabul qiling</h3><p>Kuryer buyurtmangizni eshigingizgacha olib boradi.</p></article></div></section>
+</main>
+<nav class="bottom-nav" aria-label="Asosiy navigatsiya"><a class="selected" href="#"><span>⌂</span>Asosiy</a><a href="#catalog"><span>⌕</span>Qidiruv</a><a href="#checkout"><span>🛒</span>Savat</a><a href="admin.html"><span>▤</span>Buyurtmalar</a><a href="courier.html"><span>♙</span>Profil</a></nav>
+<footer><a class="brand" href="#"><span class="brand-icon">▣</span><span><i>Ali</i> Kuryer</span></a><span>© 2026 Ali Kuryer · Namangan</span><span>Tez. Oson. Ishonchli.</span></footer>
+<script src="app.js"></script>
+</body></html>
