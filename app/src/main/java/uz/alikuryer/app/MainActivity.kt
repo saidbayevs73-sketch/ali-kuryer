@@ -11,7 +11,10 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : Activity() {
@@ -25,10 +28,15 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep the app content below Android's real status bar and above navigation bar.
-        WindowCompat.setDecorFitsSystemWindows(window, true)
+        // Draw edge-to-edge, then apply the real system-bar insets to the WebView.
+        // This prevents Android 15 / targetSdk 35 status and navigation bars
+        // from covering the app logo, buttons, or bottom navigation.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = android.graphics.Color.WHITE
         window.navigationBarColor = android.graphics.Color.WHITE
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            window.isNavigationBarContrastEnforced = false
+        }
         WindowInsetsControllerCompat(window, window.decorView).apply {
             isAppearanceLightStatusBars = true
             isAppearanceLightNavigationBars = true
@@ -39,6 +47,14 @@ class MainActivity : Activity() {
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.isVerticalScrollBarEnabled = false
         webView.isHorizontalScrollBarEnabled = false
+
+        ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
 
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
@@ -57,7 +73,34 @@ class MainActivity : Activity() {
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
 
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                // Small responsive-layout corrections; preserve the existing design.
+                view?.evaluateJavascript(
+                    """
+                    (function(){
+                      if(document.getElementById('ali-android-layout-fix')) return;
+                      var style=document.createElement('style');
+                      style.id='ali-android-layout-fix';
+                      style.textContent=
+                        'html,body{height:100%;min-height:0;overflow:hidden}' +
+                        '.app{height:100%!important;min-height:0!important;overflow:hidden!important}' +
+                        '.app-main{min-height:0!important;overscroll-behavior:contain;padding-bottom:18px!important;scroll-padding-bottom:24px}' +
+                        '.tabbar{height:68px!important;min-height:68px!important;flex:0 0 68px!important;padding-bottom:8px!important}' +
+                        '.language{height:100%!important;min-height:0!important;padding:20px 18px 22px!important}' +
+                        '.language h2{margin:28px 0 6px!important}' +
+                        '.lang-list{margin-top:22px!important}' +
+                        '.home-premium{padding-bottom:18px!important}' +
+                        '.home-premium-head{padding-top:6px!important}' +
+                        '.home-food-section{padding-bottom:26px!important}';
+                      document.head.appendChild(style);
+                    })();
+                    """.trimIndent(),
+                    null
+                )
+            }
+        }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 view: WebView?,
@@ -95,6 +138,7 @@ class MainActivity : Activity() {
         }
 
         setContentView(webView)
+        ViewCompat.requestApplyInsets(webView)
         webView.loadUrl("file:///android_asset/index.html")
     }
 
@@ -108,7 +152,7 @@ class MainActivity : Activity() {
         }
     }
 
-    @Deprecated("Deprecated in Android API; retained for WebView file chooser compatibility")
+    @Deprecated("Deprecated for WebView file chooser compatibility")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == filePickerRequest && fileCallback != null) {
@@ -124,13 +168,10 @@ class MainActivity : Activity() {
             super.onBackPressed()
             return
         }
-        // The app uses an internal JavaScript screen stack, not browser URL history.
         webView.evaluateJavascript(
             "(function(){try{if(typeof s!=='undefined'&&s.history&&s.history.length>0&&typeof back==='function'){back();return 'handled';}}catch(e){}return 'exit';})()"
         ) { result ->
-            if (result == null || result == "\"exit\"") {
-                finish()
-            }
+            if (result == null || result == "\"exit\"") finish()
         }
     }
 
