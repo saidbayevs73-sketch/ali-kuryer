@@ -140,3 +140,16 @@ footer{max-width:1480px;margin:auto;padding:25px 4.5%;color:#777985}
 
 .product-photo{width:100%;height:100%;object-fit:cover;border-radius:13px;display:block}
 @media(min-width:1100px){.categories{grid-template-columns:repeat(10,minmax(0,1fr))}}
+
+.category-all-icon{display:grid;grid-template-columns:repeat(2,13px);gap:4px;place-content:center}
+.category-all-icon i{width:13px;height:13px;border-radius:4px;background:var(--red);display:block}
+.account-panel{margin:18px 2.5%;padding:22px;background:#fff;border:1px solid #eee;border-radius:18px;box-shadow:0 12px 30px #17171c0b}
+.account-panel[hidden]{display:none}
+.panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.panel-head h2{margin:0;font-size:21px}
+.panel-close{border:0;background:#f4f4f6;border-radius:10px;width:36px;height:36px;font-size:23px;color:#333}
+.account-order{display:grid;grid-template-columns:1fr auto;gap:6px;padding:13px 0;border-bottom:1px solid #eee;font-size:12px}
+.account-order span,.account-order small{color:#777}
+.account-order small{grid-column:1/-1;line-height:1.5}
+.panel-empty{padding:15px 0;color:#777;font-size:13px}
+@media(max-width:650px){.account-panel{margin:12px 4px;padding:16px}.panel-head h2{font-size:18px}}
