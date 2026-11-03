@@ -24,6 +24,21 @@ const products=[
 ];
 let cart=JSON.parse(localStorage.getItem("aliCart")||"{}");
 let favorites=JSON.parse(localStorage.getItem("aliFavorites")||"[]");
+const productPhotos={
+1:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=700&q=85",
+2:"https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=700&q=85",
+3:"https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=700&q=85",
+4:"https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?auto=format&fit=crop&w=700&q=85",
+5:"https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&w=700&q=85",
+6:"https://images.unsplash.com/photo-1546094096-0df4bcaaa337?auto=format&fit=crop&w=700&q=85",
+7:"https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=700&q=85",
+8:"https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?auto=format&fit=crop&w=700&q=85",
+9:"https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=700&q=85",
+10:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=700&q=85",
+11:"https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=700&q=85",
+19:"https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=700&q=85",
+21:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85"
+};
 const money=n=>new Intl.NumberFormat("uz-UZ").format(n)+" so‘m";
 const grid=document.querySelector("#foodGrid");
 let activeFilter="all";
@@ -32,7 +47,7 @@ function renderProducts(filter=activeFilter,query=""){
  const list=products.filter(p=>(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
  const titleMap={all:"Mashhur mahsulotlar",food:"Taomlar",fruit:"Meva va sabzavotlar",grocery:"Oziq-ovqat",home:"Uy-ro‘zg‘or mahsulotlari",pharmacy:"Dorixona va gigiyena",drink:"Ichimliklar",sweet:"Shirinliklar",beauty:"Go‘zallik va parvarish",electronics:"Elektronika va aksessuar"};
  document.querySelector("#catalogTitle").textContent=titleMap[filter]||"Mahsulotlar";
- grid.innerHTML=list.length?list.map(p=>'<article class="food-card"><div class="food-picture cat-'+p.cat+'"><span class="food-tag">'+(p.tag||"")+'</span><span class="product-emoji">'+p.emoji+'</span><button class="favorite-toggle" data-fav="'+p.id+'" aria-label="Sevimlilarga qo‘shish">'+(favorites.includes(p.id)?"♥":"♡")+'</button></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="food-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'" aria-label="Savatga qo‘shish">+</button></div></article>').join(""):'<div class="empty-results">Mahsulot topilmadi. Boshqa nom bilan qidirib ko‘ring.</div>';
+ grid.innerHTML=list.length?list.map(p=>'<article class="food-card"><div class="food-picture cat-'+p.cat+'"><span class="food-tag">'+(p.tag||"")+'</span><img class="product-photo" src="'+(productPhotos[p.id]||"")+'" alt="'+p.name+'" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'"><span class="product-emoji" style="display:'+(productPhotos[p.id]?"none":"grid")+'">'+p.emoji+'</span><button class="favorite-toggle" data-fav="'+p.id+'" aria-label="Sevimlilarga qo‘shish">'+(favorites.includes(p.id)?"♥":"♡")+'</button></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="food-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'" aria-label="Savatga qo‘shish">+</button></div></article>').join(""):'<div class="empty-results">Mahsulot topilmadi. Boshqa nom bilan qidirib ko‘ring.</div>';
  grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;save();});
  grid.querySelectorAll("[data-fav]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.fav);favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];localStorage.setItem("aliFavorites",JSON.stringify(favorites));b.textContent=favorites.includes(id)?"♥":"♡";});
 }
