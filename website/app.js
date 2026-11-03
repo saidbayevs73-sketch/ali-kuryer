@@ -42,11 +42,12 @@ const productPhotos={
 const money=n=>new Intl.NumberFormat("uz-UZ").format(n)+" so‘m";
 const grid=document.querySelector("#foodGrid");
 let activeFilter="all";
+let favoritesOnly=false;
 function renderProducts(filter=activeFilter,query=""){
  activeFilter=filter;
- const list=products.filter(p=>(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
+ const list=products.filter(p=>(!favoritesOnly||favorites.includes(p.id))&&(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
  const titleMap={all:"Mashhur mahsulotlar",food:"Taomlar",fruit:"Meva va sabzavotlar",grocery:"Oziq-ovqat",home:"Uy-ro‘zg‘or mahsulotlari",pharmacy:"Dorixona va gigiyena",drink:"Ichimliklar",sweet:"Shirinliklar",beauty:"Go‘zallik va parvarish",electronics:"Elektronika va aksessuar"};
- document.querySelector("#catalogTitle").textContent=titleMap[filter]||"Mahsulotlar";
+ document.querySelector("#catalogTitle").textContent=favoritesOnly?"Sevimli mahsulotlar":(titleMap[filter]||"Mahsulotlar");
  grid.innerHTML=list.length?list.map(p=>'<article class="food-card"><div class="food-picture cat-'+p.cat+'"><span class="food-tag">'+(p.tag||"")+'</span><img class="product-photo" src="'+(productPhotos[p.id]||"")+'" alt="'+p.name+'" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'grid\'"><span class="product-emoji" style="display:'+(productPhotos[p.id]?"none":"grid")+'">'+p.emoji+'</span><button class="favorite-toggle" data-fav="'+p.id+'" aria-label="Sevimlilarga qo‘shish">'+(favorites.includes(p.id)?"♥":"♡")+'</button></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="food-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'" aria-label="Savatga qo‘shish">+</button></div></article>').join(""):'<div class="empty-results">Mahsulot topilmadi. Boshqa nom bilan qidirib ko‘ring.</div>';
  grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;save();});
  grid.querySelectorAll("[data-fav]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.fav);favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];localStorage.setItem("aliFavorites",JSON.stringify(favorites));b.textContent=favorites.includes(id)?"♥":"♡";});
@@ -60,12 +61,34 @@ function renderCart(){
  document.querySelectorAll("[data-minus]").forEach(b=>b.onclick=()=>{const id=b.dataset.minus;cart[id]--;if(cart[id]<=0)delete cart[id];save();});
  document.querySelectorAll("[data-plus]").forEach(b=>b.onclick=()=>{const id=b.dataset.plus;cart[id]++;save();});
 }
-document.querySelectorAll(".category").forEach(b=>b.onclick=()=>{document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderProducts(b.dataset.filter,document.querySelector("#searchInput").value);});
+document.querySelectorAll(".category").forEach(b=>b.onclick=()=>{favoritesOnly=false;document.querySelectorAll(".category").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderProducts(b.dataset.filter,document.querySelector("#searchInput").value);});
 document.querySelectorAll("[data-store-filter]").forEach(b=>b.onclick=()=>{const filter=b.dataset.storeFilter;document.querySelectorAll(".category").forEach(x=>x.classList.toggle("active",x.dataset.filter===filter));renderProducts(filter,document.querySelector("#searchInput").value);});
 document.querySelector("#searchInput").addEventListener("input",e=>{renderProducts(activeFilter,e.target.value);});
 document.querySelector("#cartJump").onclick=()=>document.querySelector("#checkout").scrollIntoView({behavior:"smooth"});
 document.querySelector(".search-jump")?.addEventListener("click",()=>document.querySelector("#searchInput").focus());
-document.querySelector(".favorite-jump")?.addEventListener("click",()=>{renderProducts("all");document.querySelector("#catalog").scrollIntoView({behavior:"smooth"});});
+document.querySelector(".favorite-jump")?.addEventListener("click",()=>showFavorites());
+function showFavorites(){favoritesOnly=true;renderProducts("all");document.querySelector("#catalog").scrollIntoView({behavior:"smooth"});}
+function showPanel(type){
+ const panel=document.querySelector("#accountPanel");panel.hidden=false;panel.innerHTML="";
+ let title="",body="";
+ if(type==="orders"){
+  title="Buyurtmalarim";
+  const orders=JSON.parse(localStorage.getItem("aliOrders")||"[]");
+  body=orders.length?orders.map(o=>'<article class="account-order"><b>'+o.id+'</b><span>'+o.created+'</span><strong>'+money(o.total)+'</strong><small>'+o.status+' · '+o.items.map(x=>x.name+" × "+x.qty).join(", ")+'</small></article>').join(""):'<p class="panel-empty">Hozircha buyurtmalaringiz yo‘q.</p>';
+ }else{
+  title="Profil";
+  body='<p class="panel-empty">Profil bo‘limi demo rejimida. Ro‘yxatdan o‘tish va shaxsiy ma’lumotlarni serverda saqlash keyingi bosqichda ulanadi.</p><button class="panel-close" type="button">Yopish</button>';
+ }
+ panel.innerHTML='<div class="panel-head"><h2>'+title+'</h2><button class="panel-close" type="button" aria-label="Yopish">×</button></div>'+body;
+ panel.querySelectorAll(".panel-close").forEach(b=>b.onclick=()=>panel.hidden=true);
+ panel.scrollIntoView({behavior:"smooth",block:"center"});
+}
+document.querySelectorAll("[data-action]").forEach(a=>a.addEventListener("click",e=>{
+ e.preventDefault();const action=a.dataset.action;
+ if(action==="favorites")showFavorites();else showPanel(action);
+ document.querySelectorAll(".bottom-nav a").forEach(x=>x.classList.toggle("selected",x===a));
+}));
+document.querySelector(".login-btn")?.addEventListener("click",()=>showPanel("profile"));
 const locationLabel=document.querySelector("#locationText");
 const savedLocation=localStorage.getItem("aliLocationName");
 if(savedLocation&&locationLabel)locationLabel.innerHTML=savedLocation+' <span class="chevron">⌄</span>';
