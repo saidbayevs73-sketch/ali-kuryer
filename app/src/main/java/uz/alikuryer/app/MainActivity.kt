@@ -48,6 +48,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
  var phone by remember{mutableStateOf("+998 ")}
  var otp by remember{mutableStateOf("")}
  var category by remember{mutableStateOf("Barchasi")}
+ var selectedRestaurant by remember{mutableStateOf("Burger House")}
  var search by remember{mutableStateOf("")}
  var cart by remember{mutableStateOf(mapOf<Int,Int>())}
  var favorites by remember{mutableStateOf(setOf<Int>())}
@@ -70,8 +71,8 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
     when(page){
      "welcome"->{Text("Taomlaringizni tez va ishonchli yetkazib beramiz!",color=Color.White,textAlign=TextAlign.Center,fontSize=16.sp);Image(painter=painterResource(R.drawable.mascot),contentDescription="Ali Kuryer skuteridagi kuryer bolakay",modifier=Modifier.fillMaxWidth().height(245.dp),contentScale=ContentScale.Fit);Spacer(Modifier.height(8.dp));PrimaryButton("Boshlash  →"){page="language"}}
      "language"->{Text("Tilni tanlang",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Dark);listOf("O‘zbekcha","Русский","中文").forEach{lang->OutlinedButton(onClick={language=lang},modifier=Modifier.fillMaxWidth(),shape=RoundedCornerShape(14.dp)){Text((if(language==lang)"🔴  " else "○  ")+lang,color=Dark,fontSize=17.sp)}};Image(painter=painterResource(R.drawable.mascot),contentDescription="Ali Kuryer bolakay",modifier=Modifier.fillMaxWidth().height(130.dp),contentScale=ContentScale.Fit);PrimaryButton("Davom etish  →"){page="phone"}}
-     "phone"->{Text("Telefon raqamingiz",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Dark);OutlinedTextField(phone,{phone=it},modifier=Modifier.fillMaxWidth(),label={Text("Telefon raqami")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Phone),singleLine=true);PrimaryButton("Tasdiqlash kodini yuborish"){page="otp"}}
-     "otp"->{Text("Tasdiqlash kodi",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Dark);Text("$phone raqamiga yuborilgan 4 xonali kodni kiriting",color=Muted,textAlign=TextAlign.Center);OutlinedTextField(otp,{if(it.length<=4)otp=it},modifier=Modifier.fillMaxWidth(),label={Text("SMS kodi")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true);PrimaryButton("Tasdiqlash"){if(otp.length==4)page="home"};Text("Demo rejim: istalgan 4 raqamni kiriting",fontSize=11.sp,color=Muted)}
+     "phone"->{Image(painter=painterResource(R.drawable.mascot),contentDescription="Skuterda kuryer bolakay",modifier=Modifier.fillMaxWidth().height(155.dp),contentScale=ContentScale.Fit);Text("Telefon raqamingiz",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Dark);OutlinedTextField(phone,{phone=it},modifier=Modifier.fillMaxWidth(),label={Text("Telefon raqami")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Phone),singleLine=true);PrimaryButton("Tasdiqlash kodini yuborish"){page="otp"}}
+     "otp"->{Text("Tasdiqlash kodi",fontSize=23.sp,fontWeight=FontWeight.Bold,color=Dark);Text("$phone raqamiga yuborilgan 4 xonali kodni kiriting",color=Muted,textAlign=TextAlign.Center);OutlinedTextField(otp,{if(it.length<=4)otp=it},modifier=Modifier.fillMaxWidth(),label={Text("SMS kodi")},keyboardOptions=KeyboardOptions(keyboardType=KeyboardType.Number),singleLine=true);PrimaryButton("Tasdiqlash"){if(otp.length==4)page="home"}}
     }
    }
   };return
