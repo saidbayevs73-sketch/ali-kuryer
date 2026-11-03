@@ -37,3 +37,5 @@ document.querySelector("#orderForm").onsubmit=e=>{
  const orders=JSON.parse(localStorage.getItem("aliOrders")||"[]");orders.unshift(order);localStorage.setItem("aliOrders",JSON.stringify(orders));cart={};save();e.target.reset();document.querySelector("#orderNotice").textContent="Demo buyurtma "+order.id+" saqlandi. Real operatorga yuborilmadi.";
 };
 renderProducts();renderCart();
+
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));}
