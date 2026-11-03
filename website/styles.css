@@ -64,3 +64,32 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
  .hero-copy h1{font-size:24px}
  .hero-benefits span{font-size:6px}
 }
+
+
+/* Ali Kuryer marketplace refinement */
+.quick-links{max-width:1440px;margin:0 auto;padding:10px 3%;display:flex;align-items:center;gap:28px;border-bottom:1px solid #f0eff2;background:#fff;position:relative;z-index:4}
+.quick-links a{color:#38343b;text-decoration:none;font-size:13px;font-weight:700;padding:5px 0}
+.quick-links a:first-child{color:var(--red)}
+.quick-links a:hover{color:var(--red)}
+.hero{height:350px}
+.hero-copy h1{max-width:540px}
+.hero-sky{background-position:center 52%}
+.search-wrap{max-width:900px}
+.categories-section{padding-top:10px}
+.restaurants-section{padding-top:14px}
+.restaurant-card{cursor:pointer}
+.promo{box-shadow:0 8px 22px #1d10200c}
+.promo h2{max-width:280px}
+.section-heading{gap:12px}
+@media(max-width:600px){
+ .quick-links{padding:8px 14px;gap:22px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+ .quick-links::-webkit-scrollbar{display:none}
+ .quick-links a{font-size:11px}
+ .hero{height:318px}
+ .hero-copy{top:18px;max-width:74%}
+ .hero-copy h1{font-size:25px;line-height:1.12;max-width:260px}
+ .hero-rider{height:60%;width:57%}
+ .categories-section{padding-top:2px}
+ .restaurants-section{padding-top:8px}
+ .promo h2{max-width:155px}
+}
