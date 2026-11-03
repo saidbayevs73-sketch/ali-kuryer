@@ -2,7 +2,7 @@
 <html lang="uz"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#ffffff"><meta name="description" content="Ali Kuryer — O‘zbekiston bo‘ylab tez yetkazib berish.">
-<link rel="manifest" href="manifest.webmanifest"><title>Ali Kuryer — Tez yetkazib berish</title><link rel="stylesheet" href="styles.css?v=4">
+<link rel="manifest" href="manifest.webmanifest"><title>Ali Kuryer — Tez yetkazib berish</title><link rel="stylesheet" href="styles.css?v=5">
 </head><body>
 <header class="app-header">
  <a class="brand" href="#"><span class="brand-mark">A</span><b>Ali <em>Kuryer</em></b></a>
@@ -27,7 +27,7 @@
  <button class="category" data-filter="electronics"><span>🎧</span><b>Elektronika<br>va aksessuar</b></button>
  <button class="category" data-filter="drink"><span>🥤</span><b>Ichimliklar</b></button>
  <button class="category" data-filter="sweet"><span>🧁</span><b>Shirinliklar</b></button>
- <button class="category" data-filter="all"><span class="dots">●●<br>●●</span><b>Barcha<br>kategoriyalar</b></button>
+ <button class="category" data-filter="all"><span class="category-all-icon"><i></i><i></i><i></i><i></i></span><b>Barcha<br>kategoriyalar</b></button>
 </section>
 <section class="promo-banners" id="promos">
  <a class="promo-food" href="#catalog"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><b>Buyurtma berish →</b></div><span>🍕 🍔 🥤</span></a>
@@ -44,6 +44,6 @@
 <section class="checkout-section" id="checkout"><div class="section-head"><h2>Savatcha</h2><span>Yetkazilganda to‘lov</span></div><div class="checkout-grid"><div id="cartItems" class="cart-items"></div>
 <form id="orderForm" class="order-form"><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Yetkazib berish manzili<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="hero-cta" type="submit">Buyurtma berish →</button><small class="demo-note">Demo: buyurtma hozircha shu brauzerda saqlanadi.</small><p id="orderNotice"></p></form></div></section>
 </main>
-<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#checkout"><span>♧</span>Buyurtmalar</a><a href="#catalog"><span>♡</span>Sevimlilar</a><a href="#checkout"><span>♙</span>Profil</a></nav>
-<footer><b>Ali Kuryer</b><span>© 2026 · O‘zbekiston bo‘ylab</span></footer>
-<script src="app.js?v=4"></script></body></html>
+<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#orders" data-action="orders"><span>♧</span>Buyurtmalar</a><a href="#favorites" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#profile" data-action="profile"><span>♙</span>Profil</a></nav>
+<section id="accountPanel" class="account-panel" hidden aria-live="polite"></section><footer><b>Ali Kuryer</b><span>© 2026 · O‘zbekiston bo‘ylab</span></footer>
+<script src="app.js?v=5"></script></body></html>
