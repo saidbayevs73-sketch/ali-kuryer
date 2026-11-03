@@ -49,6 +49,8 @@ document.querySelectorAll(".category").forEach(b=>b.onclick=()=>{document.queryS
 document.querySelectorAll("[data-store-filter]").forEach(b=>b.onclick=()=>{const filter=b.dataset.storeFilter;document.querySelectorAll(".category").forEach(x=>x.classList.toggle("active",x.dataset.filter===filter));renderProducts(filter,document.querySelector("#searchInput").value);});
 document.querySelector("#searchInput").addEventListener("input",e=>{renderProducts(activeFilter,e.target.value);});
 document.querySelector("#cartJump").onclick=()=>document.querySelector("#checkout").scrollIntoView({behavior:"smooth"});
+document.querySelector(".search-jump")?.addEventListener("click",()=>document.querySelector("#searchInput").focus());
+document.querySelector(".favorite-jump")?.addEventListener("click",()=>{renderProducts("all");document.querySelector("#catalog").scrollIntoView({behavior:"smooth"});});
 const locationLabel=document.querySelector("#locationText");
 const savedLocation=localStorage.getItem("aliLocationName");
 if(savedLocation&&locationLabel)locationLabel.innerHTML=savedLocation+' <span class="chevron">⌄</span>';
