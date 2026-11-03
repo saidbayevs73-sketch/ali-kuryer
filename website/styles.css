@@ -18,3 +18,5 @@ body:has(#orders),body:has(#tasks){background:#f6f7f9}body:has(#orders) .section
 .top nav{display:flex;gap:22px}.top nav a{color:#626875;text-decoration:none;font-size:12px;font-weight:700}.top nav a:hover{color:var(--red)}
 .top .brand{font-size:15px}.top .brand-mark{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#f52e40,#c70c20);color:#fff;display:grid;place-items:center;font-weight:900}
 @media(max-width:760px){.top{height:64px;padding:0 15px}.top nav{display:none}.top .eyebrow{font-size:8px;letter-spacing:.8px}}
+
+.favorite-toggle{position:absolute;right:9px;top:9px;width:31px;height:31px;border:0;border-radius:50%;background:#fff;color:#df1728;font-size:19px;box-shadow:0 3px 10px #17191f20;z-index:2}.food-picture{position:relative}
