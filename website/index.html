@@ -1,61 +1,47 @@
 <!doctype html>
-<html lang="uz">
-<head>
+<html lang="uz"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#df1728"><meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.webmanifest"><meta name="description" content="Ali Kuryer — O‘zbekiston bo‘ylab taomlar va kundalik mahsulotlarni tez yetkazib berish.">
-<title>Ali Kuryer — O‘zbekiston bo‘ylab tez yetkazib berish</title><link rel="stylesheet" href="styles.css">
-</head>
-<body>
+<meta name="theme-color" content="#ffffff"><meta name="description" content="Ali Kuryer — O‘zbekiston bo‘ylab tez yetkazib berish.">
+<link rel="manifest" href="manifest.webmanifest"><title>Ali Kuryer — Tez yetkazib berish</title><link rel="stylesheet" href="styles.css?v=3">
+</head><body>
 <header class="app-header">
- <a class="brand" href="#"><span class="brand-icon">A</span><span><i>Ali</i> Kuryer</span></a>
- <nav class="desktop-links"><a class="nav-current" href="#">Bosh sahifa</a><a href="#restaurants">Restoranlar</a><a href="#catalog">Market</a><a href="#catalog">Dorixona</a><a href="#promos">Aksiyalar</a></nav>
- 
- <div class="header-actions"><button class="icon-btn search-jump" aria-label="Qidiruv">⌕</button><button class="icon-btn favorite-jump" aria-label="Sevimlilar">♡</button><button class="icon-btn" id="cartJump" aria-label="Savat">🛒<span id="cartCount" class="count">0</span></button><button class="login-btn" type="button">♙ Kirish</button></div>
+ <a class="brand" href="#"><span class="brand-mark">A</span><b>Ali <em>Kuryer</em></b></a>
+ <button class="location" id="locationBtn"><span class="pin">📍</span><b id="locationText">Joylashuv: O‘zbekiston (avtomatik)</b><span>⌄</span></button>
+ <div class="header-actions"><button class="round-btn search-jump" aria-label="Qidiruv">⌕</button><button class="round-btn favorite-jump" aria-label="Sevimlilar">♡</button><button class="round-btn cart-jump" id="cartJump" aria-label="Savat">🛒<i id="cartCount">0</i></button><button class="login-btn">♙ Kirish</button></div>
 </header>
 <main>
-<section class="welcome">
- <div class="welcome-copy"><div class="hero-eyebrow">⚡ O‘zbekiston bo‘ylab yetkazib berish</div><h1>Sevimli mahsulotlaringiz<br>endi <em>yanada tez!</em></h1><p>Restoran, market, dorixona va minglab mahsulotlar — barchasi bir joyda.</p>
- <div class="hero-benefits"><span>⚡ Tez yetkazib berish</span><span>♧ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
- <a href="#catalog" class="primary-btn">Hozir buyurtma bering <span>→</span></a></div>
- <div class="mascot" aria-label="Skuterda ketayotgan Ali Kuryer"><div class="mascot-sky"></div><div class="mascot-rider"><span class="helmet">A</span><span class="rider-face">☺</span><span class="rider-body">A</span><span class="rider-pack">A<br>Ali Kuryer</span><span class="scooter">🛵</span></div></div>
+<section class="hero">
+ <div class="hero-copy"><div class="hero-logo"><span>A</span> Ali <em>Kuryer</em></div><h1>Buyurtma bering —<br>tez yetkazamiz!</h1>
+ <div class="benefits"><span>⚡ Tez yetkazib berish</span><span>♧ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
+ <a class="hero-cta" href="#catalog">Hozir buyurtma bering <b>→</b></a></div>
+ <div class="hero-art" aria-hidden="true"><div class="city-dome">🕌</div><div class="courier"><div class="courier-helmet">A</div><div class="courier-face">☺</div><div class="courier-jacket">A</div><div class="delivery-bag">A<br><small>Ali Kuryer</small></div><div class="scooter">🛵</div></div><div class="tower">🗼</div></div>
 </section>
-<section class="search-row"><button class="location" type="button" id="locationBtn"><span>📍</span><span><small>Yetkazib berish manzili</small><b id="locationText">O‘zbekiston (avtomatik) <span class="chevron">⌄</span></b></span></button><div class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Mahsulot, do‘kon yoki taom qidiring..." aria-label="Qidiruv"><kbd>⌕</kbd></div></section>
-<section class="section categories-section">
- <div class="section-title"><div><small class="eyebrow">BO‘LIMLAR</small><h2>Nima kerak edi?</h2></div></div>
- <div class="categories">
-  
-  <button class="category active" data-filter="food"><span>🍔</span><b>Restoranlar va taomlar</b></button>
-  <button class="category" data-filter="grocery"><span>🛒</span><b>Market mahsulotlari</b></button>
-  <button class="category" data-filter="fruit"><span>🍎</span><b>Meva-sabzavot</b></button>
-  <button class="category" data-filter="pharmacy"><span>💊</span><b>Dorixona</b></button>
-  <button class="category" data-filter="beauty"><span>🧴</span><b>Go‘zallik va parvarish</b></button>
-  <button class="category" data-filter="home"><span>🧼</span><b>Uy-ro‘zg‘or buyumlari</b></button>
-  <button class="category" data-filter="electronics"><span>🎧</span><b>Elektronika va aksessuar</b></button>
-  <button class="category" data-filter="all"><span>⠿</span><b>Barcha kategoriyalar</b></button>
- </div>
+<section class="search-wrap"><span>⌕</span><input id="searchInput" placeholder="Nima buyurtma qilmoqchisiz?" aria-label="Qidiruv"><span class="scan">▣</span></section>
+<section class="categories">
+ <button class="category" data-filter="food"><span>🍔</span><b>Restoranlar<br>va taomlar</b></button>
+ <button class="category" data-filter="grocery"><span>🧺</span><b>Market<br>mahsulotlari</b></button>
+ <button class="category" data-filter="fruit"><span>🍎</span><b>Meva-<br>sabzavot</b></button>
+ <button class="category" data-filter="pharmacy"><span>💊</span><b>Dorixona</b></button>
+ <button class="category" data-filter="beauty"><span>🧴</span><b>Go‘zallik<br>va parvarish</b></button>
+ <button class="category" data-filter="home"><span>🧼</span><b>Uy-ro‘zg‘or<br>buyumlari</b></button>
+ <button class="category" data-filter="electronics"><span>🎧</span><b>Elektronika<br>va aksessuar</b></button>
+ <button class="category" data-filter="all"><span class="dots">●●<br>●●</span><b>Barcha<br>kategoriyalar</b></button>
 </section>
-<section class="promo-banners" id="promos"><a class="promo-food" href="#catalog"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><b>Buyurtma berish →</b></div><span>🍕 🍔 🥤</span></a><a class="promo-market" href="#catalog"><div><h2>Kundalik xaridlaringiz<br>bir joyda!</h2><b>Hozir xarid qilish →</b></div><span>🛒 🥬 🍎</span></a></section>
-<section class="section restaurants" id="restaurants"><div class="section-title"><h2>🔥 Mashhur restoranlar</h2><a href="#catalog" class="see-all">Barchasini ko‘rish →</a></div><div class="restaurant-grid"><article class="restaurant-card kfc"><div class="restaurant-photo">KFC</div><b>KFC</b><small>⭐ 4.9　◷ 20–30 daq</small></article><article class="restaurant-card evos"><div class="restaurant-photo">EVOS</div><b>EVOS</b><small>⭐ 4.8　◷ 20–30 daq</small></article><article class="restaurant-card oqtepa"><div class="restaurant-photo">Oqtepa Lavash</div><b>Oqtepa Lavash</b><small>⭐ 4.7　◷ 25–35 daq</small></article><article class="restaurant-card feedup"><div class="restaurant-photo">FeedUp</div><b>FeedUp</b><small>⭐ 4.8　◷ 20–30 daq</small></article></div></section>
-<section class="section" id="catalog">
- <div class="section-title"><div><small class="eyebrow">SIZ UCHUN TANLADIK</small><h2 id="catalogTitle">Mashhur mahsulotlar</h2></div><span class="secure-note">Tez yetkazish</span></div>
- <div class="food-grid" id="foodGrid"></div>
-</section>
-<section class="section order-section" id="checkout">
- <div class="section-title"><div><small class="eyebrow">BUYURTMANI YAKUNLASH</small><h2>Savatcha</h2></div><span class="secure-note">Yetkazilganda to‘lov</span></div>
- <div class="checkout-grid"><div id="cartItems" class="cart-items"><div class="empty-cart"><span>🛍️</span><b>Savatingiz hozircha bo‘sh</b><span>Yoqtirgan mahsulotingizni tanlang.</span></div></div>
- <form id="orderForm" class="order-form">
-  <label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label>
-  <label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label>
-  <label>Yetkazib berish manzili<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label>
-  <div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div>
-  <button class="primary-btn full" type="submit">Buyurtma berish <span>→</span></button>
-  <small class="demo-note">Demo versiya: buyurtma shu brauzerda saqlanadi. Real buyurtmalar uchun server ulanishi kerak.</small><p id="orderNotice" class="notice" aria-live="polite"></p>
- </form></div>
-</section>
-<section class="section how-section"><small class="eyebrow">3 OSON QADAM</small><h2>Xarid qilish juda oson</h2><div class="steps"><article><b>01</b><h3>Mahsulotni tanlang</h3><p>Taom, market yoki kerakli mahsulotni toping.</p></article><article><b>02</b><h3>Manzilni kiriting</h3><p>Yetkazib berish manzilingizni ko‘rsating.</p></article><article><b>03</b><h3>Buyurtmani qabul qiling</h3><p>Kuryer buyurtmangizni manzilingizga olib boradi.</p></article></div></section>
+<section class="promo-banners" id="promos">
+ <a class="promo-food" href="#catalog"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><b>Buyurtma berish →</b></div><span>🍕 🍔 🥤</span></a>
+ <a class="promo-market" href="#catalog"><div><h2>Kundalik<br>xaridlaringiz<br>bir joyda!</h2><b>Hozir xarid qilish →</b></div><span>🧺 🥬 🍎</span></a>
+</section><div class="dots-row"><i></i><i></i><i></i><i></i></div>
+<section class="restaurants" id="restaurants"><div class="section-head"><h2>🔥 Mashhur restoranlar</h2><a href="#catalog">Barchasini ko‘rish →</a></div>
+ <div class="restaurant-grid">
+ <article class="restaurant-card kfc"><div class="restaurant-photo">KFC</div><b>KFC</b><small><strong>★</strong> 4.9　◷ 20–30 daq</small></article>
+ <article class="restaurant-card evos"><div class="restaurant-photo">EVOS</div><b>EVOS®</b><small><strong>★</strong> 4.8　◷ 20–30 daq</small></article>
+ <article class="restaurant-card oqtepa"><div class="restaurant-photo">Oqtepa<br>Lavash</div><b>Oqtepa Lavash®</b><small><strong>★</strong> 4.7　◷ 25–35 daq</small></article>
+ <article class="restaurant-card feedup"><div class="restaurant-photo">FeedUp</div><b>FeedUp®</b><small><strong>★</strong> 4.8　◷ 20–30 daq</small></article>
+ </div></section>
+<section class="catalog-section" id="catalog"><div class="section-head"><h2 id="catalogTitle">Mashhur mahsulotlar</h2><span>Tez yetkazish</span></div><div class="food-grid" id="foodGrid"></div></section>
+<section class="checkout-section" id="checkout"><div class="section-head"><h2>Savatcha</h2><span>Yetkazilganda to‘lov</span></div><div class="checkout-grid"><div id="cartItems" class="cart-items"></div>
+<form id="orderForm" class="order-form"><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Yetkazib berish manzili<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="hero-cta" type="submit">Buyurtma berish →</button><small class="demo-note">Demo: buyurtma hozircha shu brauzerda saqlanadi.</small><p id="orderNotice"></p></form></div></section>
 </main>
-<nav class="bottom-nav" aria-label="Asosiy navigatsiya"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#checkout"><span>🛒</span>Savatcha</a><a href="admin.html"><span>▤</span>Buyurtmalar</a><a href="courier.html"><span>♙</span>Profil</a></nav>
-<footer><a class="brand" href="#"><span class="brand-icon">A</span><span><i>Ali</i> Kuryer</span></a><span>© 2026 Ali Kuryer · O‘zbekiston bo‘ylab</span><span>Tez. Oson. Ishonchli.</span></footer>
-<script src="app.js"></script>
-</body></html>
+<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#checkout"><span>♧</span>Buyurtmalar</a><a href="#catalog"><span>♡</span>Sevimlilar</a><a href="#checkout"><span>♙</span>Profil</a></nav>
+<footer><b>Ali Kuryer</b><span>© 2026 · O‘zbekiston bo‘ylab</span></footer>
+<script src="app.js?v=3"></script></body></html>
