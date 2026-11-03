@@ -45,7 +45,42 @@ document.querySelectorAll(".category").forEach(b=>b.onclick=()=>{document.queryS
 document.querySelectorAll("[data-store-filter]").forEach(b=>b.onclick=()=>{const filter=b.dataset.storeFilter;document.querySelectorAll(".category").forEach(x=>x.classList.toggle("active",x.dataset.filter===filter));renderProducts(filter,document.querySelector("#searchInput").value);});
 document.querySelector("#searchInput").addEventListener("input",e=>{renderProducts(activeFilter,e.target.value);});
 document.querySelector("#cartJump").onclick=()=>document.querySelector("#checkout").scrollIntoView({behavior:"smooth"});
-document.querySelector("#locationBtn").onclick=()=>alert("Manzil tanlash xaritasi keyingi integratsiya bosqichida ulanadi.");
+const locationLabel=document.querySelector("#locationText");
+const savedLocation=localStorage.getItem("aliLocationName");
+if(savedLocation&&locationLabel)locationLabel.innerHTML=savedLocation+' <span class="chevron">⌄</span>';
+async function detectDeliveryLocation(){
+ const btn=document.querySelector("#locationBtn");
+ if(!navigator.geolocation){alert("Brauzer joylashuvni aniqlashni qo‘llab-quvvatlamaydi. Manzilni qo‘lda kiriting.");return;}
+ if(locationLabel)locationLabel.textContent="Joylashuv aniqlanmoqda...";
+ navigator.geolocation.getCurrentPosition(async pos=>{
+  const {latitude,longitude}=pos.coords;
+  try{
+   const response=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+encodeURIComponent(latitude)+"&lon="+encodeURIComponent(longitude)+"&zoom=14&accept-language=uz");
+   if(!response.ok)throw new Error("Geokodlash xatosi");
+   const data=await response.json();
+   const a=data.address||{};
+   const city=a.city||a.town||a.village||a.municipality||a.county||"Joylashuv aniqlandi";
+   const district=a.suburb||a.city_district||a.neighbourhood||a.state_district||"";
+   const country=a.country||"";
+   const label=(district?district+", ":"")+city;
+   if(locationLabel)locationLabel.innerHTML=label+' <span class="chevron">⌄</span>';
+   localStorage.setItem("aliLocationName",label);
+   localStorage.setItem("aliLocationCoords",JSON.stringify({latitude,longitude,country}));
+   if(country&& !/uzbekistan|ўзбекистон|o‘zbekiston/i.test(country))alert("Siz O‘zbekiston hududidan tashqaridasiz. Hozircha xizmat O‘zbekiston bo‘ylab mo‘ljallangan.");
+  }catch(err){
+   const label="Joylashuv aniqlandi";
+   if(locationLabel)locationLabel.innerHTML=label+' <span class="chevron">⌄</span>';
+   localStorage.setItem("aliLocationName",label);
+   localStorage.setItem("aliLocationCoords",JSON.stringify({latitude,longitude}));
+  }
+ },err=>{
+  if(locationLabel)locationLabel.innerHTML='O‘zbekiston (avtomatik) <span class="chevron">⌄</span>';
+  const messages={1:"Joylashuvga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering.",2:"Joylashuv aniqlanmadi. GPS yoki internetni tekshiring.",3:"Joylashuvni aniqlash vaqti tugadi. Qayta urinib ko‘ring."};
+  alert(messages[err.code]||"Joylashuvni aniqlab bo‘lmadi.");
+ },{enableHighAccuracy:true,timeout:12000,maximumAge:300000});
+}
+document.querySelector("#locationBtn").onclick=detectDeliveryLocation;
+
 document.querySelector("#orderForm").onsubmit=e=>{
  e.preventDefault();if(!Object.keys(cart).length){document.querySelector("#orderNotice").textContent="Avval savatga mahsulot qo‘shing.";return;}
  const order={id:"AK-"+Date.now().toString().slice(-6),name:document.querySelector("#customerName").value,phone:document.querySelector("#customerPhone").value,address:document.querySelector("#customerAddress").value,items:products.filter(p=>cart[p.id]).map(p=>({name:p.name,qty:cart[p.id],price:p.price})),total:products.reduce((s,p)=>s+p.price*(cart[p.id]||0),0)+12000,status:"Yangi",created:new Date().toLocaleString("uz-UZ")};
