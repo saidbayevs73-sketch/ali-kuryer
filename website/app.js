@@ -30,7 +30,7 @@ const titles={all:"Ommabop mahsulotlar",food:"Taomlar",grocery:"Market mahsulotl
 function renderProducts(filter=activeFilter,query=""){
  activeFilter=filter;
  const list=products.filter(p=>(!favoritesOnly||favorites.includes(p.id))&&(filter==="all"||p.cat===filter)&&((p.name+" "+p.desc).toLowerCase().includes(query.toLowerCase())));
- document.querySelector("#catalogTitle").textContent=favoritesOnly?"Sevimlilar":(titles[filter]||titles.all);
+ const catalogTitle=document.querySelector("#catalogTitle");if(catalogTitle)catalogTitle.textContent=favoritesOnly?"Sevimlilar":(titles[filter]||titles.all);
  grid.innerHTML=list.length?list.map(p=>'<article class="product-card"><div class="product-image">'+(p.photo?'<img src="'+p.photo+'" alt="'+p.name+'" loading="lazy" onerror="this.remove();this.parentElement.insertAdjacentHTML(\'afterbegin\',\'<span class=&quot;product-fallback&quot;>'+p.emoji+'</span>\')">':'<span class="product-fallback">'+p.emoji+'</span>')+(p.tag?'<span class="product-badge">'+p.tag+'</span>':'')+'<button class="favorite-btn" data-fav="'+p.id+'">'+(favorites.includes(p.id)?"♥":"♡")+'</button></div><h3>'+p.name+'</h3><p>'+p.desc+'</p><div class="product-bottom"><b>'+money(p.price)+'</b><button class="add-btn" data-add="'+p.id+'">+</button></div></article>').join(""):'<p class="empty-cart">Bu bo‘limda mahsulot topilmadi.</p>';
  grid.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const id=b.dataset.add;cart[id]=(cart[id]||0)+1;saveCart();});
  grid.querySelectorAll("[data-fav]").forEach(b=>b.onclick=()=>{const id=Number(b.dataset.fav);favorites=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];localStorage.setItem("aliFavorites",JSON.stringify(favorites));renderProducts();});
