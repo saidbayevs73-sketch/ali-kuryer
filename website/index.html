@@ -5,7 +5,7 @@
 <title>Ali Kuryer — Tezkor yetkazib berish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=23"><link rel="manifest" href="manifest.webmanifest"></head>
+<link rel="stylesheet" href="styles.css?v=24"><link rel="manifest" href="manifest.webmanifest"></head>
 <body>
 <header class="site-header"><div class="header-inner">
 <a class="brand" href="#"><span class="brand-mark"><i></i><b>A</b></span><strong>Ali Kuryer</strong></a>
@@ -16,12 +16,13 @@
 <button class="header-icon cart-jump" id="cartJump" aria-label="Savat">🛒<i id="cartCount">0</i></button>
 <button class="login-button" id="loginBtn">♙ <span>Kirish</span></button>
 </div></div></header>
+<div class="quick-links" aria-label="Asosiy bo‘limlar"><a href="#restaurants">Restoranlar</a><a href="#catalog">Do‘konlar</a><a href="#promotions">Aksiyalar</a><a href="#checkout">Buyurtmalar</a></div>
 <main class="main-shell">
 <section class="hero">
 <div class="hero-sky"></div><div class="hero-copy">
 <div class="hero-brand"><span class="brand-mark hero-mark"><i></i><b>A</b></span><strong>Ali <em>Kuryer</em></strong></div>
-<h1>Buyurtma bering —<br>tez yetkazamiz!</h1>
-<div class="hero-benefits"><span>⚡ Tez yetkazib berish</span><span>♢ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
+<h1>Sevimli taomlaringiz<br>va xaridlaringiz —<br>bir joyda!</h1>
+<div class="hero-benefits"><span>⚡ Tezkor yetkazish</span><span>♢ Qulay buyurtma</span><span>♡ Sevimlilar</span></div>
 <a class="hero-cta" href="#catalog">Hozir buyurtma bering <b>→</b></a>
 </div>
 <div class="hero-rider"><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Qizil skuterdagi 3D Ali Kuryer qahramoni" fetchpriority="high" decoding="async"></div>
@@ -38,16 +39,16 @@
 <button class="category-tile" data-filter="electronics"><span class="category-picture tech-picture">🎧</span><b>Elektronika<br>va aksessuar</b></button>
 <button class="category-tile all-categories" data-filter="all"><span class="category-picture all-picture"><i></i><i></i><i></i><i></i></span><b>Barcha<br>kategoriyalar</b></button>
 </div></section>
-<section class="promo-row">
+<section class="promo-row" id="promotions">
 <a class="promo promo-food" href="#catalog" data-quick-filter="food"><div><h2>Sevimli taomlaringiz<br>endi yanada yaqin!</h2><span>Buyurtma berish <b>→</b></span></div><img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=90" alt="Burger va taomlar"></a>
 <a class="promo promo-market" href="#catalog" data-quick-filter="grocery"><div><h2>Kundalik xaridlaringiz<br>bir joyda!</h2><span>Hozir xarid qilish <b>→</b></span></div><img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=500&q=90" alt="Yangi sabzavotlar va market savati"></a>
 </section>
 <div class="slider-dots"><i class="active"></i><i></i><i></i><i></i></div>
-<section class="restaurants-section"><div class="section-heading"><h2><span>🔥</span> Mashhur restoranlar</h2><a href="#catalog">Barchasini ko‘rish →</a></div>
+<section class="restaurants-section" id="restaurants"><div class="section-heading"><h2><span>🔥</span> Mashhur restoranlar</h2><a href="#catalog">Barchasini ko‘rish →</a></div>
 <div class="restaurant-list">
 <article class="restaurant-card"><img src="https://www.afisha.uz/uploads/media/2023/01/4e6c68a95b60f2cbf9fed5afc4712188_l.jpg" alt="KFC restorani"><div><b>KFC</b><p><strong>★ 4.9</strong><span>◷ 20–30 daq</span></p></div></article>
 <article class="restaurant-card"><img src="https://www.afisha.uz/uploads/media/2022/12/4cc430c20430ddf64df55e8206bdbbc7_xlf.jpg" alt="EVOS restorani"><div><b>EVOS®</b><p><strong>★ 4.8</strong><span>◷ 20–30 daq</span></p></div></article>
-<article class="restaurant-card"><img src="https://www.spot.uz/media/img/2025/10/VYvvFM17617361774719_l.webp" alt="Oqtepa Lavash restorani"><div><b>Qatepa Lavash®</b><p><strong>★ 4.7</strong><span>◷ 25–35 daq</span></p></div></article>
+<article class="restaurant-card"><img src="https://www.spot.uz/media/img/2025/10/VYvvFM17617361774719_l.webp" alt="Oqtepa Lavash restorani"><div><b>Oqtepa Lavash</b><p><strong>★ 4.7</strong><span>◷ 25–35 daq</span></p></div></article>
 <article class="restaurant-card"><img src="https://uznews.uz/storage/uploads/68/0f/fa/file_680ffa981e814_orig.jpg" alt="FeedUp restorani"><div><b>FeedUp®</b><p><strong>★ 4.8</strong><span>◷ 20–30 daq</span></p></div></article>
 </div></section>
 <section class="catalog-section" id="catalog"><div class="section-heading"><h2 id="catalogTitle">Ommabop mahsulotlar</h2><span class="fast-label">⚡ Tez yetkazish</span></div><div class="product-grid" id="foodGrid"></div></section>
