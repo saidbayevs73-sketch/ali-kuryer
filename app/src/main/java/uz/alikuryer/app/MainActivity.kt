@@ -1,18 +1,18 @@
 package uz.alikuryer.app
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.view.View
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
@@ -24,12 +24,22 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Keep the app content below Android's real status bar and above navigation bar.
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         window.statusBarColor = android.graphics.Color.WHITE
         window.navigationBarColor = android.graphics.Color.WHITE
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
 
         webView = WebView(this)
         webView.setBackgroundColor(android.graphics.Color.WHITE)
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        webView.isVerticalScrollBarEnabled = false
+        webView.isHorizontalScrollBarEnabled = false
+
         val settings: WebSettings = webView.settings
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
@@ -40,6 +50,12 @@ class MainActivity : Activity() {
         settings.javaScriptCanOpenWindowsAutomatically = true
         settings.setGeolocationEnabled(true)
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+        settings.useWideViewPort = true
+        settings.loadWithOverviewMode = false
+        settings.textZoom = 100
+        settings.setSupportZoom(false)
+        settings.builtInZoomControls = false
+        settings.displayZoomControls = false
 
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = object : WebChromeClient() {
@@ -64,19 +80,20 @@ class MainActivity : Activity() {
                 origin: String?,
                 callback: GeolocationPermissions.Callback?
             ) {
-                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                    checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                     callback?.invoke(origin, true, false)
                 } else {
                     geoOrigin = origin
                     geoCallback = callback
                     requestPermissions(
-                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                        arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION),
                         locationRequest
                     )
                 }
             }
         }
+
         setContentView(webView)
         webView.loadUrl("file:///android_asset/index.html")
     }
@@ -84,7 +101,7 @@ class MainActivity : Activity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == locationRequest && geoCallback != null) {
-            val granted = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
+            val granted = grantResults.any { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
             geoCallback?.invoke(geoOrigin, granted, false)
             geoCallback = null
             geoOrigin = null
@@ -103,13 +120,22 @@ class MainActivity : Activity() {
 
     @Deprecated("Deprecated in Android API")
     override fun onBackPressed() {
-        if (::webView.isInitialized && webView.canGoBack()) webView.goBack() else super.onBackPressed()
+        if (!::webView.isInitialized) {
+            super.onBackPressed()
+            return
+        }
+        // The app uses an internal JavaScript screen stack, not browser URL history.
+        webView.evaluateJavascript(
+            "(function(){try{if(typeof s!=='undefined'&&s.history&&s.history.length>0&&typeof back==='function'){back();return 'handled';}}catch(e){}return 'exit';})()"
+        ) { result ->
+            if (result == null || result == "\"exit\"") {
+                finish()
+            }
+        }
     }
 
     override fun onDestroy() {
-        if (::webView.isInitialized) {
-            webView.destroy()
-        }
+        if (::webView.isInitialized) webView.destroy()
         super.onDestroy()
     }
 }
