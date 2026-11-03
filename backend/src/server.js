@@ -30,7 +30,16 @@ const requireDb = (req, res, next) => {
   next();
 };
 
-app.get("/health", (req, res) => res.json({ ok: true, service: "ali-kuryer-api", database: pool ? "configured" : "not_configured" }));
+app.get("/health", asyncRoute(async (req, res) => {
+  if (!pool) return res.status(503).json({ ok: false, service: "ali-kuryer-api", database: "not_configured" });
+  try {
+    await pool.query("SELECT 1");
+    return res.json({ ok: true, service: "ali-kuryer-api", database: "connected" });
+  } catch (error) {
+    console.error("Database health check failed:", error.message);
+    return res.status(503).json({ ok: false, service: "ali-kuryer-api", database: "connection_failed" });
+  }
+}));
 app.get("/api/v1/catalog", requireDb, asyncRoute(async (req, res) => {
   const { rows } = await pool.query(`
     SELECT c.id AS category_id, c.name AS category_name, c.slug,
