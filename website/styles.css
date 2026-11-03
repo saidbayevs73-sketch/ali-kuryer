@@ -46,3 +46,50 @@ main{max-width:1400px;padding:0}
 .bottom-nav{display:flex;position:sticky;bottom:0;z-index:40;justify-content:space-around;background:#fff;border-top:1px solid #eee;padding:9px 2% max(9px,env(safe-area-inset-bottom));box-shadow:0 -5px 18px #0000000a}.bottom-nav a{display:grid;justify-items:center;gap:3px;text-decoration:none;color:#333;font-size:11px;font-weight:700}.bottom-nav a span{font-size:23px}.bottom-nav a.selected{color:var(--red)}
 @media(max-width:800px){.app-header{padding:0 12px;gap:8px}.brand{font-size:17px}.location{padding:7px 9px}.location b{font-size:10px}.welcome{min-height:330px;padding:28px 22px;align-items:flex-start}.welcome-copy{max-width:65%}.hero-brand{font-size:40px;letter-spacing:-2px}.welcome h1{font-size:31px}.hero-benefits{gap:5px}.hero-benefits span{font-size:8px;padding:7px}.mascot{width:45%;height:75%;right:0;bottom:0}.helmet{width:72px;height:54px;font-size:21px;right:28%}.rider-face{width:58px;height:62px;font-size:32px;right:30%}.rider-body{width:130px;height:145px;font-size:34px;right:13%}.rider-pack{width:80px;height:100px;font-size:13px;padding-top:20px}.scooter{font-size:120px;right:5%}.categories-section{padding:20px 12px}.categories{grid-template-columns:repeat(4,1fr);gap:4px}.category{min-height:100px}.category span{width:60px;height:58px;font-size:30px}.category b{font-size:10px}.promo-banners{padding:8px 12px;gap:10px}.promo-banners>a{min-height:140px;padding:14px;border-radius:17px}.promo-banners h2{font-size:15px;margin-bottom:12px}.promo-banners b{font-size:9px;padding:8px 10px}.promo-banners>a>span{font-size:35px}.restaurants{padding:25px 12px}.restaurant-grid{grid-template-columns:repeat(2,1fr);gap:10px}.restaurant-photo{height:90px;font-size:23px}.restaurants .section-title h2{font-size:19px}.bottom-nav{position:fixed;left:0;right:0}.bottom-nav a{font-size:8px}.bottom-nav a span{font-size:19px}footer{padding-bottom:75px}}
 @media(max-width:420px){.app-header{height:62px}.brand{font-size:15px}.brand-icon{width:27px;height:27px}.location{max-width:155px}.location small{font-size:7px}.location b{font-size:9px}.icon-btn{width:31px;height:31px}.welcome{min-height:310px}.welcome-copy{max-width:70%}.hero-brand{font-size:32px}.welcome h1{font-size:25px}.mascot{width:42%;height:65%}.rider-body{width:105px;height:120px}.rider-pack{width:65px;height:85px}.scooter{font-size:95px}.hero-benefits span{font-size:7px}.promo-banners>a>span{font-size:27px}.promo-banners h2{font-size:13px}}
+
+
+/* Fine alignment to the user's exact reference screenshot */
+.app-header{height:74px;max-width:none;padding:0 3.8%;gap:28px}
+main{max-width:none;padding:0}
+.welcome{min-height:405px;margin:0;border-radius:0;padding:38px 5.2%;background:linear-gradient(100deg,#e9f6ff 0%,#c4e5ff 48%,#83c6f4 100%)}
+.welcome-copy{max-width:560px}
+.hero-brand{font-size:clamp(44px,5vw,66px)}
+.welcome h1{font-size:clamp(32px,3.6vw,47px);margin:14px 0 19px}
+.mascot{right:4%;width:48%;height:100%;bottom:0}
+.mascot-rider{right:5%;width:92%}
+.helmet{right:33%;top:8%;width:118px;height:83px;font-size:33px}
+.rider-face{right:34%;top:19%;width:88px;height:90px}
+.rider-body{right:20%;top:37%;width:200px;height:200px}
+.rider-pack{right:1%;top:33%;width:128px;height:150px}
+.scooter{right:14%;font-size:clamp(150px,20vw,240px)}
+.search-wrap{margin-top:-24px;max-width:850px;height:62px;border-radius:40px}
+.categories-section{padding:27px 2.8% 20px}
+.categories{gap:15px}
+.category{min-height:120px}
+.category span{width:78px;height:76px;font-size:38px;border-radius:22px}
+.promo-banners{padding:12px 2.4% 0;gap:22px}
+.promo-banners>a{min-height:174px}
+.restaurants{padding:30px 2.4% 22px}
+.restaurant-grid{gap:18px}
+.restaurant-photo{height:122px}
+@media(max-width:800px){
+ .welcome{min-height:350px;padding:28px 18px}
+ .mascot{width:47%;height:83%;right:0}
+ .helmet{width:72px;height:54px;right:28%}
+ .rider-face{width:58px;height:62px;right:30%}
+ .rider-body{width:130px;height:145px;right:13%}
+ .rider-pack{width:80px;height:100px}
+ .scooter{font-size:120px;right:5%}
+ .categories-section{padding:18px 10px}
+ .promo-banners{padding:8px 10px}
+ .restaurants{padding:22px 10px}
+}
+@media(max-width:420px){
+ .welcome{min-height:320px}
+ .hero-brand{font-size:32px}
+ .welcome h1{font-size:25px}
+ .mascot{height:68%;width:44%}
+ .rider-body{width:105px;height:120px}
+ .rider-pack{width:65px;height:85px}
+ .scooter{font-size:95px}
+}
