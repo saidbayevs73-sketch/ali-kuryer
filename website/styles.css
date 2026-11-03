@@ -20,3 +20,10 @@ main{max-width:1440px;margin:auto}.hero{height:410px;position:relative;overflow:
 .evos .restaurant-photo{background-image:url("https://www.afisha.uz/uploads/media/2022/12/4cc430c20430ddf64df55e8206bdbbc7_xlf.jpg")!important}
 .oqtepa .restaurant-photo{background-image:url("https://www.spot.uz/media/img/2025/10/VYvvFM17617361774719_l.webp")!important}
 .feedup .restaurant-photo{background-image:url("https://uznews.uz/storage/uploads/68/0f/fa/file_680ffa981e814_orig.jpg")!important}
+
+
+/* Final image assets for the approved hero */
+.hero-art{background:linear-gradient(180deg,#8bcfff 0%,#e4f4ff 70%,#9ccbed 100%)!important}
+.hero-art>img{position:absolute;right:0;bottom:-2%;height:108%;width:92%;object-fit:contain;object-position:right bottom;z-index:5;filter:drop-shadow(0 12px 12px #143b5c35)}
+.hero-art .courier,.hero-art .city-dome,.hero-art .tower{display:none!important}
+@media(max-width:650px){.hero-art{width:47%;height:90%;top:10%}.hero-art>img{height:100%;width:118%;right:-9%;object-position:center bottom}}
