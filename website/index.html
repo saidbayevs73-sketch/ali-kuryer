@@ -5,7 +5,7 @@
 <title>Ali Kuryer — Tezkor yetkazib berish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=22"><link rel="manifest" href="manifest.webmanifest"></head>
+<link rel="stylesheet" href="styles.css?v=23"><link rel="manifest" href="manifest.webmanifest"></head>
 <body>
 <header class="site-header"><div class="header-inner">
 <a class="brand" href="#"><span class="brand-mark"><i></i><b>A</b></span><strong>Ali Kuryer</strong></a>
@@ -27,9 +27,9 @@
 <div class="hero-rider"><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Qizil skuterdagi 3D Ali Kuryer qahramoni" fetchpriority="high" decoding="async"></div>
 <div class="hero-glow"></div>
 </section>
-<div class="search-wrap"><span class="search-symbol">⌕</span><input id="searchInput" placeholder="Nima buyurtma qilmoqchisiz?"><button aria-label="Qidiruvni tozalash" onclick="document.querySelector('#searchInput').value='';document.querySelector('#searchInput').dispatchEvent(new Event('input'))">▣</button></div>
+<div class="search-wrap"><span class="search-symbol">⌕</span><input id="searchInput" type="search" aria-label="Mahsulot qidirish" placeholder="Nima buyurtma qilmoqchisiz?"><button aria-label="Qidiruvni tozalash" onclick="document.querySelector('#searchInput').value='';document.querySelector('#searchInput').dispatchEvent(new Event('input'))">▣</button></div>
 <section class="categories-section"><div class="category-list">
-<button class="category-tile" data-filter="food"><span class="category-picture food-picture">🍔</span><b>Restoranlar<br>va taomlar</b></button>
+<button type="button" class="category-tile" data-filter="food"><span class="category-picture food-picture">🍔</span><b>Restoranlar<br>va taomlar</b></button>
 <button class="category-tile" data-filter="grocery"><span class="category-picture market-picture">🧺</span><b>Market<br>mahsulotlari</b></button>
 <button class="category-tile" data-filter="fruit"><span class="category-picture fruit-picture">🍎</span><b>Meva-sabzavot</b></button>
 <button class="category-tile" data-filter="pharmacy"><span class="category-picture pharmacy-picture">🧴</span><b>Gigiyena</b></button>
@@ -50,10 +50,10 @@
 <article class="restaurant-card"><img src="https://www.spot.uz/media/img/2025/10/VYvvFM17617361774719_l.webp" alt="Oqtepa Lavash restorani"><div><b>Qatepa Lavash®</b><p><strong>★ 4.7</strong><span>◷ 25–35 daq</span></p></div></article>
 <article class="restaurant-card"><img src="https://uznews.uz/storage/uploads/68/0f/fa/file_680ffa981e814_orig.jpg" alt="FeedUp restorani"><div><b>FeedUp®</b><p><strong>★ 4.8</strong><span>◷ 20–30 daq</span></p></div></article>
 </div></section>
-<section class="catalog-section" id="catalog"><div class="section-heading"><h2>Ommabop mahsulotlar</h2><span class="fast-label">⚡ Tez yetkazish</span></div><div class="product-grid" id="foodGrid"></div></section>
+<section class="catalog-section" id="catalog"><div class="section-heading"><h2 id="catalogTitle">Ommabop mahsulotlar</h2><span class="fast-label">⚡ Tez yetkazish</span></div><div class="product-grid" id="foodGrid"></div></section>
 <section class="cart-section" id="checkout"><div class="section-heading"><h2>Savatcha va buyurtma</h2></div><div class="cart-layout"><div id="cartItems" class="cart-items"></div><form id="orderForm" class="order-form"><h3>Yetkazib berish ma’lumotlari</h3><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Manzil<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="submit-order" type="submit">Buyurtmani tasdiqlash →</button><small class="demo-note">Demo rejim: buyurtma ushbu qurilmada saqlanadi.</small><p id="orderNotice"></p></form></div></section>
 <section id="accountPanel" class="account-panel" hidden></section>
 </main>
 <nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#accountPanel" data-action="orders"><span>♧</span>Buyurtmalar</a><a href="#catalog" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#accountPanel" data-action="profile"><span>♙</span>Profil</a></nav>
 <footer><b>Ali Kuryer</b><span>Tez va ishonchli yetkazib berish</span></footer>
-<script src="app.js?v=11"></script></body></html>
+<script src="app.js?v=12"></script></body></html>
