@@ -5,13 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -19,6 +20,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
+    private lateinit var root: FrameLayout
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var geoCallback: GeolocationPermissions.Callback? = null
     private var geoOrigin: String? = null
@@ -42,17 +44,41 @@ class MainActivity : Activity() {
             isAppearanceLightNavigationBars = true
         }
 
+        root = FrameLayout(this).apply {
+            setBackgroundColor(android.graphics.Color.WHITE)
+            clipToPadding = true
+        }
+
         webView = WebView(this)
         webView.setBackgroundColor(android.graphics.Color.WHITE)
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         webView.isVerticalScrollBarEnabled = false
         webView.isHorizontalScrollBarEnabled = false
+        webView.clipToPadding = true
+        root.addView(
+            webView,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
 
-        ViewCompat.setOnApplyWindowInsetsListener(webView) { view, insets ->
+        // Use real layout margins rather than WebView padding. This changes the
+        // WebView viewport itself, so HTML headers/buttons cannot draw beneath
+        // Android's status bar or gesture/navigation bar.
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
             )
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val params = webView.layoutParams as FrameLayout.LayoutParams
+            if (params.leftMargin != bars.left ||
+                params.topMargin != bars.top ||
+                params.rightMargin != bars.right ||
+                params.bottomMargin != bars.bottom
+            ) {
+                params.setMargins(bars.left, bars.top, bars.right, bars.bottom)
+                webView.layoutParams = params
+            }
             insets
         }
 
@@ -137,8 +163,8 @@ class MainActivity : Activity() {
             }
         }
 
-        setContentView(webView)
-        ViewCompat.requestApplyInsets(webView)
+        setContentView(root)
+        ViewCompat.requestApplyInsets(root)
         webView.loadUrl("file:///android_asset/index.html")
     }
 
