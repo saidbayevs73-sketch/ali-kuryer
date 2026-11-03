@@ -1,0 +1,19 @@
+{
+  "name": "Ali Kuryer",
+  "short_name": "Ali Kuryer",
+  "description": "Namanganda tez va qulay yetkazib berish",
+  "lang": "uz-UZ",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#df1728",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
