@@ -5,7 +5,7 @@
 <title>Ali Kuryer — Tezkor yetkazib berish</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=21"><link rel="manifest" href="manifest.webmanifest"></head>
+<link rel="stylesheet" href="styles.css?v=22"><link rel="manifest" href="manifest.webmanifest"></head>
 <body>
 <header class="site-header"><div class="header-inner">
 <a class="brand" href="#"><span class="brand-mark"><i></i><b>A</b></span><strong>Ali Kuryer</strong></a>
@@ -24,7 +24,7 @@
 <div class="hero-benefits"><span>⚡ Tez yetkazib berish</span><span>♢ Ishonchli xizmat</span><span>🎧 24/7 qo‘llab-quvvatlash</span></div>
 <a class="hero-cta" href="#catalog">Hozir buyurtma bering <b>→</b></a>
 </div>
-<div class="hero-rider"><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Qizil skuterdagi Ali Kuryer 3D kuryeri"></div>
+<div class="hero-rider"><img src="https://cdn.pixabay.com/photo/2025/04/03/10/22/cartoon-9511069_1280.png" alt="Qizil skuterdagi 3D Ali Kuryer qahramoni" fetchpriority="high" decoding="async"></div>
 <div class="hero-glow"></div>
 </section>
 <div class="search-wrap"><span class="search-symbol">⌕</span><input id="searchInput" placeholder="Nima buyurtma qilmoqchisiz?"><button aria-label="Qidiruvni tozalash" onclick="document.querySelector('#searchInput').value='';document.querySelector('#searchInput').dispatchEvent(new Event('input'))">▣</button></div>
@@ -54,6 +54,6 @@
 <section class="cart-section" id="checkout"><div class="section-heading"><h2>Savatcha va buyurtma</h2></div><div class="cart-layout"><div id="cartItems" class="cart-items"></div><form id="orderForm" class="order-form"><h3>Yetkazib berish ma’lumotlari</h3><label>Ismingiz<input id="customerName" required placeholder="Ismingiz"></label><label>Telefon raqamingiz<input id="customerPhone" required inputmode="tel" placeholder="+998 90 123 45 67"></label><label>Manzil<textarea id="customerAddress" required placeholder="Ko‘cha, uy, mo‘ljal"></textarea></label><div class="total-row"><span>Jami</span><b id="grandTotal">0 so‘m</b></div><button class="submit-order" type="submit">Buyurtmani tasdiqlash →</button><small class="demo-note">Demo rejim: buyurtma ushbu qurilmada saqlanadi.</small><p id="orderNotice"></p></form></div></section>
 <section id="accountPanel" class="account-panel" hidden></section>
 </main>
-<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#checkout"><span>♧</span>Buyurtmalar</a><a href="#catalog" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#accountPanel" data-action="profile"><span>♙</span>Profil</a></nav>
+<nav class="bottom-nav"><a class="selected" href="#"><span>⌂</span>Bosh sahifa</a><a href="#catalog"><span>▦</span>Kategoriyalar</a><a href="#accountPanel" data-action="orders"><span>♧</span>Buyurtmalar</a><a href="#catalog" data-action="favorites"><span>♡</span>Sevimlilar</a><a href="#accountPanel" data-action="profile"><span>♙</span>Profil</a></nav>
 <footer><b>Ali Kuryer</b><span>Tez va ishonchli yetkazib berish</span></footer>
 <script src="app.js?v=11"></script></body></html>
