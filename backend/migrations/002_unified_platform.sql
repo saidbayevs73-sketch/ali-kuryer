@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS kitchens (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
@@ -35,7 +35,7 @@ BEGIN
     ALTER TABLE orders ADD CONSTRAINT orders_kitchen_id_fk
       FOREIGN KEY (kitchen_id) REFERENCES kitchens(id) ON DELETE SET NULL;
   END IF;
-END $;
+END $$;
 
 ALTER TABLE products ADD COLUMN IF NOT EXISTS kitchen_id UUID REFERENCES kitchens(id) ON DELETE CASCADE;
 ALTER TABLE products ADD COLUMN IF NOT EXISTS ingredients TEXT NOT NULL DEFAULT '';
