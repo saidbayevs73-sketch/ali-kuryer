@@ -1,0 +1,38 @@
+/* Distinct page layouts for Ali Kuryer */
+body[data-ak-view="home"] .main-shell>section,body[data-ak-view="home"] .main-shell>.search-wrap{display:block}
+body[data-ak-view="catalog"] .main-shell>section:not(.categories-section):not(.catalog-section),body[data-ak-view="catalog"] .main-shell>.hero,body[data-ak-view="catalog"] .main-shell>.promo-section,body[data-ak-view="catalog"] .main-shell>.restaurants-section{display:none!important}
+body[data-ak-view="restaurants"] .main-shell>section:not(.restaurants-section){display:none!important}
+body[data-ak-view="promotions"] .main-shell>section:not(.promo-section){display:none!important}
+body[data-ak-view="promotions"] .main-shell>.search-wrap{display:none!important}
+body[data-ak-view="cart"] .main-shell>section:not(.cart-section){display:none!important}
+body[data-ak-view="cart"] .main-shell>.search-wrap{display:none!important}
+body[data-ak-view="home"] .main-shell>.cart-section{display:none!important}
+body[data-ak-view="catalog"] .main-shell>.cart-section,body[data-ak-view="restaurants"] .main-shell>.cart-section,body[data-ak-view="promotions"] .main-shell>.cart-section{display:none!important}
+body[data-ak-view="catalog"] .categories-section{background:linear-gradient(135deg,#fff7f8,#fff);margin:12px 18px 20px;padding:22px;border-radius:22px;border:1px solid #ffeaed}
+body[data-ak-view="catalog"] .catalog-section{background:#fff;margin:0 18px;padding:22px;border:1px solid #f0edf1;border-radius:22px}
+body[data-ak-view="restaurants"] .restaurants-section{margin:14px 18px;padding:24px;background:linear-gradient(135deg,#fff6f1,#fff);border-radius:22px;border:1px solid #f7e9e0}
+body[data-ak-view="restaurants"] .restaurant-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+body[data-ak-view="restaurants"] .restaurant-card>img{height:190px}
+body[data-ak-view="promotions"] .promo-section{margin:14px 18px;padding:24px;background:linear-gradient(135deg,#fff5f6,#fff);border-radius:22px;border:1px solid #f7e5e9}
+body[data-ak-view="promotions"] .promo-row{grid-template-columns:1fr}
+body[data-ak-view="promotions"] .promo{height:220px}
+body[data-ak-view="cart"] .cart-section{margin:16px 18px;padding:25px;background:linear-gradient(135deg,#fff7f8,#fff);border:1px solid #f4e5e8;border-radius:22px}
+body[data-ak-view="cart"] .cart-layout{grid-template-columns:1fr 390px}
+.ak-main-nav{justify-content:space-around;gap:0}
+.ak-main-nav a{flex:1;min-width:0;max-width:150px;position:relative;padding:8px 0}
+.ak-main-nav a.selected{color:#e51b35}
+.ak-main-nav a.selected:before{content:"";position:absolute;top:-9px;width:32px;height:3px;border-radius:3px;background:#e51b35}
+.ak-main-nav a span{font-size:21px}
+.ak-page-heading{padding:22px 28px 5px;display:none}
+body[data-ak-view="catalog"] .ak-page-heading,body[data-ak-view="restaurants"] .ak-page-heading,body[data-ak-view="promotions"] .ak-page-heading,body[data-ak-view="cart"] .ak-page-heading{display:block}
+.ak-page-heading h1{font-size:clamp(24px,4vw,34px);margin:0 0 6px;font-weight:900;letter-spacing:-1px}
+.ak-page-heading p{font-size:12px;color:#777;margin:0}
+@media(max-width:600px){
+ body[data-ak-view="catalog"] .categories-section,body[data-ak-view="catalog"] .catalog-section,body[data-ak-view="restaurants"] .restaurants-section,body[data-ak-view="promotions"] .promo-section,body[data-ak-view="cart"] .cart-section{margin:8px 10px;padding:15px;border-radius:16px}
+ body[data-ak-view="restaurants"] .restaurant-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body[data-ak-view="restaurants"] .restaurant-card>img{height:115px}
+ body[data-ak-view="promotions"] .promo{height:165px}
+ body[data-ak-view="cart"] .cart-layout{grid-template-columns:1fr}
+ .ak-page-heading{padding:16px 14px 6px}
+ .ak-main-nav a{font-size:8px}
+}
