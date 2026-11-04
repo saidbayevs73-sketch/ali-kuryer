@@ -1,4 +1,4 @@
-const products=[
+let products=[
 {id:1,name:"Cheese Burger",price:32000,cat:"food",emoji:"🍔",desc:"Pishloq, sabzavot va maxsus sous",tag:"Mashhur",photo:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=650&q=85"},
 {id:2,name:"Pepperoni pitsa",price:65000,cat:"food",emoji:"🍕",desc:"Pepperoni va eritilgan pishloq",photo:"https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=650&q=85"},
 {id:3,name:"Lavash",price:29000,cat:"food",emoji:"🌯",desc:"Go‘sht va yangi sabzavotlar",photo:"https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&w=650&q=85"},
@@ -22,6 +22,23 @@ const products=[
 {id:21,name:"Quloqchin",price:85000,cat:"electronics",emoji:"🎧",desc:"Kundalik foydalanish uchun",photo:"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=650&q=85"},
 {id:22,name:"Zaryad kabeli",price:25000,cat:"electronics",emoji:"🔌",desc:"Telefon uchun aksessuar"}
 ];
+
+const API_BASE=window.ALI_KURYER_API_URL||"";
+let catalogReady=false;
+async function loadServerCatalog(){
+ if(!API_BASE)return;
+ try{
+  const response=await fetch(API_BASE+"/api/v1/catalog",{headers:{Accept:"application/json"}});
+  if(!response.ok)throw new Error("catalog_unavailable");
+  const payload=await response.json();
+  const remote=(payload.categories||[]).flatMap(category=>(category.products||[]).map(p=>({
+   id:p.id,name:p.name,price:Number(p.price),cat:category.slug,emoji:"🛍️",
+   desc:p.description||"Ali Kuryer mahsuloti",photo:p.imageUrl||"",serverId:p.id
+  })));
+  if(remote.length){products=remote;catalogReady=true;renderProducts();renderCart();loadServerCatalog();}
+ }catch(error){console.warn("Ali Kuryer katalogi hozircha serverdan olinmadi:",error.message);}
+}
+
 const money=n=>new Intl.NumberFormat("uz-UZ").format(n)+" so‘m";
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
 let cart=read("aliCart",{}),favorites=read("aliFavorites",[]),activeFilter="all",favoritesOnly=false;
@@ -70,7 +87,26 @@ document.querySelector("#locationBtn").onclick=()=>{
 };
 document.querySelector("#orderForm").onsubmit=e=>{
  e.preventDefault();if(!Object.keys(cart).length){document.querySelector("#orderNotice").textContent="Avval savatchaga mahsulot qo‘shing.";return;}
- const order={id:"AK-"+Date.now().toString().slice(-6),name:document.querySelector("#customerName").value,phone:document.querySelector("#customerPhone").value,address:document.querySelector("#customerAddress").value,items:products.filter(p=>cart[p.id]).map(p=>({name:p.name,qty:cart[p.id],price:p.price})),total:products.reduce((s,p)=>s+p.price*(cart[p.id]||0),0)+12000,status:"Yangi",created:new Date().toLocaleString("uz-UZ")};
- const orders=read("aliOrders",[]);orders.unshift(order);localStorage.setItem("aliOrders",JSON.stringify(orders));cart={};saveCart();e.target.reset();document.querySelector("#orderNotice").textContent="Demo buyurtma "+order.id+" saqlandi. Operatorga yuborilmadi.";
+ const orderItems=products.filter(p=>cart[p.id]);
+ if(API_BASE&&catalogReady){
+  if(orderItems.some(p=>!p.serverId)){document.querySelector("#orderNotice").textContent="Mahsulot ma’lumoti serverda topilmadi. Sahifani yangilang.";return;}
+  const submit=document.querySelector(".submit-order");submit.disabled=true;submit.textContent="Yuborilmoqda…";
+  try{
+   const response=await fetch(API_BASE+"/api/v1/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    customerName:document.querySelector("#customerName").value,
+    customerPhone:document.querySelector("#customerPhone").value,
+    address:document.querySelector("#customerAddress").value,
+    items:orderItems.map(p=>({productId:p.serverId,quantity:cart[p.id]})),
+    paymentMethod:"cash"
+   })});
+   const result=await response.json();
+   if(!response.ok)throw new Error(result.message||"Buyurtma yuborilmadi");
+   cart={};saveCart();e.target.reset();document.querySelector("#orderNotice").textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code;
+  }catch(error){document.querySelector("#orderNotice").textContent=error.message||"Server bilan aloqa yo‘q. Qayta urinib ko‘ring.";}
+  finally{submit.disabled=false;submit.textContent="Buyurtmani tasdiqlash →";}
+  return;
+ }
+ const order={id:"AK-"+Date.now().toString().slice(-6),name:document.querySelector("#customerName").value,phone:document.querySelector("#customerPhone").value,address:document.querySelector("#customerAddress").value,items:orderItems.map(p=>({name:p.name,qty:cart[p.id],price:p.price})),total:orderItems.reduce((sum,p)=>sum+p.price*cart[p.id],0)+12000,status:"Yangi",created:new Date().toLocaleString("uz-UZ")};
+ const orders=read("aliOrders",[]);orders.unshift(order);localStorage.setItem("aliOrders",JSON.stringify(orders));cart={};saveCart();e.target.reset();document.querySelector("#orderNotice").textContent="Demo rejim: buyurtma serverga yuborilmadi.";
 };
 renderProducts();renderCart();
