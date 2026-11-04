@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getFirebaseAdminAuth } from "./firebase-admin.js";
 
 const router = Router();
+const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const createStaffLimit = rateLimit({ windowMs: 15 * 60_000, limit: 12, standardHeaders: "draft-7", legacyHeaders: false });
 const allowedRoles = new Set(["courier", "kitchen"]);
 const adminEmails = new Set((process.env.ADMIN_EMAILS || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean));
@@ -46,7 +47,7 @@ const staffSchema = z.object({
   role: z.enum(["courier", "kitchen"])
 });
 
-router.get("/staff/me", requireUser, async (req, res) => {
+router.get("/staff/me", requireUser, asyncRoute(async (req, res) => {
   const role = req.authUser.role;
   if (!allowedRoles.has(role) || req.authUser.active === false) {
     return res.status(403).json({ error: "staff_role_required", message: "Bu hisob kuryer yoki oshxona xodimi sifatida faollashtirilmagan." });
@@ -54,9 +55,9 @@ router.get("/staff/me", requireUser, async (req, res) => {
   const user = await req.adminAuth.getUser(req.authUser.uid);
   if (user.disabled) return res.status(403).json({ error: "account_disabled", message: "Hisob administrator tomonidan vaqtincha bloklangan." });
   res.json({ uid: user.uid, email: user.email, displayName: user.displayName || "", role, active: true });
-});
+}));
 
-router.get("/admin/staff", requireUser, requireAdmin, async (req, res) => {
+router.get("/admin/staff", requireUser, requireAdmin, asyncRoute(async (req, res) => {
   const users = [];
   let pageToken;
   do {
@@ -69,9 +70,9 @@ router.get("/admin/staff", requireUser, requireAdmin, async (req, res) => {
     role: user.customClaims.role, disabled: Boolean(user.disabled),
     createdAt: user.metadata.creationTime || null, lastSignInAt: user.metadata.lastSignInTime || null
   })) });
-});
+}));
 
-router.post("/admin/staff", requireUser, requireAdmin, createStaffLimit, async (req, res) => {
+router.post("/admin/staff", requireUser, requireAdmin, createStaffLimit, asyncRoute(async (req, res) => {
   const parsed = staffSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_staff", details: parsed.error.flatten() });
   const { email, password, displayName, role } = parsed.data;
@@ -88,9 +89,9 @@ router.post("/admin/staff", requireUser, requireAdmin, createStaffLimit, async (
     if (error.code === "auth/email-already-exists") return res.status(409).json({ error: "email_exists", message: "Bu login/email oldin ro‘yxatdan o‘tgan." });
     throw error;
   }
-});
+}));
 
-router.patch("/admin/staff/:uid", requireUser, requireAdmin, async (req, res) => {
+router.patch("/admin/staff/:uid", requireUser, requireAdmin, asyncRoute(async (req, res) => {
   const parsed = z.object({ disabled: z.boolean() }).safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_status", message: "Bloklash holati noto‘g‘ri." });
   if (req.params.uid === req.authUser.uid) return res.status(400).json({ error: "cannot_change_self", message: "O‘z administrator hisobingizni bu yerdan bloklay olmaysiz." });
@@ -99,7 +100,7 @@ router.patch("/admin/staff/:uid", requireUser, requireAdmin, async (req, res) =>
   await req.adminAuth.updateUser(user.uid, { disabled: parsed.data.disabled });
   await req.adminAuth.setCustomUserClaims(user.uid, { ...user.customClaims, active: !parsed.data.disabled });
   res.json({ uid: user.uid, disabled: parsed.data.disabled, role: user.customClaims.role });
-});
+}));
 
 export function createStaffRouter() {
   return router;
