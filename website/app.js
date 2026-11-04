@@ -85,7 +85,7 @@ document.querySelector("#locationBtn").onclick=()=>{
   catch{loc.textContent="Manzil aniqlandi";}
  },()=>{loc.textContent="Manzilni tanlang";alert("Joylashuvga ruxsat berilmadi. Manzilni qo‘lda kiritishingiz mumkin.");},{enableHighAccuracy:true,timeout:10000,maximumAge:300000});
 };
-document.querySelector("#orderForm").onsubmit=e=>{
+document.querySelector("#orderForm").onsubmit=async e=>{
  e.preventDefault();if(!Object.keys(cart).length){document.querySelector("#orderNotice").textContent="Avval savatchaga mahsulot qo‘shing.";return;}
  const orderItems=products.filter(p=>cart[p.id]);
  if(API_BASE&&catalogReady){
