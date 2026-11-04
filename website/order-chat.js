@@ -14,7 +14,7 @@
   const callStatus=document.createElement("p");callStatus.setAttribute("aria-live","polite");
   const remoteAudio=document.createElement("audio");remoteAudio.autoplay=true;remoteAudio.playsInline=true;
   form.append(input,send);panel.append(heading,list,form,callButton,callStatus,remoteAudio);container.append(panel);
-  let stopped=false, pc=null, localStream=null, callId=null, role=null, seen=new Set(), queuedIce=[];
+  let stopped=false, pc=null, localStream=null, callId=null, role=null, callAccepted=false, seen=new Set(), queuedIce=[];
   const base="/api/v1/orders/"+encodeURIComponent(orderId);
   function closeMedia(){if(pc){pc.close();pc=null;}if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null;}remoteAudio.srcObject=null;}
   async function postSignal(type,payload={}){if(!callId)return;await request(base+"/calls/"+callId+"/signals",{method:"POST",body:JSON.stringify({signalType:type,payload})});}
@@ -29,7 +29,7 @@
   async function getMicrophone(){if(!navigator.mediaDevices?.getUserMedia)throw Error("Bu brauzer audio ruxsatini qo‘llamaydi. HTTPS orqali oching.");localStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});return localStream;}
   async function applySignals(signals){
    for(const s of signals||[]){if(seen.has(s.id))continue;seen.add(s.id);
-    if(s.signal_type==="hangup"){callStatus.textContent="Qo‘ng‘iroq yakunlandi.";closeMedia();callId=null;callButton.disabled=false;continue;}
+    if(s.signal_type==="hangup"){callStatus.textContent="Qo‘ng‘iroq yakunlandi.";closeMedia();callId=null;callAccepted=false;callButton.disabled=false;callButton.textContent="Audio qo‘ng‘iroq";continue;}
     if(s.signal_type==="offer"&&role==="callee"){
      const peer=await ensurePeer();await peer.setRemoteDescription(s.payload);
      for(const ice of queuedIce)await peer.addIceCandidate(ice);queuedIce=[];
@@ -47,7 +47,7 @@
    if(stopped)return;
    try{
     const d=await request(base+"/calls/current");
-    if(!callId&&d.call&&d.call.status==="ringing"&&d.call.callee_uid===(await tokenUserUid())){callId=d.call.id;role="callee";callStatus.textContent="Kiruvchi audio qo‘ng‘iroq. Qabul qilish uchun tugmani bosing.";callButton.textContent="Qo‘ng‘iroqni qabul qilish";callButton.disabled=false;}
+    if(!callId&&d.call&&d.call.status==="ringing"&&d.call.callee_uid===(await tokenUserUid())){callId=d.call.id;role="callee";callAccepted=false;callStatus.textContent="Kiruvchi audio qo‘ng‘iroq. Qabul qilish uchun tugmani bosing.";callButton.textContent="Qo‘ng‘iroqni qabul qilish";callButton.disabled=false;}
     if(callId&&d.call?.id===callId){await applySignals(d.signals);if(d.call.status==="rejected"||d.call.status==="ended"){callStatus.textContent="Qo‘ng‘iroq tugadi.";closeMedia();callId=null;callButton.textContent="Audio qo‘ng‘iroq";callButton.disabled=false;}} 
    }catch(e){if(/contact_closed/.test(e.message)){stopped=true;clearInterval(chatTimer);clearInterval(callTimer);callStatus.textContent="Buyurtma aloqasi yopilgan.";closeMedia();} }
   }
@@ -59,12 +59,12 @@
      await request(base+"/calls/"+callId,{method:"PATCH",body:JSON.stringify({status:"accepted"})});
      callStatus.textContent="Mikrofon yoqilmoqda…";await getMicrophone();await pollCall();return;
     }
-    if(callId){await postSignal("hangup");closeMedia();callId=null;role=null;callButton.textContent="Audio qo‘ng‘iroq";callStatus.textContent="Qo‘ng‘iroq yakunlandi.";return;}
-    const d=await request(base+"/calls",{method:"POST",body:"{}"});callId=d.call.id;role="caller";
+    if(callId){await postSignal("hangup");closeMedia();callId=null;role=null;callAccepted=false;callButton.textContent="Audio qo‘ng‘iroq";callStatus.textContent="Qo‘ng‘iroq yakunlandi.";return;}
+    const d=await request(base+"/calls",{method:"POST",body:"{}"});callId=d.call.id;role="caller";callAccepted=false;
     const peer=await ensurePeer(),stream=await getMicrophone();stream.getTracks().forEach(t=>peer.addTrack(t,stream));
     const offer=await peer.createOffer();await peer.setLocalDescription(offer);await postSignal("offer",peer.localDescription.toJSON());
     callStatus.textContent="Kuryer javob berishi kutilmoqda…";callButton.textContent="Qo‘ng‘iroqni tugatish";
-   }catch(e){callStatus.textContent=e.message;closeMedia();callId=null;role=null;callButton.textContent="Audio qo‘ng‘iroq";}
+   }catch(e){callStatus.textContent=e.message;closeMedia();callId=null;role=null;callAccepted=false;callButton.textContent="Audio qo‘ng‘iroq";}
    finally{callButton.disabled=false;}
   });
   form.addEventListener("submit",async e=>{e.preventDefault();send.disabled=true;try{await request(base+"/chat",{method:"POST",body:JSON.stringify({body:input.value})});input.value="";await refresh();}catch(err){heading.textContent="Chat: "+err.message;}finally{send.disabled=false;}});
