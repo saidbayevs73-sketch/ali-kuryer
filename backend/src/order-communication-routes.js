@@ -63,6 +63,19 @@ export function createOrderCommunicationRouter(pool) {
     res.status(201).json({call});
   }));
 
+  router.get("/orders/:id/calls/current", signedIn, wrap(async(req,res)=>{
+    const p=await participant(pool,req.params.id,req.identity.uid);
+    if(!p||!isActive(p))return res.status(404).json({error:"call_not_found"});
+    const {rows:[call]}=await pool.query(
+      "SELECT id,caller_uid,callee_uid,status,created_at,ended_at FROM order_call_sessions WHERE order_id=$1 AND (caller_uid=$2 OR callee_uid=$2) AND status IN ('ringing','accepted') AND created_at>now()-interval '2 minutes' ORDER BY created_at DESC LIMIT 1",
+      [p.id,req.identity.uid]);
+    if(!call)return res.json({call:null,signals:[]});
+    const {rows:signals}=await pool.query(
+      "SELECT id,sender_uid,signal_type,payload,created_at FROM order_call_signals WHERE call_id=$1 AND sender_uid<>$2 ORDER BY created_at",
+      [call.id,req.identity.uid]);
+    res.json({call,signals});
+  }));
+
   router.get("/orders/:id/calls/:callId", signedIn, wrap(async(req,res)=>{
     const p=await participant(pool,req.params.id,req.identity.uid);
     if(!p||!isActive(p))return res.status(404).json({error:"call_not_found"});
