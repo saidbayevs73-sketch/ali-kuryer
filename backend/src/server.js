@@ -10,6 +10,7 @@ import { createStaffRouter } from "./staff-routes.js";
 import { createKitchenRouter } from "./kitchen-routes.js";
 import { createCourierRouter } from "./courier-routes.js";
 import { createOrderCommunicationRouter } from "./order-communication-routes.js";
+import { createSupportReviewRouter } from "./support-review-routes.js";
 
 const { Pool } = pg;
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/v1", createStaffRouter());
 app.use("/api/v1", createKitchenRouter(pool));
 app.use("/api/v1", createCourierRouter(pool));
 app.use("/api/v1", createOrderCommunicationRouter(pool));
+app.use("/api/v1", createSupportReviewRouter(pool));
 
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const requireDb = (req, res, next) => {
