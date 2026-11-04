@@ -140,6 +140,31 @@ app.post("/api/v1/orders", requireDb, requireCustomer, asyncRoute(async (req, re
   } finally { client.release(); }
 }));
 
+app.get("/api/v1/orders/:code/tracking", requireDb, requireCustomer, asyncRoute(async (req, res) => {
+  const { rows: [order] } = await pool.query(
+    `SELECT o.public_code,o.status,o.updated_at,o.contact_closed_at,
+            cp.latitude,cp.longitude,cp.accuracy_m,cp.updated_at AS location_updated_at
+       FROM orders o
+       LEFT JOIN courier_staff_links l ON l.courier_id=o.courier_id
+       LEFT JOIN courier_presence cp ON cp.courier_uid=l.firebase_uid
+      WHERE o.public_code=$1 AND o.customer_firebase_uid=$2
+      LIMIT 1`,
+    [req.params.code, req.customerAuth.uid]
+  );
+  if (!order) return res.status(404).json({ error: "not_found" });
+  const active = ["assigned","picked_up","on_the_way"].includes(order.status) && !order.contact_closed_at;
+  const fresh = order.location_updated_at && Date.now() - new Date(order.location_updated_at).getTime() <= 120000;
+  res.json({
+    order: { code: order.public_code, status: order.status, updatedAt: order.updated_at },
+    tracking: active && fresh && order.latitude !== null ? {
+      latitude: Number(order.latitude), longitude: Number(order.longitude),
+      accuracy: order.accuracy_m === null ? null : Number(order.accuracy_m),
+      updatedAt: order.location_updated_at
+    } : null,
+    contactClosed: !active
+  });
+}));
+
 app.get("/api/v1/orders/:code", requireDb, requireCustomer, asyncRoute(async (req, res) => {
   const { rows: [order] } = await pool.query("SELECT public_code,status,total_uzs,created_at,updated_at FROM orders WHERE public_code=$1 AND customer_firebase_uid=$2", [req.params.code, req.customerAuth.uid]);
   if (!order) return res.status(404).json({ error: "not_found" });
