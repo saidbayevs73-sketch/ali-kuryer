@@ -20,7 +20,7 @@ jobs:
       - name: Check frontend JavaScript syntax
         run: |
           for file in website/*.js; do
-            node --check "$file"
+            node --input-type=module --check < "$file"
           done
       - name: Verify required project files
         run: |
