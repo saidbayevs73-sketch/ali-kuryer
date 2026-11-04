@@ -36,6 +36,10 @@ jobs:
           ls "$ANDROID_HOME/build-tools"
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
+      - name: Show debug signing fingerprints
+        shell: bash
+        run: |
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -keypass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:'
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
