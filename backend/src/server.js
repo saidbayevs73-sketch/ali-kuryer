@@ -175,7 +175,88 @@ app.get("/api/v1/orders/:code", requireDb, requireCustomer, asyncRoute(async (re
   res.json({ order: { code: order.public_code, status: order.status, total: Number(order.total_uzs), createdAt: order.created_at, updatedAt: order.updated_at } });
 }));
 
-app.get("/api/v1/admin/orders", requireDb, (req, res) => res.status(501).json({ error: "admin_auth_required", message: "Admin login and permissions must be configured before enabling this endpoint." }));
+async function requireAdmin(req, res, next) {
+  try {
+    const auth = getFirebaseAdminAuth();
+    if (!auth) return res.status(503).json({ error: "firebase_admin_not_configured" });
+    const token = (req.headers.authorization || "").startsWith("Bearer ") ? req.headers.authorization.slice(7) : "";
+    if (!token) return res.status(401).json({ error: "missing_token" });
+    const decoded = await auth.verifyIdToken(token, true);
+    const allowed = new Set((process.env.ADMIN_EMAILS || "").split(",").map(x => x.trim().toLowerCase()).filter(Boolean));
+    if (decoded.role !== "admin" && !allowed.has(String(decoded.email || "").toLowerCase())) {
+      return res.status(403).json({ error: "admin_only" });
+    }
+    req.adminAuth = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ error: "invalid_token" });
+  }
+}
+
+app.get("/api/v1/admin/orders", requireDb, requireAdmin, asyncRoute(async (req, res) => {
+  const status = req.query.status;
+  const allowedStatuses = ["new","accepted","preparing","ready","assigned","picked_up","on_the_way","delivered","cancelled"];
+  if (status && !allowedStatuses.includes(status)) return res.status(400).json({ error: "invalid_status" });
+  const params = status ? [status] : [];
+  const { rows } = await pool.query(`
+    SELECT o.id,o.public_code,o.customer_name,o.customer_phone,o.delivery_address,
+           o.status,o.total_uzs,o.payment_status,o.created_at,o.updated_at,
+           o.courier_id,c.full_name AS courier_name,c.phone AS courier_phone,
+           k.name AS kitchen_name
+      FROM orders o
+      LEFT JOIN couriers c ON c.id=o.courier_id
+      LEFT JOIN kitchens k ON k.id=o.kitchen_id
+     ${status ? "WHERE o.status=$1" : ""}
+     ORDER BY o.created_at DESC LIMIT 200
+  `, params);
+  const ids = rows.map(x => x.id);
+  const items = ids.length ? await pool.query(
+    "SELECT order_id,product_name,quantity,unit_price_uzs FROM order_items WHERE order_id=ANY($1::uuid[]) ORDER BY product_name",
+    [ids]
+  ) : { rows: [] };
+  const grouped = new Map();
+  for (const item of items.rows) {
+    if (!grouped.has(item.order_id)) grouped.set(item.order_id, []);
+    grouped.get(item.order_id).push({ name: item.product_name, quantity: item.quantity, unitPrice: Number(item.unit_price_uzs) });
+  }
+  res.json({ orders: rows.map(o => ({
+    id:o.id, code:o.public_code, customerName:o.customer_name, customerPhone:o.customer_phone,
+    address:o.delivery_address, status:o.status, total:Number(o.total_uzs), paymentStatus:o.payment_status,
+    createdAt:o.created_at, updatedAt:o.updated_at, courierId:o.courier_id,
+    courierName:o.courier_name, courierPhone:o.courier_phone, kitchenName:o.kitchen_name,
+    items:grouped.get(o.id)||[]
+  })) });
+}));
+
+app.patch("/api/v1/admin/orders/:id", requireDb, requireAdmin, asyncRoute(async (req, res) => {
+  const parsed = z.object({
+    status: z.enum(["new","accepted","preparing","ready","assigned","picked_up","on_the_way","delivered","cancelled"])
+  }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "invalid_order_update" });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const { rows:[current] } = await client.query(
+      "SELECT id,status FROM orders WHERE id=$1 FOR UPDATE", [req.params.id]
+    );
+    if (!current) { await client.query("ROLLBACK"); return res.status(404).json({ error:"order_not_found" }); }
+    const nextStatus = parsed.data.status;
+    const closesContact = ["delivered","cancelled"].includes(nextStatus);
+    const { rows:[updated] } = await client.query(
+      "UPDATE orders SET status=$1,updated_at=now(),delivered_at=CASE WHEN $1='delivered' THEN COALESCE(delivered_at,now()) ELSE delivered_at END,contact_closed_at=CASE WHEN $2 THEN COALESCE(contact_closed_at,now()) ELSE contact_closed_at END WHERE id=$3 RETURNING id,public_code,status,updated_at,contact_closed_at",
+      [nextStatus,closesContact,req.params.id]
+    );
+    await client.query(
+      "INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,$2,$3,'admin','Admin panel orqali yangilandi')",
+      [updated.id,current.status,nextStatus]
+    );
+    await client.query("COMMIT");
+    res.json({ order:updated });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally { client.release(); }
+}));
 
 app.use((err, req, res, next) => {
   console.error(err);
