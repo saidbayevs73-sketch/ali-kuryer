@@ -6,16 +6,17 @@ import {
 
 // Keep this in sync with the Firebase Web app config (not the Android app config).
 const firebaseConfig = window.ALI_KURYER_FIREBASE_CONFIG || {
-  apiKey: "AIzaSyB-McrwqzgQh3j-0Ve5vjkb0rgF6ZlDE1g",
+  apiKey: "AIzaSyDU4Px8gQj8U4Cnany8DTC6_pOfkGUSWPA",
   authDomain: "ali-kuryer-9d6bb.firebaseapp.com",
   projectId: "ali-kuryer-9d6bb",
   storageBucket: "ali-kuryer-9d6bb.firebasestorage.app",
   messagingSenderId: "1088566467185",
-  appId: "1:1088566467185:android:76b488bc28e630d5abd9d0"
+  appId: "1:1088566467185:web:5b0ff537b0f09a27abd9d0",
+  measurementId: "G-LZ46LKT8NJ"
 };
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
-const API=window.ALI_KURYER_API_URL||"";
+const API=window.ALI_KURYER_API_URL||"https://ali-kuryer-api.onrender.com";
 const $=s=>document.querySelector(s);
 const portal=document.body.dataset.portal;
 const message=(value,bad=false)=>{const el=$("#notice");if(el){el.textContent=value;el.dataset.state=bad?"error":"ok";}};
