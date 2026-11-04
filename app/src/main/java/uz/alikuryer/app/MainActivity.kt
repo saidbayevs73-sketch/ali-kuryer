@@ -114,7 +114,7 @@ class MainActivity : Activity() {
                         '.app{height:100%!important;min-height:0!important;overflow:hidden!important}' +
                         '.app-main{min-height:0!important;overscroll-behavior:contain;padding-bottom:18px!important;scroll-padding-bottom:24px}' +
                         '.tabbar{height:68px!important;min-height:68px!important;flex:0 0 68px!important;padding-bottom:8px!important}' +
-                        '.language{height:100%!important;min-height:0!important;padding:20px 18px 22px!important}' +
+                        '.language{height:100%!important;min-height:0!important;padding:56px 18px 22px!important}' +
                         '.language h2{margin:28px 0 6px!important}' +
                         '.lang-list{margin-top:22px!important}' +
                         '.home-premium{padding-bottom:18px!important}' +
