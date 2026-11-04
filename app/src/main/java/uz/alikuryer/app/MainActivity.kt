@@ -14,6 +14,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.WebResourceRequest
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -110,6 +111,17 @@ class MainActivity : Activity() {
         webView.addJavascriptInterface(AliKuryerBridge(), "AliKuryerNative")
 
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val uri = request?.url ?: return false
+                if (uri.scheme == "https" && uri.host == "ali-kuryer-web.onrender.com") return false
+                return try {
+                    startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    true
+                } catch (_: Exception) {
+                    true
+                }
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 view?.evaluateJavascript(
@@ -213,7 +225,7 @@ class MainActivity : Activity() {
 
         setContentView(root)
         ViewCompat.requestApplyInsets(root)
-        webView.loadUrl("file:///android_asset/index.html")
+        webView.loadUrl("https://ali-kuryer-web.onrender.com/?source=android")
     }
 
     private inner class AliKuryerBridge {
