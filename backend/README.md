@@ -50,3 +50,34 @@ The website must use the Firebase **Web app** configuration for `ali-kuryer-9d6b
 - `PATCH /api/v1/admin/staff/:uid`: admin-only account blocking/unblocking.
 
 No staff registration endpoint is exposed. The staff login pages are `/courier.html` and `/kitchen.html`; the manager is `/admin.html`.
+
+## Unified platform migration
+
+The next platform foundation is documented in `docs/UNIFIED_PLATFORM_SPEC.md`.
+The additive PostgreSQL migration is `backend/migrations/002_unified_platform.sql`.
+It prepares kitchen profiles, kitchen-owned products, staff profiles, private reviews,
+support tickets/messages, order-scoped chat and audio-call sessions, courier presence
+and live-check records, Telegram account linking, platform settings, and audit logs.
+
+**Do not apply the migration to production until a database backup is confirmed.**
+Apply it once with:
+
+```sh
+psql "$DATABASE_URL" -f backend/migrations/002_unified_platform.sql
+```
+
+This migration only creates/extends database structures. It does not by itself enable
+the corresponding API/UI features. Production activation requires the matching
+server-side authorization, UI, realtime transport, integration tests, and staged deploy.
+
+### Communication and order privacy rules
+
+- Customer/courier chat, audio calling, and live location are permitted only while
+  the order is active and that courier is assigned to the order.
+- When an order is delivered or cancelled, the server must close all communication
+  permissions and stop customer-facing courier location updates.
+- Video calling is explicitly excluded. Audio-only internet calls are intended.
+- Reviews are private: the author, Super Admin, and relevant kitchen may read food
+  feedback; public catalogues and unrelated couriers must never expose comments.
+- Courier selection is manual from nearby available orders; automatic nearest-courier
+  assignment is not part of the requested workflow.
