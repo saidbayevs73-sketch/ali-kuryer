@@ -14,7 +14,7 @@ function open(name,html){title.textContent=name;content.innerHTML=html;backdrop.
 function close(){backdrop.classList.remove("open");}
 $(".ak-close",backdrop).onclick=close;
 backdrop.addEventListener("click",e=>{if(e.target===backdrop)close()});
-function saveLocation(label,point){localStorage.setItem("aliLocationName",label);if(point){coords=point;write("aliLocationCoords",point)}const t=$("#locationText");if(t)t.textContent=label;close();}
+function saveLocation(label,point){localStorage.setItem("aliLocationName",label);if(point){coords=point;write("aliLocationCoords",point)}const t=$("#locationText");if(t)t.textContent=label;const address=$("#customerAddress");if(address)address.value=label;close();}
 function reverse(lat,lon){return fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat="+lat+"&lon="+lon+"&zoom=16&accept-language=uz").then(r=>r.json()).then(d=>{const a=d.address||{};return [a.road,a.house_number,a.suburb||a.neighbourhood,a.city||a.town||a.village||a.county].filter(Boolean).join(", ")||d.display_name||"Tanlangan joy"})}
 function locationSheet(){
 const list=addresses();
@@ -38,9 +38,17 @@ content.querySelectorAll("[data-page]").forEach(b=>b.onclick=()=>{const p=b.data
 }
 async function installApp(){if(installPrompt){installPrompt.prompt();try{await installPrompt.userChoice}catch{}installPrompt=null;return}open("Ilovani o‘rnatish",'<p class="ak-muted">Brauzer menyusidan “Bosh ekranga qo‘shish” yoki “Install app” bandini tanlang. Shunda Ali Kuryer telefoningizda ilova kabi ochiladi.</p>')}
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e});
+function autoDetectLocation(){
+ if(localStorage.getItem("aliLocationName")||!navigator.geolocation)return;
+ navigator.geolocation.getCurrentPosition(async p=>{
+  coords={lat:p.coords.latitude,lon:p.coords.longitude};write("aliLocationCoords",coords);
+  try{const label=await reverse(coords.lat,coords.lon);localStorage.setItem("aliLocationName",label);const t=$("#locationText");if(t)t.textContent=label;}
+  catch{const t=$("#locationText");if(t)t.textContent="Joylashuv aniqlandi";}
+ },()=>{}, {enableHighAccuracy:true,timeout:12000,maximumAge:300000});
+}
 const loc=$("#locationBtn");if(loc){loc.onclick=e=>{e.preventDefault();locationSheet()};}
-const login=$("#loginBtn");if(login)login.onclick=e=>{e.preventDefault();accountSheet()};
+const login=$("#loginBtn");if(login)login.onclick=e=>{e.preventDefault();if(window.AliKuryerNative&&window.AliKuryerNative.signInWithGoogle){window.AliKuryerNative.signInWithGoogle();}else{open("Google orqali kirish",'<p class="ak-muted">Google orqali haqiqiy kirish Android ilovasida ishlaydi. Veb-sayt uchun Firebase Web OAuth sozlamasi hali ulanmagan.</p>');}};
 
 // Existing profile and order navigation open the richer account menu.
 document.querySelectorAll('.bottom-nav [data-action="profile"],.bottom-nav [data-action="orders"]').forEach(a=>a.addEventListener("click",e=>{e.preventDefault();accountSheet()}));
-})();
+autoDetectLocation();\n})();
