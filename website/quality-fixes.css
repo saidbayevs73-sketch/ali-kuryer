@@ -1,0 +1,107 @@
+/* Consolidated layout repair: prevent text/image overlap and preserve readable sizing */
+*{box-sizing:border-box}
+html{width:100%;overflow-x:hidden;scroll-behavior:smooth}
+body{width:100%;max-width:100%;overflow-x:hidden;font-family:Inter,Arial,sans-serif;-webkit-text-size-adjust:100%;text-rendering:optimizeLegibility}
+img{display:block;max-width:100%;height:auto}
+button,input,textarea{max-width:100%;font-family:inherit}
+.site-header,.header-inner,.main-shell,.hero,.section-heading,.product-card,.restaurant-card,.cart-layout{min-width:0}
+.header-inner{flex-wrap:nowrap}
+.brand strong,.location-pill,.section-heading h2,.category-tile b,.product-card h3,.product-card p,.restaurant-card b,.hero-copy h1,.hero-description{overflow-wrap:anywhere;word-break:normal}
+.location-pill span:nth-child(2){min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hero{isolation:isolate}
+.hero-copy{min-width:0;max-width:62%;z-index:4}
+.hero-copy h1{line-height:1.12;overflow-wrap:normal}
+.hero-rider{z-index:2;pointer-events:none}
+.hero-rider img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.category-list{align-items:stretch}
+.category-tile{min-width:0;white-space:normal}
+.category-tile b{display:block;max-width:100%;line-height:1.35}
+.restaurant-card,.product-card{min-width:0;overflow:hidden}
+.restaurant-card>img,.product-image img{width:100%;height:100%;object-fit:cover;object-position:center}
+.restaurant-card>div,.product-card h3,.product-card p,.product-bottom{min-width:0}
+.product-card h3{line-height:1.4;min-height:2.8em}
+.product-card p{line-height:1.45;overflow-wrap:anywhere}
+.product-bottom>b{overflow-wrap:anywhere}
+.promo{min-width:0}
+.promo>div{position:relative;z-index:2;max-width:68%}
+.promo img{object-fit:cover;object-position:center}
+.bottom-nav{padding-left:max(4px,env(safe-area-inset-left));padding-right:max(4px,env(safe-area-inset-right))}
+.bottom-nav a{min-width:0;flex:1;white-space:nowrap}
+.ak-sheet{overflow-x:hidden}
+.ak-field input,.ak-field textarea{box-sizing:border-box}
+@media(min-width:901px){
+ .main-shell{padding-left:20px;padding-right:20px}
+ .hero{min-height:390px}
+ .hero-copy{max-width:58%}
+ .hero-rider{width:43%;right:2%}
+ .product-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+ .product-image{height:190px}
+}
+@media(max-width:900px){
+ .header-inner{gap:8px}
+ .hero-copy{max-width:64%}
+ .hero-rider{width:43%}
+ .product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .cart-layout{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .site-header{height:64px}
+ .header-inner{padding:0 9px;gap:6px}
+ .brand{flex:0 0 auto;font-size:14px;gap:4px}
+ .brand-mark{width:27px;height:30px;font-size:28px}
+ .brand strong{font-size:14px;letter-spacing:-.4px}
+ .location-pill{flex:1 1 auto;width:auto;max-width:112px;min-width:0;padding:0 7px;font-size:9px}
+ .location-pill span:nth-child(2){max-width:72px}
+ .header-actions{flex:0 0 auto;gap:3px}
+ .header-icon{width:29px;height:29px;flex:0 0 29px;font-size:17px}
+ .login-button{height:30px;min-width:30px;padding:0 8px;font-size:9px}
+ .hero{margin:10px 10px 0;min-height:285px;border-radius:18px}
+ .hero-copy{max-width:72%;padding:20px 0 18px 15px}
+ .hero-brand{font-size:28px;letter-spacing:-1px;gap:4px}
+ .hero-mark{width:34px;height:35px;font-size:33px}
+ .hero-eyebrow{font-size:7px;letter-spacing:.7px}
+ .hero-copy h1{font-size:clamp(23px,6.2vw,29px);line-height:1.12;letter-spacing:-.8px}
+ .hero-description{font-size:10px;line-height:1.45;max-width:220px}
+ .hero-benefits{gap:4px}
+ .hero-benefits span{font-size:7px;padding:5px 6px}
+ .hero-cta{font-size:9px;padding:9px 11px}
+ .hero-rider{width:48%;height:62%;right:-1%;bottom:0}
+ .search-wrap{width:calc(100% - 24px);margin:16px 12px;height:48px}
+ .categories-section,.restaurants-section,.catalog-section,.promo-section{padding-left:12px;padding-right:12px}
+ .category-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ .category-tile{padding:7px 3px;gap:6px}
+ .category-picture{width:min(100%,58px);height:58px;font-size:28px;border-radius:14px}
+ .category-tile b{font-size:9px;line-height:1.25;min-height:2.5em}
+ .promo-row{grid-template-columns:1fr 1fr;gap:8px}
+ .promo{height:125px;padding:10px}
+ .promo>div{max-width:70%}
+ .promo h2{font-size:10px;line-height:1.3}
+ .promo img{width:43%;height:70%;right:0}
+ .restaurant-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .restaurant-card>img{height:105px}
+ .restaurant-card>div{padding:8px}
+ .restaurant-card>div>b{font-size:11px}
+ .restaurant-card p{font-size:8px;gap:6px;flex-wrap:wrap}
+ .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .product-card{padding:7px}
+ .product-image{height:clamp(105px,34vw,145px)}
+ .product-card h3{font-size:11px;min-height:2.7em}
+ .product-card p{font-size:9px;min-height:2.6em}
+ .product-bottom>b{font-size:10px}
+ .cart-section{margin:10px 12px;padding:13px}
+ .order-form{padding:12px}
+ .bottom-nav{height:calc(66px + env(safe-area-inset-bottom));gap:0}
+ .bottom-nav a{font-size:8px;gap:3px}
+ .bottom-nav a span{font-size:20px}
+ .main-shell{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+}
+@media(max-width:370px){
+ .brand strong{font-size:12px}
+ .location-pill{max-width:88px}
+ .location-pill span:nth-child(2){max-width:48px}
+ .header-icon{width:25px;height:25px;flex-basis:25px}
+ .hero-copy{max-width:74%}
+ .hero-rider{width:45%}
+ .hero-copy h1{font-size:23px}
+ .category-picture{height:50px}
+}
