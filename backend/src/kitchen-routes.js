@@ -49,7 +49,8 @@ export function createKitchenRouter(pool) {
     if(!k)return res.status(409).json({error:"profile_required"});
     if(!k.active)return res.status(403).json({error:"kitchen_not_approved"});
     const v=parsed.data;
-    const {rows:[p]}=await pool.query("INSERT INTO products(kitchen_id,name,description,ingredients,price_uzs,image_url,available,photo_source) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,name,description,ingredients,price_uzs,image_url,available,photo_source",[k.id,v.name,v.description,v.ingredients,v.price,v.imageUrl??null,v.available,v.photoSource]);
+    const category=await pool.query("INSERT INTO categories(name,slug,sort_order,active) VALUES('Oshxona taomlari','oshxona-taomlari',0,true) ON CONFLICT(name) DO UPDATE SET active=true RETURNING id");
+    const {rows:[p]}=await pool.query("INSERT INTO products(kitchen_id,category_id,name,description,ingredients,price_uzs,image_url,available,photo_source) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,name,description,ingredients,price_uzs,image_url,available,photo_source",[k.id,category.rows[0].id,v.name,v.description,v.ingredients,v.price,v.imageUrl??null,v.available,v.photoSource]);
     res.status(201).json({product:p});
   }));
   router.get("/kitchen/orders",signedIn,role("kitchen"),wrap(async(req,res)=>{
