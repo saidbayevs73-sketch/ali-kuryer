@@ -219,7 +219,7 @@ class MainActivity : Activity() {
         @JavascriptInterface
         fun signInWithGoogle() {
             runOnUiThread {
-                lifecycleScope.launch {
+                this@MainActivity.lifecycleScope.launch {
                     try {
                         val googleOption = GetGoogleIdOption.Builder()
                             .setServerClientId(webClientId)
