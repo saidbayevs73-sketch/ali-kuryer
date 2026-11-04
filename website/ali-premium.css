@@ -1,0 +1,96 @@
+/* Ali Kuryer premium visual system — red, black & white */
+:root{--red:#e31b36;--red-dark:#b90f29;--ink:#111116;--muted:#777780;--line:#ececf0;--soft:#f6f6f8;--radius:22px}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+body{color:var(--ink);background:#fff}
+.site-header{height:76px;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-bottom:1px solid #ededf0}
+.header-inner{max-width:1440px;padding-inline:clamp(16px,4vw,54px);gap:22px}
+.brand{font-size:24px;letter-spacing:-1.2px}.brand-mark{color:var(--red)}
+.location-pill{border-radius:999px;background:#fafafa;border-color:#e8e8ec;height:44px;padding-inline:16px;font-size:12px}
+.header-icon{border-radius:50%;width:44px;height:44px;background:#f7f7f8;border-color:transparent}
+.login-button{border-radius:999px;background:var(--ink);padding-inline:22px;height:44px}
+.quick-links{max-width:1440px;padding-inline:clamp(16px,4vw,54px);height:50px;gap:34px}
+.quick-links a{font-size:12px}
+.main-shell{max-width:1440px}
+.hero{margin:26px clamp(14px,3vw,42px) 0;min-height:390px;border-radius:30px;background:linear-gradient(112deg,#111116 0%,#1d1d24 58%,#321019 100%);color:#fff;box-shadow:0 20px 55px #11111618}
+.hero:after{width:540px;height:540px;right:4%;top:-90px;background:radial-gradient(circle,#e31b3638 0%,#e31b3610 55%,transparent 70%)}
+.hero-sky{background:radial-gradient(ellipse at 75% 100%,#e31b3633,transparent 45%),linear-gradient(90deg,#111116 0%,transparent 100%)}
+.hero-copy{padding:48px 0 44px 6%;max-width:60%}
+.hero-brand{font-size:44px;color:#fff}.hero-brand em{color:#ff4058}
+.hero-eyebrow{color:#ff6b7d;font-size:10px;letter-spacing:2px}
+.hero-copy h1{font-size:clamp(36px,4.4vw,58px);line-height:1.02;letter-spacing:-2.3px;color:#fff}
+.hero-description{color:#d4d1d5;font-size:15px;max-width:470px}
+.hero-benefits span{background:#ffffff12;border:1px solid #ffffff25;color:#f4f2f3;border-radius:999px;padding:9px 13px}
+.hero-cta{background:var(--red);border-radius:999px;padding:15px 22px;box-shadow:0 9px 26px #e31b3640}
+.hero-rider{width:46%;right:1%}.hero-rider img{filter:drop-shadow(0 18px 22px #0008)}
+.search-wrap{max-width:900px;height:64px;border-radius:999px;margin:26px auto 34px;padding-inline:24px;box-shadow:0 12px 34px #15151b0d;border-color:#e7e7eb}
+.search-wrap input{font-size:14px}.search-wrap button{border-radius:50%}
+.categories-section,.restaurants-section,.catalog-section,.promo-section{padding-inline:clamp(16px,4vw,54px)}
+.section-heading{margin-bottom:19px}.section-heading h2{font-size:24px;letter-spacing:-.9px}
+.section-subtitle{font-size:12px}
+.category-list{gap:14px}
+.category-tile{border:1px solid #eeeef1;border-radius:19px;padding:16px 9px 13px;min-height:135px}
+.category-tile:hover,.category-tile.active{border-color:#f08b9a;box-shadow:0 12px 28px #e31b3612}
+.category-picture{height:72px;width:72px;border-radius:22px}
+.category-tile b{font-size:11px}
+.promo-section{padding-top:14px}
+.promo-row{gap:18px}
+.promo{height:178px;border-radius:22px;padding:26px 28px}
+.promo-food{background:linear-gradient(115deg,#c9102d,#ed334d)}
+.promo-market{background:linear-gradient(115deg,#17171d,#3a3a44)}
+.promo h2{font-size:22px}.promo span{border-radius:999px;padding:10px 15px}
+.restaurant-list{gap:18px}
+.restaurant-card{border:0;border-radius:20px;background:#f7f7f8}
+.restaurant-card>img{height:155px}
+.restaurant-card>div{padding:14px 16px}
+.restaurant-card>div>b{font-size:15px}
+.restaurant-card p{font-size:11px}
+.product-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.product-card{border:1px solid #eeeef1;border-radius:19px;padding:11px}
+.product-image{height:170px;border-radius:14px;background:#f5f5f6}
+.product-card h3{font-size:13px;min-height:35px}
+.product-card p{font-size:11px}
+.product-bottom>b{font-size:13px}
+.add-btn{width:36px;height:36px;border-radius:12px;background:var(--red)}
+.favorite-btn{width:33px;height:33px;border-radius:50%}
+.cart-section{margin:28px clamp(14px,3vw,42px);padding:26px;border:0;border-radius:24px;background:#f6f6f8}
+.order-form,.empty-cart,.cart-line{border-radius:16px}
+.order-form{padding:20px}
+.order-form input,.order-form textarea{border-radius:12px;padding:12px;font-size:12px}
+.submit-order{background:var(--red);border-radius:999px;padding:15px}
+.account-panel{border-radius:20px}
+.bottom-nav{border-top:1px solid #ececf0;box-shadow:0 -8px 28px #11111608}
+.bottom-nav a{font-size:10px}
+.bottom-nav a.selected,.bottom-nav a:hover{color:var(--red)}
+footer{max-width:1440px;margin:auto}
+@media(max-width:900px){
+ .hero{min-height:350px}.hero-copy{max-width:65%}
+ .category-list{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .category-tile{min-height:unset}
+ .product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ .site-header{height:62px}.brand{font-size:15px}.header-icon{width:30px;height:30px;flex-basis:30px}
+ .location-pill{border-radius:10px}
+ .login-button{border-radius:10px;background:var(--red)}
+ .hero{margin:12px 10px 0;min-height:310px;border-radius:21px}
+ .hero-copy{padding:24px 0 22px 17px;max-width:78%}
+ .hero-brand{font-size:30px}.hero-copy h1{font-size:28px;letter-spacing:-1.2px}
+ .hero-description{font-size:10px}.hero-rider{width:55%;right:-5%;height:58%}
+ .hero-benefits span{font-size:7px;padding:6px 7px}
+ .hero-cta{border-radius:999px}
+ .search-wrap{height:49px;border-radius:14px;margin:15px 12px 20px;padding-inline:14px}
+ .section-heading h2{font-size:17px}
+ .category-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .category-tile{min-height:58px;border-radius:13px;padding:7px}
+ .category-picture{width:44px;height:44px;flex-basis:44px;border-radius:12px}
+ .promo{height:120px;border-radius:14px;padding:12px}
+ .promo h2{font-size:11px}.promo span{font-size:7px;padding:7px 8px}
+ .restaurant-card>img{height:85px}
+ .restaurant-card>div{padding:8px}
+ .product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .product-image{height:120px}
+ .product-card{border-radius:13px;padding:7px}
+ .product-card h3{font-size:10px}.product-card p{font-size:8px}
+ .cart-section{margin:12px;padding:14px;border-radius:15px}
+ .order-form{padding:13px}
+}
