@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { getFirebaseAdminAuth } from "./firebase-admin.js";
 
-const router = Router();
 const wrap = fn => (req,res,next) => Promise.resolve(fn(req,res,next)).catch(next);
 
 async function signedIn(req,res,next) {
@@ -23,6 +22,7 @@ const kitchenProfile = async (pool, uid) => {
 
 const isAdmin=(req,res,next)=>{const e=String(req.identity?.email||"").toLowerCase();const allowed=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()));return req.identity?.role==="admin"||allowed.has(e)?next():res.status(403).json({error:"admin_only"});};
 export function createKitchenRouter(pool) {
+  const router = Router();
   router.use((req,res,next) => pool ? next() : res.status(503).json({error:"database_not_configured"}));
   router.get("/kitchen/profile",signedIn,role("kitchen"),wrap(async(req,res)=>{
     res.json({kitchen:await kitchenProfile(pool,req.identity.uid)});
