@@ -41,7 +41,7 @@ if(portal==="admin"){
    const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
    await signInWithPopup(auth,provider);
    await refreshStaff();
-   loginPanel.hidden=true;managePanel.hidden=false;await refreshKitchens();message("Administrator sifatida kirdingiz.");
+   loginPanel.hidden=true;managePanel.hidden=false;await refreshKitchens();await refreshOrders();message("Administrator sifatida kirdingiz.");
   }catch(error){await signOut(auth).catch(()=>{});message(error.message||"Admin kirishi amalga oshmadi.",true);}
   finally{googleButton.disabled=false;}
  });
@@ -66,6 +66,36 @@ if(portal==="admin"){
    row.append(info,button);list.append(row);
   }
  }
+ const statusNames={new:"Yangi",accepted:"Qabul qilindi",preparing:"Tayyorlanmoqda",ready:"Tayyor",assigned:"Kuryer biriktirilgan",picked_up:"Olib ketildi",on_the_way:"Yo‘lda",delivered:"Yetkazildi",cancelled:"Bekor qilindi"};
+ async function refreshOrders(){
+  const list=$("#adminOrders");if(!list)return;
+  list.replaceChildren(make("p","muted","Buyurtmalar yuklanmoqda…"));
+  try{
+   const status=$("#orderStatusFilter")?.value||"";
+   const data=await request("/api/v1/admin/orders"+(status?"?status="+encodeURIComponent(status):""));
+   list.replaceChildren();
+   if(!data.orders.length){list.append(make("p","muted","Bu filter bo‘yicha buyurtmalar topilmadi."));return;}
+   for(const order of data.orders){
+    const card=make("article","staff-row");card.style.cssText="display:block;border:1px solid #e6e8ec;border-radius:14px;padding:14px;margin:12px 0";
+    const top=make("div","");top.style.cssText="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center";
+    top.append(make("strong","",order.code+" · "+(statusNames[order.status]||order.status)));
+    const total=make("strong","",Number(order.total).toLocaleString("uz-UZ")+" so‘m");top.append(total);
+    const details=make("div","muted");details.style.cssText="display:grid;gap:5px;margin:10px 0";
+    details.append(make("div","",order.customerName+" · "+order.customerPhone));
+    details.append(make("div","",order.address));
+    details.append(make("div","",(order.kitchenName||"Oshxona ko‘rsatilmagan")+" · "+(order.courierName||"Kuryer biriktirilmagan")));
+    for(const item of order.items||[])details.append(make("div","",item.name+" × "+item.quantity+" — "+Number(item.unitPrice*item.quantity).toLocaleString("uz-UZ")+" so‘m"));
+    const controls=make("div","");controls.style.cssText="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px";
+    const select=make("select","");select.style.cssText="max-width:240px;padding:10px;border:1px solid #d7dbe2;border-radius:10px";
+    for(const [value,label] of Object.entries(statusNames)){const option=make("option","",label);option.value=value;option.selected=value===order.status;select.append(option);}
+    const save=make("button","secondary-btn","Holatni saqlash");save.type="button";
+    save.addEventListener("click",async()=>{save.disabled=true;try{await request("/api/v1/admin/orders/"+encodeURIComponent(order.id),{method:"PATCH",body:JSON.stringify({status:select.value})});message("Buyurtma holati yangilandi.");await refreshOrders();}catch(error){message(error.message,true);save.disabled=false;}});
+    controls.append(select,save);card.append(top,details,controls);list.append(card);
+   }
+  }catch(error){list.replaceChildren(make("p","muted","Buyurtmalarni yuklab bo‘lmadi: "+error.message));}
+ }
+ $("#refreshOrders")?.addEventListener("click",()=>refreshOrders());
+ $("#orderStatusFilter")?.addEventListener("change",()=>refreshOrders());
  async function refreshStaff(){
   const data=await request("/api/v1/admin/staff");
   const list=$("#staffList");list.replaceChildren();
