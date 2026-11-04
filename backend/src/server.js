@@ -72,7 +72,7 @@ async function requireCustomer(req, res, next) {
     const token = (req.headers.authorization || "").startsWith("Bearer ") ? req.headers.authorization.slice(7) : "";
     if (!token) return res.status(401).json({ error: "google_login_required", message: "Buyurtma berish uchun Google hisobingizga kiring." });
     const decoded = await auth.verifyIdToken(token, true);
-    if (!decoded.uid || !decoded.email) return res.status(403).json({ error: "verified_google_account_required" });
+    if (!decoded.uid || !decoded.email || decoded.firebase?.sign_in_provider !== "google") return res.status(403).json({ error: "verified_google_account_required", message: "Faqat Google hisobi orqali kirish mumkin." });
     req.customerAuth = decoded;
     next();
   } catch { return res.status(401).json({ error: "invalid_token", message: "Google hisobingizga qayta kiring." }); }
