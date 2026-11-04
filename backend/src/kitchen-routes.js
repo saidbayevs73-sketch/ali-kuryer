@@ -21,6 +21,7 @@ const kitchenProfile = async (pool, uid) => {
   return rows[0] || null;
 };
 
+const isAdmin=(req,res,next)=>{const e=String(req.identity?.email||"").toLowerCase();const allowed=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()));return req.identity?.role==="admin"||allowed.has(e)?next():res.status(403).json({error:"admin_only"});};
 export function createKitchenRouter(pool) {
   router.use((req,res,next) => pool ? next() : res.status(503).json({error:"database_not_configured"}));
   router.get("/kitchen/profile",signedIn,role("kitchen"),wrap(async(req,res)=>{
@@ -68,6 +69,17 @@ export function createKitchenRouter(pool) {
     const {rows}=await pool.query("UPDATE orders SET status=$1,accepted_at=CASE WHEN $1='accepted' THEN now() ELSE accepted_at END,updated_at=now() WHERE id=$2 AND kitchen_id=$3 AND status=ANY($4::text[]) RETURNING id,public_code,status",[v.data,req.params.id,k.id,previous[v.data]]);
     if(!rows[0])return res.status(409).json({error:"invalid_order_transition"});
     res.json({order:rows[0]});
+  }));
+  router.get("/admin/kitchens",signedIn,isAdmin,wrap(async(req,res)=>{
+    const {rows}=await pool.query("SELECT id,owner_uid,name,phone,address,active,created_at FROM kitchens ORDER BY created_at DESC");
+    res.json({kitchens:rows});
+  }));
+  router.patch("/admin/kitchens/:id/active",signedIn,isAdmin,wrap(async(req,res)=>{
+    const v=z.object({active:z.boolean()}).safeParse(req.body);
+    if(!v.success)return res.status(400).json({error:"invalid_status"});
+    const {rows}=await pool.query("UPDATE kitchens SET active=$1,updated_at=now() WHERE id=$2 RETURNING id,name,active",[v.data.active,req.params.id]);
+    if(!rows[0])return res.status(404).json({error:"kitchen_not_found"});
+    res.json({kitchen:rows[0]});
   }));
   return router;
 }
