@@ -83,7 +83,7 @@ app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
     await client.query("BEGIN");
     const ids = input.items.map(x => x.productId);
     const { rows: products } = await client.query(
-      "SELECT id,name,price_uzs FROM products WHERE id=ANY($1::uuid[]) AND available=true FOR SHARE", [ids]);
+      "SELECT id,name,price_uzs,kitchen_id FROM products WHERE id=ANY($1::uuid[]) AND available=true FOR SHARE", [ids]);
     if (products.length !== new Set(ids).size) {
       await client.query("ROLLBACK");
       return res.status(400).json({ error: "product_unavailable", message: "Ayrim mahsulotlar mavjud emas." });
@@ -91,11 +91,14 @@ app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
     const byId = new Map(products.map(p => [p.id, p]));
     const subtotal = input.items.reduce((sum, item) => sum + Number(byId.get(item.productId).price_uzs) * item.quantity, 0);
     const total = subtotal + input.deliveryFee;
+    const kitchenIds = [...new Set(products.map(p => p.kitchen_id).filter(Boolean))];
+    if (kitchenIds.length > 1) { await client.query("ROLLBACK"); return res.status(400).json({ error: "multiple_kitchens", message: "Har bir buyurtma bitta oshxonadan bo‘lishi kerak." }); }
+    const kitchenId = kitchenIds[0] || null;
     const publicCode = "AK-" + Date.now().toString().slice(-8);
     const { rows: [order] } = await client.query(`
-      INSERT INTO orders(public_code,customer_name,customer_phone,delivery_address,latitude,longitude,landmark,notes,subtotal_uzs,delivery_fee_uzs,total_uzs,payment_method)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'cash') RETURNING id,public_code,status,total_uzs,created_at
-    `, [publicCode,input.customerName,input.customerPhone,input.address,input.latitude ?? null,input.longitude ?? null,input.landmark ?? null,input.notes ?? null,subtotal,input.deliveryFee,total]);
+      INSERT INTO orders(public_code,customer_name,customer_phone,delivery_address,latitude,longitude,landmark,notes,subtotal_uzs,delivery_fee_uzs,total_uzs,payment_method,kitchen_id)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'cash',$12) RETURNING id,public_code,status,total_uzs,created_at
+    `, [publicCode,input.customerName,input.customerPhone,input.address,input.latitude ?? null,input.longitude ?? null,input.landmark ?? null,input.notes ?? null,subtotal,input.deliveryFee,total,kitchenId]);
     for (const item of input.items) {
       const p = byId.get(item.productId);
       await client.query("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_uzs) VALUES($1,$2,$3,$4,$5)",
