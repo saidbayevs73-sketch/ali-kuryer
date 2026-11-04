@@ -15,3 +15,84 @@
 @media(max-width:600px){.site-header{height:62px}.header-inner{padding:0 8px;gap:5px}.brand{font-size:15px;gap:4px}.brand-mark{width:29px;height:34px;font-size:29px}.brand-mark i{top:8px;width:12px}.brand-mark i:before{top:6px}.brand-mark i:after{top:12px}.location-pill{height:34px;max-width:112px;min-width:0;padding:0 6px;gap:4px;font-size:8px;border-radius:9px}.pin{font-size:13px}.chevron{font-size:13px}.header-actions{gap:3px}.header-icon{width:29px;height:29px;flex:0 0 29px;border-radius:9px;font-size:17px}.login-button{height:31px;padding:0 9px;border-radius:9px;font-size:9px}.login-button span{display:none}.quick-links{height:40px;padding:0 12px;gap:22px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}.quick-links::-webkit-scrollbar{display:none}.quick-links a{font-size:10px}.hero{margin:12px 10px 0;min-height:300px;border-radius:19px}.hero:after{width:260px;height:260px;right:-50px;top:55px}.hero-copy{padding:22px 0 22px 17px;max-width:75%}.hero-brand{font-size:29px;letter-spacing:-1.5px;gap:4px}.hero-mark{width:37px;height:38px;font-size:36px}.hero-eyebrow{font-size:7px;letter-spacing:1px;margin:12px 0 8px}.hero-copy h1{font-size:27px;line-height:1.08;letter-spacing:-1px}.hero-description{max-width:245px;font-size:10px;line-height:1.45;margin-bottom:12px}.hero-benefits{gap:4px}.hero-benefits span{font-size:7px;padding:6px 7px;border-radius:7px}.hero-cta{margin-top:14px;padding:10px 12px;font-size:9px;gap:9px;border-radius:9px}.hero-cta b{font-size:14px}.hero-rider{width:54%;height:58%;right:-4%;bottom:0}.hero-rider img{height:100%;object-position:center bottom}.search-wrap{height:48px;margin:15px 12px 18px;padding:0 12px;border-radius:11px}.search-wrap input{font-size:10px}.search-symbol{font-size:21px}.categories-section,.restaurants-section,.catalog-section,.promo-section{padding:5px 12px 17px}.section-heading{gap:8px;margin-bottom:11px;flex-wrap:wrap}.section-heading h2{font-size:16px}.section-subtitle{font-size:9px}.section-heading>a{font-size:9px}.category-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.category-tile{padding:7px;border-radius:11px;gap:8px}.category-picture{width:43px;height:43px;flex-basis:43px;font-size:24px;border-radius:11px}.category-tile b{font-size:9px}.promo-section{padding-top:4px}.promo-row{gap:8px}.promo{height:118px;padding:11px;border-radius:12px;align-items:flex-start}.promo h2{font-size:11px;line-height:1.2;margin-bottom:9px}.promo span{font-size:7px;padding:7px 8px;border-radius:6px}.promo img{width:48%;height:68%;bottom:0}.restaurant-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.restaurant-card{border-radius:11px}.restaurant-card>img{height:78px}.restaurant-card>div{padding:7px 8px}.restaurant-card>div>b{font-size:10px}.restaurant-card p{font-size:8px;gap:9px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.product-card{padding:7px;border-radius:11px}.product-image{height:116px;border-radius:8px}.product-card h3{font-size:10px;margin:8px 0 4px}.product-card p{font-size:8px;min-height:20px}.product-bottom>b{font-size:10px}.add-btn{width:28px;height:28px;font-size:19px}.favorite-btn{width:25px;height:25px;font-size:14px}.fast-label{font-size:8px;padding:6px 7px}.cart-section{margin:10px 12px;padding:14px;border-radius:13px}.cart-layout{grid-template-columns:1fr;gap:10px}.order-form{padding:12px}.order-form h3{font-size:13px}.bottom-nav{height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);gap:0;justify-content:space-around}.bottom-nav a{min-width:0;flex:1;font-size:8px;gap:2px}.bottom-nav a span{font-size:20px}.main-shell{padding-bottom:calc(75px + env(safe-area-inset-bottom))}footer{padding:18px 12px calc(80px + env(safe-area-inset-bottom));flex-direction:column;gap:6px}.account-panel{margin:12px;padding:12px}}
 @media(max-width:370px){.brand strong{font-size:13px}.location-pill{max-width:87px}.location-pill span:nth-child(2){max-width:53px}.header-icon{width:25px;height:25px;flex-basis:25px}.hero-copy h1{font-size:24px}.hero-rider{width:57%}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* Reference alignment: Ali Kuryer red/white marketplace layout */
+:root{--red:#e50924;--red-dark:#c9001b;--ink:#171717;--muted:#6f6f75;--line:#eeeef1;--soft:#f8f8fa}
+.site-header{height:74px;box-shadow:0 2px 12px #1616160a}
+.header-inner{max-width:1500px;padding:0 4%;gap:22px}
+.brand{font-size:25px}.brand-mark{color:var(--red)}
+.location-pill{max-width:360px;height:46px;border-radius:24px;padding:0 18px;font-size:13px;box-shadow:0 2px 9px #0000000b}
+.header-icon{width:48px;height:48px;border-radius:50%;font-size:25px;box-shadow:0 2px 9px #0000000b}
+.login-button{height:46px;padding:0 22px;border-radius:24px;font-size:13px}
+.quick-links{display:none}
+.main-shell{max-width:1500px;padding-bottom:100px}
+.hero{margin:0;min-height:420px;border-radius:0 0 28px 28px;background:linear-gradient(180deg,#69baf7 0%,#d5efff 58%,#fff 100%);overflow:hidden}
+.hero:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#ffffff12,#ffffff00 65%),radial-gradient(ellipse at 18% 18%,#fff9 0 3%,transparent 30%),linear-gradient(180deg,transparent 55%,#ffffff55)}
+.hero:after{width:480px;height:480px;right:6%;top:10%;background:#ffffff26}
+.hero-copy{padding:42px 0 38px 5%;max-width:61%}
+.hero-brand{font-size:clamp(42px,5vw,68px);letter-spacing:-2.5px}
+.hero-eyebrow{font-size:12px}
+.hero-copy h1{font-size:clamp(32px,4vw,48px);max-width:560px}
+.hero-description{font-size:16px;color:#292d35}
+.hero-benefits span{font-size:12px;padding:10px 14px;border-radius:24px}
+.hero-cta{padding:15px 24px;border-radius:28px;font-size:15px}
+.hero-rider{width:48%;right:0;height:100%}
+.hero-rider img{height:100%;object-fit:contain;object-position:center bottom}
+.search-wrap{margin:-28px auto 28px;max-width:850px;height:68px;border-radius:38px;box-shadow:0 7px 24px #00000018;padding:0 25px}
+.search-wrap input{font-size:16px}
+.categories-section,.restaurants-section,.catalog-section,.promo-section{padding-left:3%;padding-right:3%}
+.category-list{display:flex;gap:18px;justify-content:space-between}
+.category-tile{flex:1;min-width:100px;border:0;background:transparent;padding:8px 4px}
+.category-picture{width:100%;height:84px;border-radius:22px;font-size:42px}
+.category-tile b{font-size:13px}
+.promo{height:180px;border-radius:24px;padding:24px}
+.promo h2{font-size:25px}
+.promo span{font-size:13px;padding:11px 17px;border-radius:24px}
+.restaurant-list{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.restaurant-card{border-radius:22px;box-shadow:0 3px 10px #00000012}
+.restaurant-card>img{height:155px}
+.restaurant-card>div{padding:14px 16px}
+.restaurant-card>div>b{font-size:16px}
+.restaurant-card p{font-size:13px}
+.bottom-nav{height:78px;gap:min(9vw,110px);box-shadow:0 -3px 16px #0000000a}
+.bottom-nav a{font-size:13px;min-width:85px}
+.bottom-nav a span{font-size:28px}
+@media(max-width:900px){
+ .hero{min-height:370px}.hero-copy{max-width:65%}
+ .category-list{display:flex;overflow-x:auto;justify-content:flex-start;scroll-snap-type:x mandatory;padding:3px 0 10px}
+ .category-tile{flex:0 0 112px;min-width:112px;scroll-snap-align:start;flex-direction:column;align-items:center}
+ .category-picture{width:76px;height:76px}
+ .category-tile b{text-align:center;font-size:11px}
+ .restaurant-card>img{height:120px}
+}
+@media(max-width:600px){
+ .site-header{height:62px}.header-inner{padding:0 8px;gap:5px}
+ .brand{font-size:15px}.location-pill{max-width:112px;min-width:0;height:34px;padding:0 6px;font-size:8px;border-radius:18px}
+ .header-icon{width:29px;height:29px;flex:0 0 29px;border-radius:50%;font-size:17px}
+ .login-button{height:31px;padding:0 9px;font-size:9px}
+ .hero{margin:0;min-height:310px;border-radius:0 0 18px 18px}
+ .hero-copy{padding:23px 0 22px 15px;max-width:72%}
+ .hero-brand{font-size:31px}.hero-mark{width:37px;height:38px;font-size:36px}
+ .hero-eyebrow{font-size:7px}.hero-copy h1{font-size:27px}
+ .hero-description{font-size:10px;max-width:240px}
+ .hero-benefits span{font-size:7px;padding:6px 7px}
+ .hero-cta{margin-top:13px;padding:10px 13px;font-size:10px}
+ .hero-rider{width:54%;height:62%;right:-4%;bottom:0}
+ .search-wrap{height:48px;margin:-14px 12px 18px;padding:0 14px;border-radius:28px}
+ .search-wrap input{font-size:11px}
+ .categories-section,.restaurants-section,.catalog-section,.promo-section{padding:5px 12px 17px}
+ .category-list{display:flex;overflow-x:auto;gap:10px;scrollbar-width:none}
+ .category-list::-webkit-scrollbar{display:none}
+ .category-tile{flex:0 0 78px;min-width:78px;display:flex;flex-direction:column;align-items:center;padding:5px 2px;gap:6px}
+ .category-picture{width:68px;height:68px;flex-basis:68px;border-radius:17px;font-size:34px}
+ .category-tile b{text-align:center;font-size:9px;line-height:1.2}
+ .promo-row{grid-template-columns:1fr 1fr;gap:8px}
+ .promo{height:118px;padding:11px;border-radius:14px}
+ .promo h2{font-size:11px}.promo span{font-size:7px;padding:7px 8px}
+ .restaurant-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .restaurant-card>img{height:78px}
+ .restaurant-card>div{padding:7px 8px}
+ .restaurant-card>div>b{font-size:10px}.restaurant-card p{font-size:8px}
+ .bottom-nav{height:calc(66px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);gap:0;justify-content:space-around}
+ .bottom-nav a{min-width:0;flex:1;font-size:8px}.bottom-nav a span{font-size:21px}
+}
