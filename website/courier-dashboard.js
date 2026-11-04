@@ -7,5 +7,16 @@ for(const o of available.orders){const row=document.createElement("article");row
 for(const o of mine.orders){const row=document.createElement("article");row.className="staff-row";const info=document.createElement("div");info.className="staff-info";const title=document.createElement("strong");title.textContent=o.public_code;const detail=document.createElement("small");detail.textContent=o.delivery_address+" · "+o.status;info.append(title,detail);const next={assigned:"picked_up",picked_up:"on_the_way",on_the_way:"delivered"}[o.status];if(next){const b=document.createElement("button");b.textContent=({picked_up:"Olib ketdim",on_the_way:"Yo‘lda",delivered:"Yetkazildi"})[next];b.onclick=async()=>{b.disabled=true;try{await call("/api/v1/courier/orders/"+o.id+"/status",{method:"PATCH",body:JSON.stringify({status:next})});await refreshCourier();msg("Buyurtma holati yangilandi.");}catch(e){msg(e.message,true);b.disabled=false;}};row.append(b);}el("#myOrders").append(row);}
 }catch(e){msg(e.message,true);}}
 el("#refreshCourier")?.addEventListener("click",refreshCourier);
-el("#onlineToggle")?.addEventListener("click",()=>{if(!navigator.geolocation){msg("Qurilmada GPS mavjud emas.",true);return;}navigator.geolocation.getCurrentPosition(async p=>{try{await call("/api/v1/courier/presence",{method:"POST",body:JSON.stringify({online:true,latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy})});msg("GPS va online holat yangilandi.");}catch(e){msg(e.message,true);}},()=>msg("GPS ruxsati berilmadi.",true),{enableHighAccuracy:true,timeout:10000});});
+let gpsWatchId=null,lastGpsSent=0;
+el("#onlineToggle")?.addEventListener("click",()=>{
+ if(!navigator.geolocation){msg("Qurilmada GPS mavjud emas.",true);return;}
+ if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;msg("GPS kuzatuvi to‘xtatildi.");return;}
+ msg("GPS kuzatuvi boshlandi…");
+ gpsWatchId=navigator.geolocation.watchPosition(async p=>{
+  const now=Date.now();if(now-lastGpsSent<8000)return;lastGpsSent=now;
+  try{await call("/api/v1/courier/presence",{method:"POST",body:JSON.stringify({online:true,latitude:p.coords.latitude,longitude:p.coords.longitude,accuracy:p.coords.accuracy})});msg("Jonli GPS yangilandi.");}
+  catch(e){msg(e.message,true);}
+ },()=>msg("GPS ruxsati berilmadi yoki joylashuv aniqlanmadi.",true),{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+});
+window.addEventListener("pagehide",()=>{if(gpsWatchId!==null)navigator.geolocation.clearWatch(gpsWatchId);});
 window.addEventListener("ali-kuryer-staff-ready",refreshCourier);
