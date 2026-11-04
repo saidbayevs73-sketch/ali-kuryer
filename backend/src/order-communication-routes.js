@@ -55,7 +55,7 @@ export function createOrderCommunicationRouter(pool) {
     const p=await participant(pool,req.params.id,req.identity.uid);
     if(!p)return res.status(404).json({error:"order_not_found"});
     if(!isActive(p)||!p.peer)return res.status(403).json({error:"contact_closed_or_peer_missing"});
-    const existing=await pool.query("SELECT id FROM order_call_sessions WHERE order_id=$1 AND status IN ('ringing','accepted') AND created_at>now()-interval '2 minutes' LIMIT 1",[p.id]);
+    const existing=await pool.query("SELECT id FROM order_call_sessions WHERE order_id=$1 AND status IN ('ringing','accepted') LIMIT 1",[p.id]);
     if(existing.rows[0])return res.status(409).json({error:"call_already_active",callId:existing.rows[0].id});
     const {rows:[call]}=await pool.query(
       "INSERT INTO order_call_sessions(order_id,caller_uid,callee_uid,call_type) VALUES($1,$2,$3,'audio') RETURNING id,caller_uid,callee_uid,status,created_at",
@@ -67,7 +67,7 @@ export function createOrderCommunicationRouter(pool) {
     const p=await participant(pool,req.params.id,req.identity.uid);
     if(!p||!isActive(p))return res.status(404).json({error:"call_not_found"});
     const {rows:[call]}=await pool.query(
-      "SELECT id,caller_uid,callee_uid,status,created_at,ended_at FROM order_call_sessions WHERE order_id=$1 AND (caller_uid=$2 OR callee_uid=$2) AND status IN ('ringing','accepted') AND created_at>now()-interval '2 minutes' ORDER BY created_at DESC LIMIT 1",
+      "SELECT id,caller_uid,callee_uid,status,created_at,ended_at FROM order_call_sessions WHERE order_id=$1 AND (caller_uid=$2 OR callee_uid=$2) AND status IN ('ringing','accepted') ORDER BY created_at DESC LIMIT 1",
       [p.id,req.identity.uid]);
     if(!call)return res.json({call:null,signals:[]});
     const {rows:signals}=await pool.query(
