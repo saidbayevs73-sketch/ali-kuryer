@@ -33,7 +33,7 @@
     if(s.signal_type==="offer"&&role==="callee"){
      const peer=await ensurePeer();await peer.setRemoteDescription(s.payload);
      for(const ice of queuedIce)await peer.addIceCandidate(ice);queuedIce=[];
-     const stream=await getMicrophone();stream.getTracks().forEach(t=>peer.addTrack(t,stream));
+     const stream=localStream||await getMicrophone();stream.getTracks().forEach(t=>peer.addTrack(t,stream));
      const answer=await peer.createAnswer();await peer.setLocalDescription(answer);await postSignal("answer",peer.localDescription.toJSON());callStatus.textContent="Qo‘ng‘iroqqa ulandingiz.";
     }else if(s.signal_type==="answer"&&role==="caller"){
      const peer=await ensurePeer();if(peer.signalingState==="have-local-offer")await peer.setRemoteDescription(s.payload);
