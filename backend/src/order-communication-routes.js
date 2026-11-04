@@ -2,7 +2,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { getFirebaseAdminAuth } from "./firebase-admin.js";
 
-const router = Router();
 const wrap = fn => (req,res,next) => Promise.resolve(fn(req,res,next)).catch(next);
 async function signedIn(req,res,next) {
   try {
@@ -27,6 +26,7 @@ async function participant(pool, orderId, uid) {
 const isActive = o => ["assigned","picked_up","on_the_way"].includes(o.status) && !o.contact_closed_at;
 
 export function createOrderCommunicationRouter(pool) {
+  const router = Router();
   router.use((req,res,next)=>pool?next():res.status(503).json({error:"database_not_configured"}));
 
   router.get("/orders/:id/chat", signedIn, wrap(async(req,res)=>{
