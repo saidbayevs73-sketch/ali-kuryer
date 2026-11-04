@@ -1,6 +1,6 @@
 package uz.alikuryer.app
 
-import androidx.activity.ComponentActivity
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -21,15 +21,16 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
-import androidx.lifecycle.lifecycleScope
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
     private lateinit var webView: WebView
     private lateinit var root: FrameLayout
     private var fileCallback: ValueCallback<Array<Uri>>? = null
@@ -219,7 +220,7 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun signInWithGoogle() {
             runOnUiThread {
-                this@MainActivity.lifecycleScope.launch {
+                CoroutineScope(Dispatchers.Main).launch {
                     try {
                         val googleOption = GetGoogleIdOption.Builder()
                             .setServerClientId(webClientId)
@@ -274,7 +275,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == locationRequest && geoCallback != null) {
             val granted = grantResults.any { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
