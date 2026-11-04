@@ -55,17 +55,24 @@ export function createOrderCommunicationRouter(pool) {
     const p=await participant(pool,req.params.id,req.identity.uid);
     if(!p)return res.status(404).json({error:"order_not_found"});
     if(!isActive(p)||!p.peer)return res.status(403).json({error:"contact_closed_or_peer_missing"});
+    await pool.query("UPDATE order_call_sessions SET status='expired',ended_at=now() WHERE order_id=$1 AND status='ringing' AND created_at < now() - interval '2 minutes'",[p.id]);
     const existing=await pool.query("SELECT id FROM order_call_sessions WHERE order_id=$1 AND status IN ('ringing','accepted') LIMIT 1",[p.id]);
     if(existing.rows[0])return res.status(409).json({error:"call_already_active",callId:existing.rows[0].id});
-    const {rows:[call]}=await pool.query(
-      "INSERT INTO order_call_sessions(order_id,caller_uid,callee_uid,call_type) VALUES($1,$2,$3,'audio') RETURNING id,caller_uid,callee_uid,status,created_at",
-      [p.id,req.identity.uid,p.peer]);
-    res.status(201).json({call});
+    try {
+      const {rows:[call]}=await pool.query(
+        "INSERT INTO order_call_sessions(order_id,caller_uid,callee_uid,call_type) VALUES($1,$2,$3,'audio') RETURNING id,caller_uid,callee_uid,status,created_at",
+        [p.id,req.identity.uid,p.peer]);
+      return res.status(201).json({call});
+    } catch (error) {
+      if (error.code === "23505") return res.status(409).json({error:"call_already_active"});
+      throw error;
+    }
   }));
 
   router.get("/orders/:id/calls/current", signedIn, wrap(async(req,res)=>{
     const p=await participant(pool,req.params.id,req.identity.uid);
     if(!p||!isActive(p))return res.status(404).json({error:"call_not_found"});
+    await pool.query("UPDATE order_call_sessions SET status='expired',ended_at=now() WHERE order_id=$1 AND status='ringing' AND created_at < now() - interval '2 minutes'",[p.id]);
     const {rows:[call]}=await pool.query(
       "SELECT id,caller_uid,callee_uid,status,created_at,ended_at FROM order_call_sessions WHERE order_id=$1 AND (caller_uid=$2 OR callee_uid=$2) AND status IN ('ringing','accepted') ORDER BY created_at DESC LIMIT 1",
       [p.id,req.identity.uid]);
