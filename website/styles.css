@@ -96,3 +96,47 @@
  .bottom-nav{height:calc(66px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);gap:0;justify-content:space-around}
  .bottom-nav a{min-width:0;flex:1;font-size:8px}.bottom-nav a span{font-size:21px}
 }
+
+
+/* Ali Kuryer customer experience refresh */
+:root{--red:#d91432;--red-dark:#b90f29;--ink:#19171b;--muted:#77727b;--line:#eee9ed;--soft:#f8f6f7;--radius:20px}
+body{background:#fbfafb}
+.site-header{box-shadow:0 3px 18px #211f2408}
+.brand-mark{filter:drop-shadow(0 3px 4px #d9143220)}
+.location-pill{border-radius:999px;background:#fff;transition:border-color .2s,box-shadow .2s}
+.location-pill:hover{border-color:#e9a0aa;box-shadow:0 4px 14px #d9143210}
+.header-icon{border-radius:50%;transition:background .2s,border-color .2s,transform .2s}
+.header-icon:hover{background:#fff1f3;border-color:#f2c2c9;transform:translateY(-1px)}
+.login-button,.hero-cta,.submit-order{background:linear-gradient(135deg,#e51b35,#c8102e);box-shadow:0 7px 18px #d9143224;transition:transform .2s,box-shadow .2s}
+.login-button:hover,.hero-cta:hover,.submit-order:hover{transform:translateY(-2px);box-shadow:0 10px 22px #d9143233}
+.quick-links{border-color:#f0ecef}
+.quick-links a{position:relative}
+.quick-links a:first-child:after,.quick-links a:hover:after{content:"";position:absolute;left:0;right:0;bottom:-16px;height:2px;background:var(--red);border-radius:2px}
+.hero{box-shadow:0 12px 34px #a82b3b12}
+.hero:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,#fff8,transparent 58%)}
+.hero-copy h1{letter-spacing:-2px}
+.search-wrap{border-radius:999px;border-color:#e8e2e7;box-shadow:0 8px 26px #211f240d;transition:border-color .2s,box-shadow .2s}
+.search-wrap:focus-within{border-color:#e58a98;box-shadow:0 0 0 4px #e51b3510,0 8px 26px #211f240d}
+.section-heading{margin-bottom:18px}
+.section-heading h2{letter-spacing:-.8px}
+.category-tile{border-color:#f0ebef;box-shadow:0 3px 12px #211f2405}
+.category-tile:hover,.category-tile.active{border-color:#ed9eaa;background:#fffafb;box-shadow:0 8px 22px #d9143210}
+.category-picture{transition:transform .2s}
+.category-tile:hover .category-picture{transform:scale(1.06)}
+.promo{box-shadow:0 8px 22px #211f2410;transition:transform .2s,box-shadow .2s}
+.promo:hover{transform:translateY(-3px);box-shadow:0 13px 28px #211f241b}
+.restaurant-card,.product-card{box-shadow:0 4px 16px #211f2407}
+.restaurant-card:hover,.product-card:hover{border-color:#ead6da;box-shadow:0 12px 28px #211f2412}
+.product-image{background:linear-gradient(145deg,#faf8f9,#f1edf0)}
+.add-btn{border-radius:50%;box-shadow:0 4px 10px #d9143225;transition:transform .18s,background .18s}
+.add-btn:hover{transform:scale(1.08);background:var(--red-dark)}
+.favorite-btn{border-radius:50%;box-shadow:0 2px 9px #211f2410}
+.cart-section{background:linear-gradient(135deg,#fff,#faf7f8);box-shadow:0 7px 24px #211f2408}
+.order-form input:focus,.order-form textarea:focus{outline:0;border-color:#df8794;box-shadow:0 0 0 3px #e51b3510}
+.bottom-nav{box-shadow:0 -5px 22px #211f2409}
+.bottom-nav a{transition:color .18s,transform .18s}
+.bottom-nav a:hover{transform:translateY(-2px)}
+:focus-visible{outline:3px solid #e51b3544;outline-offset:3px}
+@media(min-width:1100px){.main-shell{padding-left:8px;padding-right:8px}.hero{min-height:370px}.search-wrap{margin-top:27px;margin-bottom:34px}.category-list{gap:15px}.product-grid{gap:16px}.product-image{height:170px}}
+@media(max-width:600px){body{background:#fff}.hero{box-shadow:0 8px 24px #a82b3b12}.search-wrap{box-shadow:0 7px 22px #211f2412}.section-heading h2{font-size:18px}.product-grid{gap:9px}.product-card{padding:7px;border-radius:13px}.product-image{height:118px}.product-card h3{font-size:11px}.product-bottom>b{font-size:10px}.add-btn{width:29px;height:29px}.cart-section{border-radius:16px;padding:14px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
