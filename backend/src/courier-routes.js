@@ -9,11 +9,10 @@ const admin=(req,res,next)=>{const e=String(req.identity?.email||"").toLowerCase
 export function createCourierRouter(pool){
  router.use((req,res,next)=>pool?next():res.status(503).json({error:"database_not_configured"}));
  router.post("/admin/couriers/link",auth,admin,wrap(async(req,res)=>{
-  const v=z.object({uid:z.string().min(1),phone:z.string().min(7).max(30)}).safeParse(req.body);
+  const v=z.object({uid:z.string().min(1),phone:z.string().min(7).max(30),fullName:z.string().min(2).max(120)}).safeParse(req.body);
   if(!v.success)return res.status(400).json({error:"invalid_link"});
-  const found=await pool.query("SELECT id FROM couriers WHERE phone=$1 AND active=true",[v.data.phone]);
-  if(!found.rows[0])return res.status(404).json({error:"courier_record_not_found",message:"Avval couriers jadvalida faol kuryer yozuvi bo‘lishi kerak."});
-  await pool.query("INSERT INTO courier_staff_links(firebase_uid,courier_id) VALUES($1,$2) ON CONFLICT(firebase_uid) DO UPDATE SET courier_id=EXCLUDED.courier_id",[v.data.uid,found.rows[0].id]);
+  const {rows:[courier]}=await pool.query("INSERT INTO couriers(full_name,phone,active) VALUES($1,$2,true) ON CONFLICT(phone) DO UPDATE SET full_name=EXCLUDED.full_name,active=true RETURNING id",[v.data.fullName,v.data.phone]);
+  await pool.query("INSERT INTO courier_staff_links(firebase_uid,courier_id) VALUES($1,$2) ON CONFLICT(firebase_uid) DO UPDATE SET courier_id=EXCLUDED.courier_id",[v.data.uid,courier.id]);
   res.json({ok:true});
  }));
  router.get("/courier/orders/available",auth,courier,wrap(async(req,res)=>{
