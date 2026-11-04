@@ -35,7 +35,7 @@ async function loadServerCatalog(){
    id:p.id,name:p.name,price:Number(p.price),cat:category.slug,emoji:"🛍️",
    desc:p.description||"Ali Kuryer mahsuloti",photo:p.imageUrl||"",serverId:p.id
   })));
-  if(remote.length){products=remote;catalogReady=true;renderProducts();renderCart();}
+  products=remote;catalogReady=true;renderProducts();renderCart();
  }catch(error){console.warn("Ali Kuryer katalogi hozircha serverdan olinmadi:",error.message);}
 }
 
@@ -88,6 +88,14 @@ document.querySelector("#locationBtn").onclick=()=>{
 document.querySelector("#orderForm").onsubmit=async e=>{
  e.preventDefault();if(!Object.keys(cart).length){document.querySelector("#orderNotice").textContent="Avval savatchaga mahsulot qo‘shing.";return;}
  const orderItems=products.filter(p=>cart[p.id]);
+ if(!API_BASE||!catalogReady){
+  document.querySelector("#orderNotice").textContent="Buyurtma berish vaqtincha ishlamayapti: server katalogi ulanmagan. Keyinroq qayta urinib ko‘ring.";
+  return;
+ }
+ if(!orderItems.length){
+  document.querySelector("#orderNotice").textContent="Server katalogida mahsulot topilmadi. Oshxona mahsulot qo‘shishini kuting.";
+  return;
+ }
  if(API_BASE&&catalogReady){
   if(orderItems.some(p=>!p.serverId)){document.querySelector("#orderNotice").textContent="Mahsulot ma’lumoti serverda topilmadi. Sahifani yangilang.";return;}
   const submit=document.querySelector(".submit-order");submit.disabled=true;submit.textContent="Yuborilmoqda…";
