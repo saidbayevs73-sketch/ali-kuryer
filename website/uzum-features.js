@@ -40,7 +40,7 @@ async function installApp(){if(installPrompt){installPrompt.prompt();try{await i
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e});
 const loc=$("#locationBtn");if(loc){loc.onclick=e=>{e.preventDefault();locationSheet()};}
 const login=$("#loginBtn");if(login)login.onclick=e=>{e.preventDefault();accountSheet()};
-const nav=$(".bottom-nav");if(nav){const a=document.createElement("a");a.href="#accountPanel";a.dataset.action="more";a.innerHTML="<span>☰</span>Ko‘proq";a.onclick=e=>{e.preventDefault();accountSheet()};nav.appendChild(a);}
+
 // Existing profile and order navigation open the richer account menu.
 document.querySelectorAll('.bottom-nav [data-action="profile"],.bottom-nav [data-action="orders"]').forEach(a=>a.addEventListener("click",e=>{e.preventDefault();accountSheet()}));
 })();
