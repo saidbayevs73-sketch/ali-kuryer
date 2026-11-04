@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.webkit.GeolocationPermissions
+import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -17,6 +18,16 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.lifecycle.lifecycleScope
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView
@@ -26,13 +37,12 @@ class MainActivity : Activity() {
     private var geoOrigin: String? = null
     private val filePickerRequest = 2101
     private val locationRequest = 2102
+    private val webClientId = "1088566467185-1tefomqi153ho33u18r40u3p27le8gbm.apps.googleusercontent.com"
+    private val firebaseAuth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Draw edge-to-edge, then apply the real system-bar insets to the WebView.
-        // This prevents Android 15 / targetSdk 35 status and navigation bars
-        // from covering the app logo, buttons, or bottom navigation.
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = android.graphics.Color.WHITE
         window.navigationBarColor = android.graphics.Color.WHITE
@@ -63,9 +73,6 @@ class MainActivity : Activity() {
             )
         )
 
-        // Use real layout margins rather than WebView padding. This changes the
-        // WebView viewport itself, so HTML headers/buttons cannot draw beneath
-        // Android's status bar or gesture/navigation bar.
         ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
@@ -99,34 +106,74 @@ class MainActivity : Activity() {
         settings.builtInZoomControls = false
         settings.displayZoomControls = false
 
+        webView.addJavascriptInterface(AliKuryerBridge(), "AliKuryerNative")
+
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // Small responsive-layout corrections; preserve the existing design.
                 view?.evaluateJavascript(
                     """
                     (function(){
-                      if(document.getElementById('ali-android-layout-fix')) return;
-                      var style=document.createElement('style');
-                      style.id='ali-android-layout-fix';
-                      style.textContent=
-                        'html,body{height:100%;min-height:0;overflow:hidden}' +
-                        '.app{height:100%!important;min-height:0!important;overflow:hidden!important}' +
-                        '.app-main{min-height:0!important;overscroll-behavior:contain;padding-bottom:18px!important;scroll-padding-bottom:24px}' +
-                        '.tabbar{height:68px!important;min-height:68px!important;flex:0 0 68px!important;padding-bottom:8px!important}' +
-                        '.language{height:100%!important;min-height:0!important;padding:56px 18px 22px!important}' +
-                        '.language h2{margin:28px 0 6px!important}' +
-                        '.lang-list{margin-top:22px!important}' +
-                        '.home-premium{padding-bottom:18px!important}' +
-                        '.home-premium-head{padding-top:6px!important}' +
-                        '.home-food-section{padding-bottom:26px!important}';
-                      document.head.appendChild(style);
+                      if(!document.getElementById('ali-android-layout-fix')){
+                        var style=document.createElement('style');
+                        style.id='ali-android-layout-fix';
+                        style.textContent=
+                          'html,body{height:100%;min-height:0;overflow:hidden}' +
+                          '.app{height:100%!important;min-height:0!important;overflow:hidden!important}' +
+                          '.app-main{min-height:0!important;overscroll-behavior:contain;padding-bottom:18px!important;scroll-padding-bottom:24px}' +
+                          '.tabbar{height:68px!important;min-height:68px!important;flex:0 0 68px!important;padding-bottom:8px!important}' +
+                          '.language{height:100%!important;min-height:0!important;padding:56px 18px 22px!important}' +
+                          '.language h2{margin:28px 0 6px!important}' +
+                          '.lang-list{margin-top:22px!important}' +
+                          '.home-premium{padding-bottom:18px!important}' +
+                          '.home-premium-head{padding-top:6px!important}' +
+                          '.home-food-section{padding-bottom:26px!important}';
+                        document.head.appendChild(style);
+                      }
+                      if(!window.__aliGoogleLoginBound){
+                        window.__aliGoogleLoginBound=true;
+                        document.addEventListener('click',function(e){
+                          var b=e.target && e.target.closest ? e.target.closest('#loginBtn, [data-google-login]') : null;
+                          if(!b) return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+                          if(window.AliKuryerNative) window.AliKuryerNative.signInWithGoogle();
+                        },true);
+                      }
+                      window.aliKuryerGoogleAuthSuccess=function(name,email){
+                        var panel=document.getElementById('accountPanel');
+                        if(panel){
+                          panel.hidden=false;
+                          panel.innerHTML='';
+                          var wrap=document.createElement('div');
+                          wrap.style.cssText='padding:20px;border-radius:18px;background:#fff;border:1px solid #e8e8e8;margin:16px 0';
+                          var heading=document.createElement('h2'); heading.textContent='Profil';
+                          var user=document.createElement('p'); user.textContent=name || 'Google foydalanuvchisi';
+                          var mail=document.createElement('p'); mail.textContent=email || '';
+                          var state=document.createElement('small'); state.textContent='Google orqali muvaffaqiyatli kirdingiz';
+                          wrap.append(heading,user,mail,state); panel.appendChild(wrap);
+                          panel.scrollIntoView({behavior:'smooth',block:'center'});
+                        }
+                        var btn=document.getElementById('loginBtn');
+                        if(btn){btn.innerHTML='♙ <span>'+String(name||'Profil').replace(/[<>&"]/g,'')+'</span>';}
+                      };
+                      window.aliKuryerGoogleAuthError=function(message){
+                        alert(message || 'Google orqali kirishda xatolik yuz berdi. Qayta urinib ko‘ring.');
+                      };
                     })();
                     """.trimIndent(),
                     null
                 )
+                firebaseAuth.currentUser?.let { user ->
+                    view?.evaluateJavascript(
+                        "if(window.aliKuryerGoogleAuthSuccess)window.aliKuryerGoogleAuthSuccess(${JSONObject.quote(user.displayName ?: "")},${JSONObject.quote(user.email ?: "")});",
+                        null
+                    )
+                }
             }
         }
+
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 view: WebView?,
@@ -166,6 +213,65 @@ class MainActivity : Activity() {
         setContentView(root)
         ViewCompat.requestApplyInsets(root)
         webView.loadUrl("file:///android_asset/index.html")
+    }
+
+    private inner class AliKuryerBridge {
+        @JavascriptInterface
+        fun signInWithGoogle() {
+            runOnUiThread {
+                lifecycleScope.launch {
+                    try {
+                        val googleOption = GetGoogleIdOption.Builder()
+                            .setServerClientId(webClientId)
+                            .setFilterByAuthorizedAccounts(false)
+                            .setAutoSelectEnabled(false)
+                            .build()
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(googleOption)
+                            .build()
+                        val credentialManager = CredentialManager.create(this@MainActivity)
+                        val result = credentialManager.getCredential(this@MainActivity, request)
+                        val credential = result.credential
+                        if (credential is CustomCredential &&
+                            credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                        ) {
+                            val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                            val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
+                            firebaseAuth.signInWithCredential(firebaseCredential)
+                                .addOnCompleteListener(this@MainActivity) { task ->
+                                    if (task.isSuccessful) {
+                                        val user = task.result?.user
+                                        val name = JSONObject.quote(user?.displayName ?: "")
+                                        val email = JSONObject.quote(user?.email ?: "")
+                                        webView.evaluateJavascript(
+                                            "if(window.aliKuryerGoogleAuthSuccess)window.aliKuryerGoogleAuthSuccess($name,$email);",
+                                            null
+                                        )
+                                    } else {
+                                        showGoogleError(task.exception?.localizedMessage)
+                                    }
+                                }
+                        } else {
+                            showGoogleError("Google hisob ma’lumoti olinmadi. Qayta urinib ko‘ring.")
+                        }
+                    } catch (e: Exception) {
+                        showGoogleError(e.localizedMessage)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showGoogleError(message: String?) {
+        val safeMessage = JSONObject.quote(message ?: "Google orqali kirishda xatolik yuz berdi.")
+        runOnUiThread {
+            if (::webView.isInitialized) {
+                webView.evaluateJavascript(
+                    "if(window.aliKuryerGoogleAuthError)window.aliKuryerGoogleAuthError($safeMessage);else alert($safeMessage);",
+                    null
+                )
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
