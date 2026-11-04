@@ -52,6 +52,7 @@ document.addEventListener("click", async event => {
   if (!button) return;
   event.preventDefault(); event.stopPropagation();
   if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+  if (window.AliKuryerNative?.signInWithGoogle) { window.AliKuryerNative.signInWithGoogle(); return; }
   if (auth.currentUser) { showUser(auth.currentUser); return; }
   try { await signInWithRedirect(auth, provider); }
   catch (error) { friendlyError(error); }
