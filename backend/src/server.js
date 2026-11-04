@@ -4,6 +4,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pg from "pg";
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
+import { getFirebaseAdminAuth } from "./firebase-admin.js";
 import { createStaffRouter } from "./staff-routes.js";
 import { createKitchenRouter } from "./kitchen-routes.js";
 import { createCourierRouter } from "./courier-routes.js";
@@ -61,6 +63,19 @@ app.get("/api/v1/catalog", requireDb, asyncRoute(async (req, res) => {
   res.json({ categories: [...grouped.values()] });
 }));
 
+async function requireCustomer(req, res, next) {
+  try {
+    const auth = getFirebaseAdminAuth();
+    if (!auth) return res.status(503).json({ error: "firebase_admin_not_configured" });
+    const token = (req.headers.authorization || "").startsWith("Bearer ") ? req.headers.authorization.slice(7) : "";
+    if (!token) return res.status(401).json({ error: "google_login_required", message: "Buyurtma berish uchun Google hisobingizga kiring." });
+    const decoded = await auth.verifyIdToken(token, true);
+    if (!decoded.uid || !decoded.email) return res.status(403).json({ error: "verified_google_account_required" });
+    req.customerAuth = decoded;
+    next();
+  } catch { return res.status(401).json({ error: "invalid_token", message: "Google hisobingizga qayta kiring." }); }
+}
+
 const orderSchema = z.object({
   customerName: z.string().trim().min(2).max(100),
   customerPhone: z.string().trim().regex(/^\+?[0-9 ()-]{9,20}$/),
@@ -74,13 +89,26 @@ const orderSchema = z.object({
   paymentMethod: z.literal("cash").default("cash")
 });
 
-app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
+app.post("/api/v1/orders", requireDb, requireCustomer, asyncRoute(async (req, res) => {
   const parsed = orderSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "invalid_order", details: parsed.error.flatten() });
   const input = parsed.data;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const { rows: existingCustomers } = await client.query("SELECT id,firebase_uid FROM customers WHERE phone=$1 FOR UPDATE", [input.customerPhone]);
+    let customerId;
+    if (existingCustomers[0]) {
+      if (existingCustomers[0].firebase_uid && existingCustomers[0].firebase_uid !== req.customerAuth.uid) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({ error: "phone_already_linked", message: "Bu telefon boshqa hisobga biriktirilgan." });
+      }
+      customerId = existingCustomers[0].id;
+      await client.query("UPDATE customers SET full_name=$1,firebase_uid=$2,email=$3 WHERE id=$4", [input.customerName, req.customerAuth.uid, req.customerAuth.email, customerId]);
+    } else {
+      const { rows: [customer] } = await client.query("INSERT INTO customers(full_name,phone,firebase_uid,email) VALUES($1,$2,$3,$4) RETURNING id", [input.customerName, input.customerPhone, req.customerAuth.uid, req.customerAuth.email]);
+      customerId = customer.id;
+    }
     const ids = input.items.map(x => x.productId);
     const { rows: products } = await client.query(
       "SELECT id,name,price_uzs,kitchen_id FROM products WHERE id=ANY($1::uuid[]) AND available=true FOR SHARE", [ids]);
@@ -94,11 +122,11 @@ app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
     const kitchenIds = [...new Set(products.map(p => p.kitchen_id).filter(Boolean))];
     if (kitchenIds.length > 1) { await client.query("ROLLBACK"); return res.status(400).json({ error: "multiple_kitchens", message: "Har bir buyurtma bitta oshxonadan bo‘lishi kerak." }); }
     const kitchenId = kitchenIds[0] || null;
-    const publicCode = "AK-" + Date.now().toString().slice(-8);
+    const publicCode = "AK-" + randomBytes(9).toString("hex").toUpperCase();
     const { rows: [order] } = await client.query(`
-      INSERT INTO orders(public_code,customer_name,customer_phone,delivery_address,latitude,longitude,landmark,notes,subtotal_uzs,delivery_fee_uzs,total_uzs,payment_method,kitchen_id)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'cash',$12) RETURNING id,public_code,status,total_uzs,created_at
-    `, [publicCode,input.customerName,input.customerPhone,input.address,input.latitude ?? null,input.longitude ?? null,input.landmark ?? null,input.notes ?? null,subtotal,input.deliveryFee,total,kitchenId]);
+      INSERT INTO orders(public_code,customer_id,customer_firebase_uid,customer_name,customer_phone,delivery_address,latitude,longitude,landmark,notes,subtotal_uzs,delivery_fee_uzs,total_uzs,payment_method,kitchen_id)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'cash',$14) RETURNING id,public_code,status,total_uzs,created_at
+    `, [publicCode,customerId,req.customerAuth.uid,input.customerName,input.customerPhone,input.address,input.latitude ?? null,input.longitude ?? null,input.landmark ?? null,input.notes ?? null,subtotal,input.deliveryFee,total,kitchenId]);
     for (const item of input.items) {
       const p = byId.get(item.productId);
       await client.query("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_uzs) VALUES($1,$2,$3,$4,$5)",
@@ -112,8 +140,8 @@ app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
   } finally { client.release(); }
 }));
 
-app.get("/api/v1/orders/:code", requireDb, asyncRoute(async (req, res) => {
-  const { rows: [order] } = await pool.query("SELECT public_code,status,total_uzs,created_at,updated_at FROM orders WHERE public_code=$1", [req.params.code]);
+app.get("/api/v1/orders/:code", requireDb, requireCustomer, asyncRoute(async (req, res) => {
+  const { rows: [order] } = await pool.query("SELECT public_code,status,total_uzs,created_at,updated_at FROM orders WHERE public_code=$1 AND customer_firebase_uid=$2", [req.params.code, req.customerAuth.uid]);
   if (!order) return res.status(404).json({ error: "not_found" });
   res.json({ order: { code: order.public_code, status: order.status, total: Number(order.total_uzs), createdAt: order.created_at, updatedAt: order.updated_at } });
 }));
