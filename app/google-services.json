@@ -1,45 +1,36 @@
 {
   "project_info": {
-    "project_number": "196902658109",
-    "project_id": "ali-kuryer",
-    "storage_bucket": "ali-kuryer.firebasestorage.app"
+    "project_number": "1088566467185",
+    "project_id": "ali-kuryer-9d6bb",
+    "storage_bucket": "ali-kuryer-9d6bb.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:196902658109:android:e2ac5ef5480c7d310a8a54",
+        "mobilesdk_app_id": "1:1088566467185:android:76b488bc28e630d5abd9d0",
         "android_client_info": {
           "package_name": "uz.alikuryer.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1088566467185-1tefomqi153ho33u18r40u3p27le8gbm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyAcgoKtT8hGIQc0zrGne9vIWMSThkjOQgA"
+          "current_key": "AIzaSyB-McrwqzgQh3j-0Ve5vjkb0rgF6ZlDE1g"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:196902658109:android:6bf763e4d470ea170a8a54",
-        "android_client_info": {
-          "package_name": "uz.alikuryer.customer"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAcgoKtT8hGIQc0zrGne9vIWMSThkjOQgA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1088566467185-1tefomqi153ho33u18r40u3p27le8gbm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
