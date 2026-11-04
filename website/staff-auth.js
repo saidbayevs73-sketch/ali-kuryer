@@ -41,10 +41,31 @@ if(portal==="admin"){
    const provider=new GoogleAuthProvider();provider.setCustomParameters({prompt:"select_account"});
    await signInWithPopup(auth,provider);
    await refreshStaff();
-   loginPanel.hidden=true;managePanel.hidden=false;message("Administrator sifatida kirdingiz.");
+   loginPanel.hidden=true;managePanel.hidden=false;await refreshKitchens();message("Administrator sifatida kirdingiz.");
   }catch(error){await signOut(auth).catch(()=>{});message(error.message||"Admin kirishi amalga oshmadi.",true);}
   finally{googleButton.disabled=false;}
  });
+ async function refreshKitchens(){
+  let section=$("#kitchenAdminSection");
+  if(!section){
+   section=make("section","portal-card");
+   section.id="kitchenAdminSection";
+   section.append(make("h2","","Oshxonalar tasdig‘i"));
+   const list=make("div","");list.id="adminKitchenList";section.append(list);
+   managePanel.append(section);
+  }
+  const list=$("#adminKitchenList");list.replaceChildren();
+  const data=await request("/api/v1/admin/kitchens");
+  if(!data.kitchens.length){list.append(make("p","muted","Hozircha oshxona arizalari yo‘q."));return;}
+  for(const kitchen of data.kitchens){
+   const row=make("article","staff-row"),info=make("div","staff-info");
+   info.append(make("strong","",kitchen.name),make("small","",kitchen.phone+" · "+kitchen.address));
+   const button=make("button","secondary-btn",kitchen.active?"Faol":"Tasdiqlash");
+   button.type="button";button.disabled=Boolean(kitchen.active);
+   button.addEventListener("click",async()=>{button.disabled=true;try{await request("/api/v1/admin/kitchens/"+encodeURIComponent(kitchen.id)+"/active",{method:"PATCH",body:JSON.stringify({active:true})});await refreshKitchens();message("Oshxona tasdiqlandi.");}catch(error){message(error.message,true);button.disabled=false;}});
+   row.append(info,button);list.append(row);
+  }
+ }
  async function refreshStaff(){
   const data=await request("/api/v1/admin/staff");
   const list=$("#staffList");list.replaceChildren();
@@ -71,6 +92,7 @@ if(portal==="admin"){
   finally{button.disabled=false;}
  });
  $("#refreshStaff")?.addEventListener("click",()=>refreshStaff().catch(e=>message(e.message,true)));
+ $("#refreshKitchens")?.addEventListener("click",()=>refreshKitchens().catch(e=>message(e.message,true)));
  $("#logout")?.addEventListener("click",async()=>{await signOut(auth);managePanel.hidden=true;loginPanel.hidden=false;message("Hisobdan chiqdingiz.");});
 }
 
