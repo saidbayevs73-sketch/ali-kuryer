@@ -60,7 +60,7 @@ if(portal==="admin"){
     try{await request("/api/v1/admin/staff/"+encodeURIComponent(person.uid),{method:"PATCH",body:JSON.stringify({disabled:!person.disabled})});await refreshStaff();message("Xodim holati yangilandi.");}
     catch(error){message(error.message,true);toggle.disabled=false;}
    });
-   row.append(info,state,toggle);list.append(row);
+   if(person.role==="courier"&&!person.disabled){const link=make("button","secondary-btn","Kuryer profilini ulash");link.type="button";link.addEventListener("click",async()=>{const phone=prompt("Kuryer telefon raqamini kiriting (+998...)");if(!phone)return;link.disabled=true;try{await request("/api/v1/admin/couriers/link",{method:"POST",body:JSON.stringify({uid:person.uid,phone,fullName:person.displayName||person.email})});message("Kuryer profili ulandi.");}catch(error){message(error.message,true);}finally{link.disabled=false;}});row.append(info,state,toggle,link);}else row.append(info,state,toggle);list.append(row);
   }
  }
  $("#staffForm")?.addEventListener("submit",async event=>{
