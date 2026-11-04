@@ -18,7 +18,7 @@ async function ticketAccess(pool,id,uid,role){
   const {rows:[t]}=await pool.query("SELECT * FROM support_tickets_v2 WHERE id=$1",[id]);
   if(!t)return null;
   if(role==="admin"||t.sender_uid===uid||t.assigned_uid===uid)return t;
-  if(t.assigned_role===role&&["courier","kitchen"].includes(role))return t;
+  if(!t.assigned_uid&&t.assigned_role===role&&["courier","kitchen"].includes(role))return t;
   return null;
 }
 export function createSupportReviewRouter(pool){
@@ -41,7 +41,7 @@ export function createSupportReviewRouter(pool){
   const isAdmin=req.identity.role==="admin"||new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase())).has(String(req.identity.email||"").toLowerCase());
   const {rows}=isAdmin
    ?await pool.query("SELECT id,order_id,sender_uid,sender_role,subject,message,status,assigned_role,assigned_uid,created_at,updated_at FROM support_tickets_v2 ORDER BY created_at DESC LIMIT 200")
-   :await pool.query("SELECT id,order_id,sender_uid,sender_role,subject,message,status,assigned_role,assigned_uid,created_at,updated_at FROM support_tickets_v2 WHERE sender_uid=$1 OR assigned_uid=$1 OR assigned_role=$2 ORDER BY created_at DESC LIMIT 100",[req.identity.uid,role]);
+   :await pool.query("SELECT id,order_id,sender_uid,sender_role,subject,message,status,assigned_role,assigned_uid,created_at,updated_at FROM support_tickets_v2 WHERE sender_uid=$1 OR assigned_uid=$1 OR (assigned_uid IS NULL AND assigned_role=$2) ORDER BY created_at DESC LIMIT 100",[req.identity.uid,role]);
   res.json({tickets:rows});
  }));
  router.get("/support/tickets/:id/messages",auth,wrap(async(req,res)=>{
