@@ -1,4 +1,4 @@
-name: Build Ali Kuryer APK
+name: Build Ali Kuryer and Admin APKs
 
 on:
   workflow_dispatch:
@@ -23,24 +23,27 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Verify preinstalled Android SDK
+      - name: Verify Android SDK
         shell: bash
         run: |
           test -d "$ANDROID_HOME"
-          echo "Android SDK found at $ANDROID_HOME"
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager 2>/dev/null | head -n 1)"
-          if [ -n "$SDKMANAGER" ]; then
-            yes | "$SDKMANAGER" --licenses || true
-          fi
+          if [ -n "$SDKMANAGER" ]; then yes | "$SDKMANAGER" --licenses || true; fi
           ls "$ANDROID_HOME/platforms"
           ls "$ANDROID_HOME/build-tools"
-      - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
-      - name: Show Android signing fingerprints
+      - name: Build customer and admin debug APKs
+        run: gradle --no-daemon :app:assembleDebug :admin:assembleDebug
+      - name: Show customer app signing fingerprints
         run: gradle --no-daemon :app:signingReport
-      - name: Upload APK
+      - name: Upload customer APK
         uses: actions/upload-artifact@v4
         with:
           name: AliKuryer-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Upload admin APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: AliKuryer-Admin-debug-apk
+          path: admin/build/outputs/apk/debug/admin-debug.apk
           if-no-files-found: error
