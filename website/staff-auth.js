@@ -16,6 +16,7 @@ const firebaseConfig = window.ALI_KURYER_FIREBASE_CONFIG || {
 };
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
+window.AliKuryerStaff={get currentUser(){return auth.currentUser;}};
 const API=window.ALI_KURYER_API_URL||"https://ali-kuryer-api.onrender.com";
 const $=s=>document.querySelector(s);
 const portal=document.body.dataset.portal;
@@ -86,6 +87,7 @@ if(portal==="courier"||portal==="kitchen"){
    $("#staffName").textContent=me.displayName||me.email;
    $("#staffRole").textContent=expected==="courier"?"Kuryer kabineti":"Oshxona kabineti";
    message("Muvaffaqiyatli kirdingiz.");
+   window.dispatchEvent(new Event("ali-kuryer-staff-ready"));
   }catch(error){await signOut(auth).catch(()=>{});message(error.message||"Login yoki parol xato.",true);}
   finally{button.disabled=false;}
  });
