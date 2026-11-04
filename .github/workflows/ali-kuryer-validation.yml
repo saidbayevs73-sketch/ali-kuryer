@@ -28,6 +28,7 @@ jobs:
           test -f backend/migrations/003_courier_staff_links.sql
           test -f backend/migrations/004_order_communications.sql
           test -f backend/src/order-communication-routes.js
+          test -f backend/src/support-review-routes.js
           test -f website/order-chat.js
           test -f backend/src/kitchen-routes.js
           test -f backend/src/courier-routes.js
