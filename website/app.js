@@ -107,6 +107,7 @@ document.querySelector("#orderForm").onsubmit=async e=>{
    cart={};saveCart();e.target.reset();
    const notice=document.querySelector("#orderNotice");
    notice.textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code+" · Kuryer biriktirilgach jonli kuzatuv boshlanadi.";
+   if(window.AliKuryerOrderChat)window.AliKuryerOrderChat.attach(document.querySelector("#orderForm"),result.order.id);
    if(window.aliTrackingTimer)clearInterval(window.aliTrackingTimer);
    const updateTracking=async()=>{
     try{
