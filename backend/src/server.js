@@ -4,6 +4,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pg from "pg";
 import { z } from "zod";
+import { createStaffRouter } from "./staff-routes.js";
 
 const { Pool } = pg;
 const app = express();
@@ -23,6 +24,7 @@ app.use(cors({ origin: (process.env.ALLOWED_ORIGINS || "").split(",").filter(Boo
   : true }));
 app.use(express.json({ limit: "32kb" }));
 app.use("/api", rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: "draft-7", legacyHeaders: false }));
+app.use("/api/v1", createStaffRouter());
 
 const asyncRoute = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 const requireDb = (req, res, next) => {
