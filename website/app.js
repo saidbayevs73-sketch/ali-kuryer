@@ -35,7 +35,7 @@ async function loadServerCatalog(){
    id:p.id,name:p.name,price:Number(p.price),cat:category.slug,emoji:"🛍️",
    desc:p.description||"Ali Kuryer mahsuloti",photo:p.imageUrl||"",serverId:p.id
   })));
-  if(remote.length){products=remote;catalogReady=true;renderProducts();renderCart();loadServerCatalog();}
+  if(remote.length){products=remote;catalogReady=true;renderProducts();renderCart();}
  }catch(error){console.warn("Ali Kuryer katalogi hozircha serverdan olinmadi:",error.message);}
 }
 
@@ -92,7 +92,10 @@ document.querySelector("#orderForm").onsubmit=async e=>{
   if(orderItems.some(p=>!p.serverId)){document.querySelector("#orderNotice").textContent="Mahsulot ma’lumoti serverda topilmadi. Sahifani yangilang.";return;}
   const submit=document.querySelector(".submit-order");submit.disabled=true;submit.textContent="Yuborilmoqda…";
   try{
-   const response=await fetch(API_BASE+"/api/v1/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+   const authUser=window.AliKuryerWebAuth?.auth?.currentUser;
+   if(!authUser)throw new Error("Buyurtma berishdan oldin Google hisobingizga kiring.");
+   const idToken=await authUser.getIdToken();
+   const response=await fetch(API_BASE+"/api/v1/orders",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+idToken},body:JSON.stringify({
     customerName:document.querySelector("#customerName").value,
     customerPhone:document.querySelector("#customerPhone").value,
     address:document.querySelector("#customerAddress").value,
