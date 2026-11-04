@@ -104,7 +104,24 @@ document.querySelector("#orderForm").onsubmit=async e=>{
    })});
    const result=await response.json();
    if(!response.ok)throw new Error(result.message||"Buyurtma yuborilmadi");
-   cart={};saveCart();e.target.reset();document.querySelector("#orderNotice").textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code;
+   cart={};saveCart();e.target.reset();
+   const notice=document.querySelector("#orderNotice");
+   notice.textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code+" · Kuryer biriktirilgach jonli kuzatuv boshlanadi.";
+   if(window.aliTrackingTimer)clearInterval(window.aliTrackingTimer);
+   const updateTracking=async()=>{
+    try{
+     const currentUser=window.AliKuryerWebAuth?.auth?.currentUser;if(!currentUser)return;
+     const token=await currentUser.getIdToken();
+     const trackingResponse=await fetch(API_BASE+"/api/v1/orders/"+encodeURIComponent(result.order.code)+"/tracking",{headers:{Authorization:"Bearer "+token}});
+     if(!trackingResponse.ok)return;
+     const data=await trackingResponse.json(),statusNames={new:"Yangi",accepted:"Oshxona qabul qildi",preparing:"Tayyorlanmoqda",ready:"Kuryer kutilmoqda",assigned:"Kuryer biriktirildi",picked_up:"Kuryer buyurtmani oldi",on_the_way:"Kuryer yo‘lda",delivered:"Yetkazildi",cancelled:"Bekor qilindi"};
+     const location=data.tracking?(" · GPS: "+data.tracking.latitude.toFixed(5)+", "+data.tracking.longitude.toFixed(5)):"";
+     notice.textContent="Buyurtma "+result.order.code+" · "+(statusNames[data.order.status]||data.order.status)+location;
+     if(data.contactClosed){clearInterval(window.aliTrackingTimer);window.aliTrackingTimer=null;}
+    }catch(error){console.warn("Buyurtma kuzatuvi:",error.message);}
+   };
+   await updateTracking();
+   window.aliTrackingTimer=setInterval(updateTracking,10000);
   }catch(error){document.querySelector("#orderNotice").textContent=error.message||"Server bilan aloqa yo‘q. Qayta urinib ko‘ring.";}
   finally{submit.disabled=false;submit.textContent="Buyurtmani tasdiqlash →";}
   return;
