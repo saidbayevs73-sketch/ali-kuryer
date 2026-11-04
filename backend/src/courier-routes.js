@@ -1,12 +1,12 @@
 import {Router} from "express";
 import {z} from "zod";
 import {getFirebaseAdminAuth} from "./firebase-admin.js";
-const router=Router();
 const wrap=fn=>(req,res,next)=>Promise.resolve(fn(req,res,next)).catch(next);
 async function auth(req,res,next){try{const a=getFirebaseAdminAuth();if(!a)return res.status(503).json({error:"firebase_admin_not_configured"});const h=req.headers.authorization||"";if(!h.startsWith("Bearer "))return res.status(401).json({error:"missing_token"});req.identity=await a.verifyIdToken(h.slice(7),true);next();}catch{return res.status(401).json({error:"invalid_token"});}}
 const courier=(req,res,next)=>req.identity?.role==="courier"&&req.identity?.active!==false?next():res.status(403).json({error:"courier_only"});
 const admin=(req,res,next)=>{const e=String(req.identity?.email||"").toLowerCase();const a=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()));return req.identity?.role==="admin"||a.has(e)?next():res.status(403).json({error:"admin_only"});};
 export function createCourierRouter(pool){
+ const router=Router();
  router.use((req,res,next)=>pool?next():res.status(503).json({error:"database_not_configured"}));
  router.post("/admin/couriers/link",auth,admin,wrap(async(req,res)=>{
   const v=z.object({uid:z.string().min(1),phone:z.string().min(7).max(30),fullName:z.string().min(2).max(120)}).safeParse(req.body);
