@@ -54,6 +54,30 @@ export function createKitchenRouter(pool) {
     const {rows:[p]}=await pool.query("INSERT INTO products(kitchen_id,category_id,name,description,ingredients,price_uzs,image_url,available,photo_source) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,name,description,ingredients,price_uzs,image_url,available,photo_source",[k.id,category.rows[0].id,v.name,v.description,v.ingredients,v.price,v.imageUrl??null,v.available,v.photoSource]);
     res.status(201).json({product:p});
   }));
+  router.patch("/kitchen/products/:id",signedIn,role("kitchen"),wrap(async(req,res)=>{
+    const schema=z.object({name:z.string().trim().min(2).max(160).optional(),description:z.string().max(1000).optional(),ingredients:z.string().max(2000).optional(),price:z.number().int().min(0).max(100000000).optional(),imageUrl:z.string().url().nullable().optional(),available:z.boolean().optional()}).refine(x=>Object.keys(x).length>0);
+    const v=schema.safeParse(req.body);
+    if(!v.success)return res.status(400).json({error:"invalid_product_update"});
+    const k=await kitchenProfile(pool,req.identity.uid);
+    if(!k)return res.status(409).json({error:"profile_required"});
+    const x=v.data;
+    const {rows}=await pool.query(`UPDATE products SET
+      name=COALESCE($1,name),description=COALESCE($2,description),ingredients=COALESCE($3,ingredients),
+      price_uzs=COALESCE($4,price_uzs),image_url=CASE WHEN $5 THEN $6 ELSE image_url END,
+      available=COALESCE($7,available),updated_at=now()
+      WHERE id=$8 AND kitchen_id=$9
+      RETURNING id,name,description,ingredients,price_uzs,image_url,available`,
+      [x.name??null,x.description??null,x.ingredients??null,x.price??null,Object.hasOwn(x,"imageUrl"),x.imageUrl??null,x.available??null,req.params.id,k.id]);
+    if(!rows[0])return res.status(404).json({error:"product_not_found"});
+    res.json({product:rows[0]});
+  }));
+  router.delete("/kitchen/products/:id",signedIn,role("kitchen"),wrap(async(req,res)=>{
+    const k=await kitchenProfile(pool,req.identity.uid);
+    if(!k)return res.status(409).json({error:"profile_required"});
+    const {rows}=await pool.query("UPDATE products SET available=false,updated_at=now() WHERE id=$1 AND kitchen_id=$2 RETURNING id,available",[req.params.id,k.id]);
+    if(!rows[0])return res.status(404).json({error:"product_not_found"});
+    res.json({product:rows[0],message:"Taom menyudan yashirildi."});
+  }));
   router.get("/kitchen/orders",signedIn,role("kitchen"),wrap(async(req,res)=>{
     const k=await kitchenProfile(pool,req.identity.uid);
     if(!k)return res.status(409).json({error:"profile_required"});
