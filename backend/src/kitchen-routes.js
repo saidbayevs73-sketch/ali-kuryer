@@ -81,7 +81,10 @@ export function createKitchenRouter(pool) {
   router.get("/kitchen/orders",signedIn,role("kitchen"),wrap(async(req,res)=>{
     const k=await kitchenProfile(pool,req.identity.uid);
     if(!k)return res.status(409).json({error:"profile_required"});
-    const {rows}=await pool.query("SELECT id,public_code,customer_name,customer_phone,delivery_address,status,total_uzs,created_at FROM orders WHERE kitchen_id=$1 ORDER BY created_at DESC LIMIT 100",[k.id]);
+    const {rows}=await pool.query(`SELECT o.id,o.public_code,o.customer_name,o.customer_phone,o.delivery_address,o.status,o.total_uzs,o.created_at,
+      COALESCE(json_agg(json_build_object('name',i.product_name,'quantity',i.quantity,'unitPrice',i.unit_price_uzs)) FILTER (WHERE i.id IS NOT NULL),'[]'::json) AS items
+      FROM orders o LEFT JOIN order_items i ON i.order_id=o.id
+      WHERE o.kitchen_id=$1 GROUP BY o.id ORDER BY o.created_at DESC LIMIT 100`,[k.id]);
     res.json({orders:rows});
   }));
   router.patch("/kitchen/orders/:id/status",signedIn,role("kitchen"),wrap(async(req,res)=>{
