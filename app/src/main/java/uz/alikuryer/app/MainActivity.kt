@@ -88,7 +88,7 @@ class MainActivity : ComponentActivity() {
                 ) { padding ->
                     Column(Modifier.fillMaxSize().padding(padding).background(Color.White)) {
                         when (page) {
-                            "home" -> HomePage(category, { category = it }, cart, { page = "cart" })
+                            "home" -> HomePage(category, { category = it }, cart, { page = "cart" }, { id -> cart[id] = (cart[id] ?: 0) + 1 })
                             "cart" -> CartPage(cart, total, onAdd = { id -> cart[id] = (cart[id] ?: 0) + 1 }, onRemove = { id ->
                                 val n = (cart[id] ?: 0) - 1
                                 if (n <= 0) cart.remove(id) else cart[id] = n
@@ -141,7 +141,7 @@ private fun Header() {
 }
 
 @Composable
-private fun HomePage(category: String, onCategory: (String) -> Unit, cart: Map<Int, Int>, goCart: () -> Unit) {
+private fun HomePage(category: String, onCategory: (String) -> Unit, cart: Map<Int, Int>, goCart: () -> Unit, onAdd: (Int) -> Unit) {
     val categories = listOf("Barchasi", "Fast food", "Pizza", "Sushi", "Ichimlik")
     val visible = foods.filter { category == "Barchasi" || it.category == category }
     LazyColumn(Modifier.fillMaxSize()) {
@@ -173,7 +173,7 @@ private fun HomePage(category: String, onCategory: (String) -> Unit, cart: Map<I
                     Text(food.note, color = Color.Gray, fontSize = 11.sp)
                     Text("${food.price} so‘m", color = Red, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
-                Button(onClick = { /* cart mutation is handled by product action below */ }, enabled = false, contentPadding = PaddingValues(horizontal = 10.dp), shape = RoundedCornerShape(10.dp)) { Text("+") }
+                Button(onClick = { onAdd(food.id) }, contentPadding = PaddingValues(horizontal = 10.dp), shape = RoundedCornerShape(10.dp)) { Text("+") }
             }
         }
         item { Spacer(Modifier.height(20.dp)) }
