@@ -71,34 +71,9 @@ export function createKitchenRouter(pool) {
       await client.query("BEGIN");
       const {rows}=await client.query("UPDATE orders SET status=$1,accepted_at=CASE WHEN $1='accepted' THEN now() ELSE accepted_at END,updated_at=now() WHERE id=$2 AND kitchen_id=$3 AND status=ANY($4::text[]) RETURNING id,public_code,status,latitude,longitude",[v.data,req.params.id,k.id,previous[v.data]]);
       if(!rows[0]){await client.query("ROLLBACK");return res.status(409).json({error:"invalid_order_transition"});}
-      let assignedCourier=null;
-      if(v.data==="ready"&&rows[0].latitude!==null&&rows[0].longitude!==null){
-        const assigned=await client.query(`
-          WITH nearest AS (
-            SELECT c.id,l.firebase_uid,
-              6371*2*ASIN(SQRT(
-                POWER(SIN(RADIANS(cp.latitude-$1)/2),2)+
-                COS(RADIANS($1))*COS(RADIANS(cp.latitude))*
-                POWER(SIN(RADIANS(cp.longitude-$2)/2),2)
-              )) AS distance_km
-            FROM courier_presence cp
-            JOIN courier_staff_links l ON l.firebase_uid=cp.courier_uid
-            JOIN couriers c ON c.id=l.courier_id AND c.active=true
-            WHERE cp.is_online=true AND cp.latitude IS NOT NULL AND cp.longitude IS NOT NULL
-              AND cp.updated_at>now()-interval '90 seconds'
-              AND NOT EXISTS(SELECT 1 FROM orders active WHERE active.courier_id=c.id AND active.status IN ('assigned','picked_up','on_the_way'))
-            ORDER BY distance_km ASC
-            LIMIT 1
-            FOR UPDATE OF c SKIP LOCKED
-          )
-          UPDATE orders o SET courier_id=nearest.id,status='assigned',updated_at=now()
-          FROM nearest WHERE o.id=$3 AND o.status='ready'
-          RETURNING nearest.firebase_uid,o.id,o.public_code,o.status
-        `,[rows[0].latitude,rows[0].longitude,rows[0].id]);
-        assignedCourier=assigned.rows[0]||null;
-      }
       await client.query("COMMIT");
-      res.json({order:{...rows[0],...(assignedCourier?{status:"assigned",courierUid:assignedCourier.firebase_uid}:{})},dispatch:assignedCourier?"assigned":"waiting_for_online_courier"});
+      res.json({order:rows[0],dispatch:v.data==="ready"?"queued_for_auto_dispatch":"not_applicable"});
+
     }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
   }));
   router.get("/admin/kitchens",signedIn,isAdmin,wrap(async(req,res)=>{
