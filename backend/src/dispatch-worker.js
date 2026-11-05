@@ -15,7 +15,8 @@ async function expireOffers(pool) {
     `);
     for (const offer of rows) {
       await client.query("UPDATE courier_dispatch_offers SET status='expired' WHERE id=$1 AND status='offered'", [offer.id]);
-      await client.query("UPDATE orders SET status='ready',courier_id=NULL,updated_at=now() WHERE id=$1 AND status='assigned' AND courier_id=$2", [offer.order_id,offer.courier_id]);
+      const reset=await client.query("UPDATE orders SET status='ready',courier_id=NULL,updated_at=now() WHERE id=$1 AND status='assigned' AND courier_id=$2 RETURNING id", [offer.order_id,offer.courier_id]);
+      if(reset.rows[0]) await client.query("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,'assigned','ready','system','Kuryer 30 soniyada javob bermadi; navbatdagi kuryer qidiriladi')",[offer.order_id]);
     }
     return rows.length;
   });
