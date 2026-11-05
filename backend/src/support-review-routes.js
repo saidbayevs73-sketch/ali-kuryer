@@ -25,13 +25,24 @@ export function createSupportReviewRouter(pool){
  const router=Router();
  router.use((req,res,next)=>pool?next():res.status(503).json({error:"database_not_configured"}));
  router.post("/support/tickets",auth,wrap(async(req,res)=>{
-  const role=req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
+  const adminEmails=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
+  const isAdmin=req.identity.role==="admin"||adminEmails.has(String(req.identity.email||"").toLowerCase());
+  const role=isAdmin?"admin":req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
   const v=z.object({orderId:z.string().uuid().optional(),subject:z.string().trim().min(3).max(160),message:z.string().trim().min(1).max(5000)}).safeParse(req.body);
   if(!v.success)return res.status(400).json({error:"invalid_ticket"});
   if(v.data.orderId){
-   const p=await pool.query("SELECT id,customer_firebase_uid,courier_id FROM orders WHERE id=$1",[v.data.orderId]);
+   const p=await pool.query("SELECT id,customer_firebase_uid,courier_id,kitchen_id FROM orders WHERE id=$1",[v.data.orderId]);
    if(!p.rows[0])return res.status(404).json({error:"order_not_found"});
-   if(role==="customer"&&p.rows[0].customer_firebase_uid!==req.identity.uid)return res.status(403).json({error:"not_order_owner"});
+   const order=p.rows[0];
+   if(role==="customer"&&order.customer_firebase_uid!==req.identity.uid)return res.status(403).json({error:"not_order_owner"});
+   if(role==="courier"){
+    const link=await pool.query("SELECT 1 FROM courier_staff_links WHERE firebase_uid=$1 AND courier_id=$2",[req.identity.uid,order.courier_id]);
+    if(!link.rows[0])return res.status(403).json({error:"not_assigned_courier"});
+   }
+   if(role==="kitchen"){
+    const kitchen=await pool.query("SELECT 1 FROM kitchens WHERE id=$1 AND owner_uid=$2",[order.kitchen_id,req.identity.uid]);
+    if(!kitchen.rows[0])return res.status(403).json({error:"not_order_kitchen"});
+   }
   }
   const {rows:[ticket]}=await pool.query("INSERT INTO support_tickets_v2(order_id,sender_uid,sender_role,subject,message) VALUES($1,$2,$3,$4,$5) RETURNING id,status,subject,message,created_at",[v.data.orderId||null,req.identity.uid,role,v.data.subject,v.data.message]);
   res.status(201).json({ticket});
