@@ -11,6 +11,7 @@ import { createKitchenRouter } from "./kitchen-routes.js";
 import { createCourierRouter } from "./courier-routes.js";
 import { createOrderCommunicationRouter } from "./order-communication-routes.js";
 import { createSupportReviewRouter } from "./support-review-routes.js";
+import { startDispatchWorker } from "./dispatch-worker.js";
 
 const { Pool } = pg;
 const app = express();
@@ -263,4 +264,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "internal_error", message: "Serverda xatolik yuz berdi." });
 });
 
-app.listen(port, () => console.log(`Ali Kuryer API listening on ${port}`));
+app.listen(port, () => {
+  console.log(`Ali Kuryer API listening on ${port}`);
+  if (pool) startDispatchWorker(pool);
+});
