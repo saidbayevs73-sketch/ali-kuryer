@@ -26,13 +26,18 @@ async function offerNextCourier(pool) {
     const { rows: orders } = await client.query(`
       SELECT o.id,o.latitude,o.longitude,o.public_code
         FROM orders o
-       WHERE o.status='ready' AND o.latitude IS NOT NULL AND o.longitude IS NOT NULL
+       WHERE o.status='ready'
          AND NOT EXISTS (SELECT 1 FROM courier_dispatch_offers d WHERE d.order_id=o.id AND d.status='offered')
        ORDER BY o.created_at
        FOR UPDATE OF o SKIP LOCKED LIMIT 1
     `);
     const order=orders[0];
     if (!order) return "none";
+    if (order.latitude===null || order.longitude===null) {
+      const alert=await client.query("INSERT INTO dispatch_queue_alerts(order_id) VALUES($1) ON CONFLICT(order_id) DO UPDATE SET alerted_at=CASE WHEN dispatch_queue_alerts.cleared_at IS NOT NULL THEN now() ELSE dispatch_queue_alerts.alerted_at END,cleared_at=NULL RETURNING (xmax=0) AS inserted",[order.id]);
+      if (alert.rows[0]?.inserted) await client.query("INSERT INTO platform_audit_log(actor_uid,actor_role,action,target_type,target_id,details) VALUES('system','system','dispatch_missing_customer_location','order',$1,$2::jsonb)",[order.id,JSON.stringify({publicCode:order.public_code,message:'Mijoz manzili koordinatasi yo‘q'})]);
+      return "waiting";
+    }
     const { rows: couriers } = await client.query(`
       SELECT c.id,l.firebase_uid,
         6371*2*ASIN(SQRT(
