@@ -9,7 +9,7 @@ el("#refreshCourier")?.addEventListener("click",refreshCourier);
 let gpsWatchId=null,lastGpsSent=0;
 el("#onlineToggle")?.addEventListener("click",()=>{
  if(!navigator.geolocation){msg("Qurilmada GPS mavjud emas.",true);return;}
- if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;msg("GPS kuzatuvi to‘xtatildi.");return;}
+ if(gpsWatchId!==null){navigator.geolocation.clearWatch(gpsWatchId);gpsWatchId=null;call("/api/v1/courier/offline",{method:"POST",body:"{}"}).then(()=>msg("Siz offline bo‘ldingiz.")).catch(e=>msg(e.message,true));return;}
  msg("GPS kuzatuvi boshlandi…");
  gpsWatchId=navigator.geolocation.watchPosition(async p=>{
   const now=Date.now();if(now-lastGpsSent<8000)return;lastGpsSent=now;
