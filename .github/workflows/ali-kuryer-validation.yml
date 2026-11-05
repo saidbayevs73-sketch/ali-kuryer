@@ -1,0 +1,40 @@
+name: Ali Kuryer validation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [auth-role-security]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install backend dependencies
+        run: npm install --prefix backend
+      - name: Check backend JavaScript syntax
+        run: |
+          find backend/src -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Check frontend JavaScript syntax
+        run: |
+          for file in website/*.js; do
+            node --input-type=module --check < "$file"
+          done
+      - name: Verify required project files
+        run: |
+          test -f backend/migrations/002_unified_platform.sql
+          test -f backend/migrations/003_courier_staff_links.sql
+          test -f backend/migrations/004_order_communications.sql
+          test -f backend/src/order-communication-routes.js
+          test -f backend/src/support-review-routes.js
+          test -f website/order-chat.js
+          test -f backend/src/kitchen-routes.js
+          test -f backend/src/courier-routes.js
+          test -f website/kitchen-dashboard.js
+          test -f website/courier-dashboard.js
+          test -f docs/UNIFIED_PLATFORM_SPEC.md
+          test -f website/admin.html
+          test -f website/courier.html
+          test -f website/kitchen.html

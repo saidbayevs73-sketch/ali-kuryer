@@ -35,7 +35,7 @@ async function loadServerCatalog(){
    id:p.id,name:p.name,price:Number(p.price),cat:category.slug,emoji:"🛍️",
    desc:p.description||"Ali Kuryer mahsuloti",photo:p.imageUrl||"",serverId:p.id
   })));
-  if(remote.length){products=remote;catalogReady=true;renderProducts();renderCart();loadServerCatalog();}
+  products=remote;catalogReady=true;renderProducts();renderCart();
  }catch(error){console.warn("Ali Kuryer katalogi hozircha serverdan olinmadi:",error.message);}
 }
 
@@ -88,11 +88,22 @@ document.querySelector("#locationBtn").onclick=()=>{
 document.querySelector("#orderForm").onsubmit=async e=>{
  e.preventDefault();if(!Object.keys(cart).length){document.querySelector("#orderNotice").textContent="Avval savatchaga mahsulot qo‘shing.";return;}
  const orderItems=products.filter(p=>cart[p.id]);
+ if(!API_BASE||!catalogReady){
+  document.querySelector("#orderNotice").textContent="Buyurtma berish vaqtincha ishlamayapti: server katalogi ulanmagan. Keyinroq qayta urinib ko‘ring.";
+  return;
+ }
+ if(!orderItems.length){
+  document.querySelector("#orderNotice").textContent="Server katalogida mahsulot topilmadi. Oshxona mahsulot qo‘shishini kuting.";
+  return;
+ }
  if(API_BASE&&catalogReady){
   if(orderItems.some(p=>!p.serverId)){document.querySelector("#orderNotice").textContent="Mahsulot ma’lumoti serverda topilmadi. Sahifani yangilang.";return;}
   const submit=document.querySelector(".submit-order");submit.disabled=true;submit.textContent="Yuborilmoqda…";
   try{
-   const response=await fetch(API_BASE+"/api/v1/orders",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+   const authUser=window.AliKuryerWebAuth?.auth?.currentUser;
+   if(!authUser)throw new Error("Buyurtma berishdan oldin Google hisobingizga kiring.");
+   const idToken=await authUser.getIdToken();
+   const response=await fetch(API_BASE+"/api/v1/orders",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+idToken},body:JSON.stringify({
     customerName:document.querySelector("#customerName").value,
     customerPhone:document.querySelector("#customerPhone").value,
     address:document.querySelector("#customerAddress").value,
@@ -101,7 +112,25 @@ document.querySelector("#orderForm").onsubmit=async e=>{
    })});
    const result=await response.json();
    if(!response.ok)throw new Error(result.message||"Buyurtma yuborilmadi");
-   cart={};saveCart();e.target.reset();document.querySelector("#orderNotice").textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code;
+   cart={};saveCart();e.target.reset();
+   const notice=document.querySelector("#orderNotice");
+   notice.textContent="Buyurtma qabul qilindi. Raqami: "+result.order.code+" · Kuryer biriktirilgach jonli kuzatuv boshlanadi.";
+   if(window.AliKuryerOrderChat)window.AliKuryerOrderChat.attach(document.querySelector("#orderForm"),result.order.id);
+   if(window.aliTrackingTimer)clearInterval(window.aliTrackingTimer);
+   const updateTracking=async()=>{
+    try{
+     const currentUser=window.AliKuryerWebAuth?.auth?.currentUser;if(!currentUser)return;
+     const token=await currentUser.getIdToken();
+     const trackingResponse=await fetch(API_BASE+"/api/v1/orders/"+encodeURIComponent(result.order.code)+"/tracking",{headers:{Authorization:"Bearer "+token}});
+     if(!trackingResponse.ok)return;
+     const data=await trackingResponse.json(),statusNames={new:"Yangi",accepted:"Oshxona qabul qildi",preparing:"Tayyorlanmoqda",ready:"Kuryer kutilmoqda",assigned:"Kuryer biriktirildi",picked_up:"Kuryer buyurtmani oldi",on_the_way:"Kuryer yo‘lda",delivered:"Yetkazildi",cancelled:"Bekor qilindi"};
+     const location=data.tracking?(" · GPS: "+data.tracking.latitude.toFixed(5)+", "+data.tracking.longitude.toFixed(5)):"";
+     notice.textContent="Buyurtma "+result.order.code+" · "+(statusNames[data.order.status]||data.order.status)+location;
+     if(data.contactClosed){clearInterval(window.aliTrackingTimer);window.aliTrackingTimer=null;}
+    }catch(error){console.warn("Buyurtma kuzatuvi:",error.message);}
+   };
+   await updateTracking();
+   window.aliTrackingTimer=setInterval(updateTracking,10000);
   }catch(error){document.querySelector("#orderNotice").textContent=error.message||"Server bilan aloqa yo‘q. Qayta urinib ko‘ring.";}
   finally{submit.disabled=false;submit.textContent="Buyurtmani tasdiqlash →";}
   return;

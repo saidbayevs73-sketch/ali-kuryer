@@ -23,3 +23,61 @@ Node.js + Express + PostgreSQL backend foundation for the customer app, courier 
 
 ## Deliberate launch gates
 SMS OTP, customer sessions, admin RBAC, courier assignment and live GPS must be completed before production use. Admin data endpoints are intentionally disabled until authentication and role permissions are in place. Online payment and restaurant integrations are out of scope for this phase.
+
+
+## Staff authentication (Firebase)
+
+Customers continue to use Google sign-in on the customer site. Staff accounts are **not self-registered**:
+- Admin signs in with Google.
+- Only an email listed in `ADMIN_EMAILS` (comma-separated) can open the staff manager.
+- Admin creates Firebase Email/Password accounts and assigns exactly one role: `courier` or `kitchen`.
+- Firebase custom claims store the role and active state. The API verifies Firebase ID tokens and checks the role on every staff request.
+- Admin can disable or re-enable staff accounts. Disabled accounts are rejected by Firebase token verification and the staff profile endpoint.
+
+### Required Render environment variables
+
+- `FIREBASE_SERVICE_ACCOUNT_JSON`: the full Firebase service-account JSON object, stored as a secret environment variable. Generate it in Firebase Console → Project settings → Service accounts. **Never commit this JSON file or paste it into chat.**
+- `ADMIN_EMAILS`: the exact Google email address(es) allowed to administer staff accounts, separated by commas.
+- `ALLOWED_ORIGINS`: the exact HTTPS website origin(s), comma-separated, for example the deployed customer-site origin.
+
+The website must use the Firebase **Web app** configuration for `ali-kuryer-9d6bb` and the API base URL must point to the deployed backend. Do not use an Android app ID as the Web app ID. Configure these values in the hosting environment before testing.
+
+### Endpoints
+
+- `GET /api/v1/staff/me`: confirms that the signed-in user is an active courier or kitchen staff member.
+- `GET /api/v1/admin/staff`: admin-only staff list.
+- `POST /api/v1/admin/staff`: admin-only account creation; requires `email`, `password` (10+ characters), `displayName`, and `role` (`courier` or `kitchen`).
+- `PATCH /api/v1/admin/staff/:uid`: admin-only account blocking/unblocking.
+
+No staff registration endpoint is exposed. The staff login pages are `/courier.html` and `/kitchen.html`; the manager is `/admin.html`.
+
+## Unified platform migration
+
+The next platform foundation is documented in `docs/UNIFIED_PLATFORM_SPEC.md`.
+The additive PostgreSQL migration is `backend/migrations/002_unified_platform.sql`.
+It prepares kitchen profiles, kitchen-owned products, staff profiles, private reviews,
+support tickets/messages, order-scoped chat and audio-call sessions, courier presence
+and live-check records, Telegram account linking, platform settings, and audit logs.
+
+**Do not apply the migration to production until a database backup is confirmed.**
+Apply it once with:
+
+```sh
+psql "$DATABASE_URL" -f backend/migrations/002_unified_platform.sql
+```
+
+This migration only creates/extends database structures. It does not by itself enable
+the corresponding API/UI features. Production activation requires the matching
+server-side authorization, UI, realtime transport, integration tests, and staged deploy.
+
+### Communication and order privacy rules
+
+- Customer/courier chat, audio calling, and live location are permitted only while
+  the order is active and that courier is assigned to the order.
+- When an order is delivered or cancelled, the server must close all communication
+  permissions and stop customer-facing courier location updates.
+- Video calling is explicitly excluded. Audio-only internet calls are intended.
+- Reviews are private: the author, Super Admin, and relevant kitchen may read food
+  feedback; public catalogues and unrelated couriers must never expose comments.
+- Courier selection is manual from nearby available orders; automatic nearest-courier
+  assignment is not part of the requested workflow.
