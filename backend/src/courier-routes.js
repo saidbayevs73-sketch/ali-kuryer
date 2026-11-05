@@ -40,7 +40,7 @@ export function createCourierRouter(pool){
   }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
  }));
  router.get("/courier/orders/mine",auth,courier,wrap(async(req,res)=>{
-  const {rows}=await pool.query("SELECT o.id,o.public_code,o.delivery_address,o.status,o.total_uzs,o.created_at FROM orders o JOIN courier_staff_links l ON l.courier_id=o.courier_id WHERE l.firebase_uid=$1 AND o.status=ANY($2::text[]) ORDER BY o.created_at DESC",[req.identity.uid,["assigned","picked_up","on_the_way"]]);
+  const {rows}=await pool.query("SELECT o.id,o.public_code,o.delivery_address,o.status,o.total_uzs,o.created_at,COALESCE(d.status='accepted',false) AS offer_accepted FROM orders o JOIN courier_staff_links l ON l.courier_id=o.courier_id LEFT JOIN LATERAL (SELECT status FROM courier_dispatch_offers WHERE order_id=o.id AND courier_uid=$1 ORDER BY offered_at DESC LIMIT 1) d ON true WHERE l.firebase_uid=$1 AND o.status=ANY($2::text[]) ORDER BY o.created_at DESC",[req.identity.uid,["assigned","picked_up","on_the_way"]]);
   res.json({orders:rows});
  }));
  router.patch("/courier/orders/:id/status",auth,courier,wrap(async(req,res)=>{
