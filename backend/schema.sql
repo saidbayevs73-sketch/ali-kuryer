@@ -115,3 +115,36 @@ CREATE INDEX IF NOT EXISTS order_history_order_idx ON order_status_history(order
 CREATE INDEX IF NOT EXISTS notifications_customer_idx ON notifications(customer_id,read_at,created_at DESC);
 CREATE INDEX IF NOT EXISTS tickets_status_idx ON support_tickets(status,created_at DESC);
 CREATE INDEX IF NOT EXISTS courier_location_updated_idx ON courier_locations(updated_at);
+
+-- Firebase courier identity and dispatch tables used by courier-routes.js.
+CREATE TABLE IF NOT EXISTS courier_staff_links (
+  firebase_uid TEXT PRIMARY KEY,
+  courier_id UUID NOT NULL UNIQUE REFERENCES couriers(id) ON DELETE CASCADE,
+  linked_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS courier_dispatch_offers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  courier_id UUID NOT NULL REFERENCES couriers(id) ON DELETE CASCADE,
+  courier_uid TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'offered' CHECK (status IN ('offered','accepted','declined','expired')),
+  offered_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '2 minutes'),
+  responded_at TIMESTAMPTZ,
+  UNIQUE(order_id, courier_uid)
+);
+CREATE INDEX IF NOT EXISTS courier_offers_lookup_idx
+  ON courier_dispatch_offers(order_id, courier_uid, status, expires_at);
+
+CREATE TABLE IF NOT EXISTS courier_presence (
+  courier_uid TEXT PRIMARY KEY,
+  is_online BOOLEAN NOT NULL DEFAULT false,
+  latitude DOUBLE PRECISION NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+  longitude DOUBLE PRECISION NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+  accuracy_m DOUBLE PRECISION CHECK (accuracy_m IS NULL OR accuracy_m >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_closed_at TIMESTAMPTZ;
