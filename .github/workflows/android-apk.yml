@@ -1,0 +1,35 @@
+name: Build Ali Kuryer Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/integration-completion
+    paths:
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/android-apk.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+      - name: Build customer APK
+        run: gradle :app:assembleDebug --no-daemon
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ali-kuryer-customer-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
