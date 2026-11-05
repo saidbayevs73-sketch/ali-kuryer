@@ -69,6 +69,17 @@ if(portal==="admin"){
  const statusNames={new:"Yangi",accepted:"Qabul qilindi",preparing:"Tayyorlanmoqda",ready:"Tayyor",assigned:"Kuryer biriktirilgan",picked_up:"Olib ketildi",on_the_way:"Yo‘lda",delivered:"Yetkazildi",cancelled:"Bekor qilindi"};
  async function refreshOrders(){
   const list=$("#adminOrders");if(!list)return;
+  let queueBox=$("#dispatchQueueNotice");
+  if(!queueBox){queueBox=make("div","");queueBox.id="dispatchQueueNotice";list.parentElement.insertBefore(queueBox,list);}
+  try{
+   const queued=await request("/api/v1/admin/dispatch/queue");
+   queueBox.replaceChildren();
+   if(queued.queue.length){
+    queueBox.style.cssText="border:1px solid #f0c36d;background:#fff8e8;border-radius:12px;padding:12px;margin:12px 0";
+    queueBox.append(make("strong","","Diqqat: kuryer kutayotgan buyurtmalar ("+queued.queue.length+")"));
+    for(const item of queued.queue)queueBox.append(make("p","",item.public_code+" — "+(item.reason==="missing_location"?"mijoz joylashuvi koordinatasi yo‘q":"mos onlayn kuryer topilmadi")));
+   }else{queueBox.style.cssText="";queueBox.replaceChildren();}
+  }catch(error){queueBox.replaceChildren(make("p","muted","Navbat ogohlantirishlarini yuklab bo‘lmadi: "+error.message));}
   list.replaceChildren(make("p","muted","Buyurtmalar yuklanmoqda…"));
   try{
    const status=$("#orderStatusFilter")?.value||"";
