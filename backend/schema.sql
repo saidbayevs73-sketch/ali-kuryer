@@ -148,3 +148,11 @@ CREATE TABLE IF NOT EXISTS courier_presence (
 
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_at TIMESTAMPTZ;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS contact_closed_at TIMESTAMPTZ;
+
+
+-- Kitchen actions are recorded in the shared order timeline.
+ALTER TABLE order_status_history DROP CONSTRAINT IF EXISTS order_status_history_changed_by_role_check;
+ALTER TABLE order_status_history ADD CONSTRAINT order_status_history_changed_by_role_check
+  CHECK (changed_by_role IN ('system','admin','kitchen','courier'));
+CREATE INDEX IF NOT EXISTS courier_presence_online_idx
+  ON courier_presence(is_online, updated_at DESC);
