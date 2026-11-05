@@ -18,4 +18,5 @@ el("#onlineToggle")?.addEventListener("click",()=>{
  },()=>msg("GPS ruxsati berilmadi yoki joylashuv aniqlanmadi.",true),{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
 });
 window.addEventListener("pagehide",()=>{if(gpsWatchId!==null)navigator.geolocation.clearWatch(gpsWatchId);});
-window.addEventListener("ali-kuryer-staff-ready",refreshCourier);\nsetInterval(()=>{if(window.AliKuryerStaff?.currentUser)refreshCourier();},10000);
+window.addEventListener("ali-kuryer-staff-ready",refreshCourier);
+setInterval(()=>{if(window.AliKuryerStaff?.currentUser)refreshCourier();},10000);
