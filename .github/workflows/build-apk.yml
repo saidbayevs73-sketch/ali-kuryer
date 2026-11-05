@@ -3,7 +3,7 @@ name: Build Ali Kuryer and Admin APKs
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, auth-role-security ]
 
 jobs:
   build:
