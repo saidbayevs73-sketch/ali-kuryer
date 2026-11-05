@@ -4,6 +4,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pg from "pg";
 import { z } from "zod";
+import { createCourierRouter } from "./courier-routes.js";
 
 const { Pool } = pg;
 const app = express();
@@ -108,6 +109,8 @@ app.get("/api/v1/orders/:code", requireDb, asyncRoute(async (req, res) => {
   if (!order) return res.status(404).json({ error: "not_found" });
   res.json({ order: { code: order.public_code, status: order.status, total: Number(order.total_uzs), createdAt: order.created_at, updatedAt: order.updated_at } });
 }));
+
+app.use("/api/v1", createCourierRouter(pool));
 
 app.get("/api/v1/admin/orders", requireDb, (req, res) => res.status(501).json({ error: "admin_auth_required", message: "Admin login and permissions must be configured before enabling this endpoint." }));
 
