@@ -48,7 +48,8 @@ export function createSupportReviewRouter(pool){
   res.status(201).json({ticket});
  }));
  router.get("/support/tickets",auth,wrap(async(req,res)=>{
-  const role=req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
+  const adminEmails=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
+  const role=req.identity.role==="admin"||adminEmails.has(String(req.identity.email||"").toLowerCase())?"admin":req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
   const isAdmin=req.identity.role==="admin"||new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase())).has(String(req.identity.email||"").toLowerCase());
   const {rows}=isAdmin
    ?await pool.query("SELECT id,order_id,sender_uid,sender_role,subject,message,status,assigned_role,assigned_uid,created_at,updated_at FROM support_tickets_v2 ORDER BY created_at DESC LIMIT 200")
@@ -56,14 +57,16 @@ export function createSupportReviewRouter(pool){
   res.json({tickets:rows});
  }));
  router.get("/support/tickets/:id/messages",auth,wrap(async(req,res)=>{
-  const role=req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
+  const adminEmails=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
+  const role=req.identity.role==="admin"||adminEmails.has(String(req.identity.email||"").toLowerCase())?"admin":req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
   const t=await ticketAccess(pool,req.params.id,req.identity.uid,role);if(!t)return res.status(404).json({error:"ticket_not_found"});
   const {rows}=await pool.query("SELECT sender_uid,sender_role,body,created_at FROM support_messages WHERE ticket_id=$1 ORDER BY created_at",[t.id]);
   res.json({messages:rows});
  }));
  router.post("/support/tickets/:id/messages",auth,wrap(async(req,res)=>{
   const v=z.object({body:z.string().trim().min(1).max(5000)}).safeParse(req.body);if(!v.success)return res.status(400).json({error:"invalid_message"});
-  const role=req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
+  const adminEmails=new Set((process.env.ADMIN_EMAILS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean));
+  const role=req.identity.role==="admin"||adminEmails.has(String(req.identity.email||"").toLowerCase())?"admin":req.identity.role==="courier"||req.identity.role==="kitchen"?req.identity.role:"customer";
   const t=await ticketAccess(pool,req.params.id,req.identity.uid,role);if(!t)return res.status(404).json({error:"ticket_not_found"});
   if(["resolved","closed"].includes(t.status))return res.status(409).json({error:"ticket_closed"});
   const {rows:[message]}=await pool.query("INSERT INTO support_messages(ticket_id,sender_uid,sender_role,body) VALUES($1,$2,$3,$4) RETURNING sender_uid,sender_role,body,created_at",[t.id,req.identity.uid,role,v.data.body]);
