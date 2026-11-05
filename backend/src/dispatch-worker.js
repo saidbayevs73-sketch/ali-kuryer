@@ -28,13 +28,14 @@ async function offerNextCourier(pool) {
         FROM orders o
        WHERE o.status='ready'
          AND NOT EXISTS (SELECT 1 FROM courier_dispatch_offers d WHERE d.order_id=o.id AND d.status='offered')
+         AND NOT EXISTS (SELECT 1 FROM dispatch_queue_alerts a WHERE a.order_id=o.id AND a.cleared_at IS NULL AND a.alerted_at>now()-interval '30 seconds')
        ORDER BY o.created_at
        FOR UPDATE OF o SKIP LOCKED LIMIT 1
     `);
     const order=orders[0];
     if (!order) return "none";
     if (order.latitude===null || order.longitude===null) {
-      const alert=await client.query("INSERT INTO dispatch_queue_alerts(order_id) VALUES($1) ON CONFLICT(order_id) DO UPDATE SET alerted_at=CASE WHEN dispatch_queue_alerts.cleared_at IS NOT NULL THEN now() ELSE dispatch_queue_alerts.alerted_at END,cleared_at=NULL RETURNING (xmax=0) AS inserted",[order.id]);
+      const alert=await client.query("INSERT INTO dispatch_queue_alerts(order_id) VALUES($1) ON CONFLICT(order_id) DO UPDATE SET alerted_at=now(),cleared_at=NULL RETURNING (xmax=0) AS inserted",[order.id]);
       if (alert.rows[0]?.inserted) await client.query("INSERT INTO platform_audit_log(actor_uid,actor_role,action,target_type,target_id,details) VALUES('system','system','dispatch_missing_customer_location','order',$1,$2::jsonb)",[order.id,JSON.stringify({publicCode:order.public_code,message:'Mijoz manzili koordinatasi yo‘q'})]);
       return "waiting";
     }
@@ -59,7 +60,7 @@ async function offerNextCourier(pool) {
     `,[order.latitude,order.longitude,order.id]);
     const courier=couriers[0];
     if (!courier) {
-      const alert=await client.query("INSERT INTO dispatch_queue_alerts(order_id) VALUES($1) ON CONFLICT(order_id) DO UPDATE SET alerted_at=CASE WHEN dispatch_queue_alerts.cleared_at IS NOT NULL THEN now() ELSE dispatch_queue_alerts.alerted_at END,cleared_at=NULL RETURNING (xmax=0) AS inserted",[order.id]);
+      const alert=await client.query("INSERT INTO dispatch_queue_alerts(order_id) VALUES($1) ON CONFLICT(order_id) DO UPDATE SET alerted_at=now(),cleared_at=NULL RETURNING (xmax=0) AS inserted",[order.id]);
       if (alert.rows[0]?.inserted) {
         await client.query("INSERT INTO platform_audit_log(actor_uid,actor_role,action,target_type,target_id,details) VALUES('system','system','dispatch_waiting_for_courier','order',$1,$2::jsonb)",[order.id,JSON.stringify({publicCode:order.public_code,message:'Mos onlayn kuryer topilmadi'})]);
       }
