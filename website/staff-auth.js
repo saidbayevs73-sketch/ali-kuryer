@@ -107,6 +107,7 @@ if(portal==="admin"){
  }
  $("#refreshOrders")?.addEventListener("click",()=>refreshOrders());
  $("#orderStatusFilter")?.addEventListener("change",()=>refreshOrders());
+ setInterval(()=>{if(!managePanel.hidden&&auth.currentUser)refreshOrders();},15000);
  async function refreshStaff(){
   const data=await request("/api/v1/admin/staff");
   const list=$("#staffList");list.replaceChildren();
