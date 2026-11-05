@@ -19,8 +19,10 @@ export function createCourierRouter(pool){
   const client=await pool.connect();
   try{
    await client.query("BEGIN");
-   const {rows:[offer]}=await client.query("SELECT id,order_id FROM courier_dispatch_offers WHERE order_id=$1 AND courier_uid=$2 AND status='offered' AND expires_at>now() FOR UPDATE",[req.params.id,req.identity.uid]);
+   const {rows:[offer]}=await client.query("SELECT id,order_id,courier_id FROM courier_dispatch_offers WHERE order_id=$1 AND courier_uid=$2 AND status='offered' AND expires_at>now() FOR UPDATE",[req.params.id,req.identity.uid]);
    if(!offer){await client.query("ROLLBACK");return res.status(409).json({error:"offer_expired_or_unavailable",message:"Taklif muddati tugagan yoki buyurtma boshqa kuryerga berilgan."});}
+   const {rows:[order]}=await client.query("UPDATE orders SET status='assigned',courier_id=$2,updated_at=now() WHERE id=$1 AND status='ready' AND courier_id IS NULL RETURNING id",[offer.order_id,offer.courier_id]);
+   if(!order){await client.query("ROLLBACK");return res.status(409).json({error:"offer_expired_or_unavailable",message:"Taklif muddati tugagan yoki buyurtma boshqa kuryerga berilgan."});}
    await client.query("UPDATE courier_dispatch_offers SET status='accepted',responded_at=now() WHERE id=$1",[offer.id]);
    await client.query("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,'ready','assigned','courier','Kuryer buyurtmani qabul qildi')",[offer.order_id]);
    await client.query("COMMIT");
@@ -49,6 +51,7 @@ export function createCourierRouter(pool){
   const prev={picked_up:["assigned"],on_the_way:["picked_up"],delivered:["on_the_way"]};
   const {rows}=await pool.query("UPDATE orders SET status=$1,delivered_at=CASE WHEN $1='delivered' THEN now() ELSE delivered_at END,contact_closed_at=CASE WHEN $1='delivered' THEN now() ELSE contact_closed_at END,updated_at=now() WHERE id=$2 AND courier_id=(SELECT courier_id FROM courier_staff_links WHERE firebase_uid=$3) AND status=ANY($4::text[]) AND ($1<>'picked_up' OR EXISTS(SELECT 1 FROM courier_dispatch_offers d WHERE d.order_id=orders.id AND d.courier_uid=$3 AND d.status='accepted')) RETURNING id,public_code,status",[v.data,req.params.id,req.identity.uid,prev[v.data]]);
   if(!rows[0])return res.status(409).json({error:"invalid_order_transition"});
+  await pool.query("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,$2,$3,'courier',$4)",[rows[0].id,prev[v.data][0],v.data,"Kuryer buyurtma holatini yangiladi"]);
   res.json({order:rows[0]});
  }));
  router.post("/courier/presence",auth,courier,wrap(async(req,res)=>{

@@ -4,6 +4,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pg from "pg";
 import { z } from "zod";
+import { createCourierRouter } from "./courier-routes.js";
+import { createOperationsRouter } from "./operations-routes.js";
 
 const { Pool } = pg;
 const app = express();
@@ -95,6 +97,7 @@ app.post("/api/v1/orders", requireDb, asyncRoute(async (req, res) => {
       await client.query("INSERT INTO order_items(order_id,product_id,product_name,quantity,unit_price_uzs) VALUES($1,$2,$3,$4,$5)",
         [order.id,p.id,p.name,item.quantity,p.price_uzs]);
     }
+    await client.query("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,NULL,'new','system','Mijoz yangi buyurtma berdi')", [order.id]);
     await client.query("COMMIT");
     res.status(201).json({ order: { id: order.id, code: order.public_code, status: order.status, total: Number(order.total_uzs), createdAt: order.created_at } });
   } catch (error) {
@@ -109,7 +112,8 @@ app.get("/api/v1/orders/:code", requireDb, asyncRoute(async (req, res) => {
   res.json({ order: { code: order.public_code, status: order.status, total: Number(order.total_uzs), createdAt: order.created_at, updatedAt: order.updated_at } });
 }));
 
-app.get("/api/v1/admin/orders", requireDb, (req, res) => res.status(501).json({ error: "admin_auth_required", message: "Admin login and permissions must be configured before enabling this endpoint." }));
+app.use("/api/v1", createCourierRouter(pool));
+app.use("/api/v1", createOperationsRouter(pool));
 
 app.use((err, req, res, next) => {
   console.error(err);

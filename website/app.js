@@ -96,6 +96,8 @@ document.querySelector("#orderForm").onsubmit=async e=>{
     customerName:document.querySelector("#customerName").value,
     customerPhone:document.querySelector("#customerPhone").value,
     address:document.querySelector("#customerAddress").value,
+    latitude:read("aliLocationCoords",null)?.lat,
+    longitude:read("aliLocationCoords",null)?.lon,
     items:orderItems.map(p=>({productId:p.serverId,quantity:cart[p.id]})),
     paymentMethod:"cash"
    })});
