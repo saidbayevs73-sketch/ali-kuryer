@@ -23,7 +23,7 @@ let products=[
 {id:22,name:"Zaryad kabeli",price:25000,cat:"electronics",emoji:"🔌",desc:"Telefon uchun aksessuar"}
 ];
 
-const API_BASE=window.ALI_KURYER_API_URL||"";
+const API_BASE=window.ALI_KURYER_API_URL||"https://ali-kuryer-api.onrender.com";
 let catalogReady=false;
 async function loadServerCatalog(){
  if(!API_BASE)return;
