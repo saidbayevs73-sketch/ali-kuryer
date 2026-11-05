@@ -30,7 +30,7 @@ async function offerNextCourier(pool) {
          AND NOT EXISTS (SELECT 1 FROM courier_dispatch_offers d WHERE d.order_id=o.id AND d.status='offered')
          AND NOT EXISTS (SELECT 1 FROM dispatch_queue_alerts a WHERE a.order_id=o.id AND a.cleared_at IS NULL AND a.alerted_at>now()-interval '30 seconds')
        ORDER BY o.created_at
-       FOR UPDATE OF o SKIP LOCKED LIMIT 1
+       LIMIT 1 FOR UPDATE OF o SKIP LOCKED
     `);
     const order=orders[0];
     if (!order) return "none";
@@ -56,7 +56,7 @@ async function offerNextCourier(pool) {
                          WHERE old.order_id=$3 AND old.courier_id=c.id
                            AND old.status IN ('accepted','declined','expired'))
       ORDER BY distance_km ASC
-      FOR UPDATE OF c SKIP LOCKED LIMIT 1
+      LIMIT 1 FOR UPDATE OF c SKIP LOCKED
     `,[order.latitude,order.longitude,order.id]);
     const courier=couriers[0];
     if (!courier) {
