@@ -27,6 +27,8 @@ jobs:
           test -f backend/migrations/002_unified_platform.sql
           test -f backend/migrations/003_courier_staff_links.sql
           test -f backend/migrations/004_order_communications.sql
+          test -f backend/migrations/005_courier_dispatch.sql
+          test -f backend/src/dispatch-worker.js
           test -f backend/src/order-communication-routes.js
           test -f backend/src/support-review-routes.js
           test -f website/order-chat.js
