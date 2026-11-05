@@ -51,6 +51,10 @@ export function createCourierRouter(pool){
   if(!rows[0])return res.status(409).json({error:"invalid_order_transition"});
   res.json({order:rows[0]});
  }));
+ router.post("/courier/offline",auth,courier,wrap(async(req,res)=>{
+  const {rowCount}=await pool.query("UPDATE courier_presence SET is_online=false,updated_at=now() WHERE courier_uid=$1",[req.identity.uid]);
+  res.json({ok:true,wasOnline:rowCount>0});
+ }));
  router.post("/courier/presence",auth,courier,wrap(async(req,res)=>{
   const v=z.object({online:z.boolean(),latitude:z.number().min(-90).max(90),longitude:z.number().min(-180).max(180),accuracy:z.number().min(0).max(10000).optional()}).safeParse(req.body);
   if(!v.success)return res.status(400).json({error:"invalid_location"});
