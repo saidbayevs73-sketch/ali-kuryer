@@ -15,18 +15,9 @@ export function createCourierRouter(pool){
   await pool.query("INSERT INTO courier_staff_links(firebase_uid,courier_id) VALUES($1,$2) ON CONFLICT(firebase_uid) DO UPDATE SET courier_id=EXCLUDED.courier_id",[v.data.uid,courier.id]);
   res.json({ok:true});
  }));
- router.get("/courier/orders/available",auth,courier,wrap(async(req,res)=>{
-  const {rows}=await pool.query("SELECT o.id,o.public_code,o.delivery_address,o.latitude,o.longitude,o.total_uzs,o.created_at,k.name AS kitchen_name FROM orders o LEFT JOIN kitchens k ON k.id=o.kitchen_id WHERE o.status='ready' AND o.courier_id IS NULL ORDER BY o.created_at LIMIT 100");
-  res.json({orders:rows});
- }));
  router.get("/courier/orders/mine",auth,courier,wrap(async(req,res)=>{
   const {rows}=await pool.query("SELECT o.id,o.public_code,o.delivery_address,o.status,o.total_uzs,o.created_at FROM orders o JOIN courier_staff_links l ON l.courier_id=o.courier_id WHERE l.firebase_uid=$1 AND o.status=ANY($2::text[]) ORDER BY o.created_at DESC",[req.identity.uid,["assigned","picked_up","on_the_way"]]);
   res.json({orders:rows});
- }));
- router.post("/courier/orders/:id/claim",auth,courier,wrap(async(req,res)=>{
-  const {rows}=await pool.query("UPDATE orders SET courier_id=(SELECT courier_id FROM courier_staff_links WHERE firebase_uid=$2),status='assigned',updated_at=now() WHERE id=$1 AND status='ready' AND courier_id IS NULL AND EXISTS(SELECT 1 FROM courier_staff_links WHERE firebase_uid=$2) RETURNING id,public_code,status",[req.params.id,req.identity.uid]);
-  if(!rows[0])return res.status(409).json({error:"order_unavailable",message:"Buyurtma band yoki kuryer profilingiz admin tomonidan ulanmagan."});
-  res.json({order:rows[0]});
  }));
  router.patch("/courier/orders/:id/status",auth,courier,wrap(async(req,res)=>{
   const v=z.enum(["picked_up","on_the_way","delivered"]).safeParse(req.body.status);
