@@ -122,6 +122,10 @@ export function createOperationsRouter(pool) {
           SELECT 1 FROM courier_dispatch_offers d
           WHERE d.order_id=$1 AND d.courier_uid=l.firebase_uid AND d.status='offered' AND d.expires_at>now()
         )
+        AND NOT EXISTS (
+          SELECT 1 FROM orders active_order
+          WHERE active_order.courier_id=c.id AND active_order.status IN ('assigned','picked_up','on_the_way')
+        )
         ORDER BY CASE WHEN $2::double precision IS NULL OR $3::double precision IS NULL THEN 0
           ELSE (p.latitude-$2)*(p.latitude-$2)+(p.longitude-$3)*(p.longitude-$3) END ASC,
           p.updated_at DESC
