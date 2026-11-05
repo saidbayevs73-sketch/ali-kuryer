@@ -6,12 +6,28 @@ on:
       - work/integration-completion
     paths:
       - "app/**"
+      - "backend/**"
+      - "website/app.js"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
       - ".github/workflows/android-apk.yml"
 
 jobs:
+  backend-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check backend JavaScript syntax
+        run: |
+          node --check backend/src/server.js
+          node --check backend/src/courier-routes.js
+          node --check backend/src/operations-routes.js
+          node --check backend/src/firebase-admin.js
+
   build:
     runs-on: ubuntu-latest
     steps:
