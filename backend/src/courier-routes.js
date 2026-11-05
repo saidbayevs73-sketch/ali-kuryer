@@ -47,7 +47,7 @@ export function createCourierRouter(pool){
   const v=z.enum(["picked_up","on_the_way","delivered"]).safeParse(req.body.status);
   if(!v.success)return res.status(400).json({error:"invalid_status"});
   const prev={picked_up:["assigned"],on_the_way:["picked_up"],delivered:["on_the_way"]};
-  const {rows}=await pool.query("UPDATE orders SET status=$1,delivered_at=CASE WHEN $1='delivered' THEN now() ELSE delivered_at END,contact_closed_at=CASE WHEN $1='delivered' THEN now() ELSE contact_closed_at END,updated_at=now() WHERE id=$2 AND courier_id=(SELECT courier_id FROM courier_staff_links WHERE firebase_uid=$3) AND status=ANY($4::text[]) RETURNING id,public_code,status",[v.data,req.params.id,req.identity.uid,prev[v.data]]);
+  const {rows}=await pool.query("UPDATE orders SET status=$1,delivered_at=CASE WHEN $1='delivered' THEN now() ELSE delivered_at END,contact_closed_at=CASE WHEN $1='delivered' THEN now() ELSE contact_closed_at END,updated_at=now() WHERE id=$2 AND courier_id=(SELECT courier_id FROM courier_staff_links WHERE firebase_uid=$3) AND status=ANY($4::text[]) AND ($1<>'picked_up' OR EXISTS(SELECT 1 FROM courier_dispatch_offers d WHERE d.order_id=orders.id AND d.courier_uid=$3 AND d.status='accepted')) RETURNING id,public_code,status",[v.data,req.params.id,req.identity.uid,prev[v.data]]);
   if(!rows[0])return res.status(409).json({error:"invalid_order_transition"});
   res.json({order:rows[0]});
  }));
