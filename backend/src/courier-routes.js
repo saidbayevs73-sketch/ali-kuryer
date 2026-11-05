@@ -15,6 +15,30 @@ export function createCourierRouter(pool){
   await pool.query("INSERT INTO courier_staff_links(firebase_uid,courier_id) VALUES($1,$2) ON CONFLICT(firebase_uid) DO UPDATE SET courier_id=EXCLUDED.courier_id",[v.data.uid,courier.id]);
   res.json({ok:true});
  }));
+ router.post("/courier/orders/:id/accept",auth,courier,wrap(async(req,res)=>{
+  const client=await pool.connect();
+  try{
+   await client.query("BEGIN");
+   const {rows:[offer]}=await client.query("SELECT id,order_id FROM courier_dispatch_offers WHERE order_id=$1 AND courier_uid=$2 AND status='offered' AND expires_at>now() FOR UPDATE",[req.params.id,req.identity.uid]);
+   if(!offer){await client.query("ROLLBACK");return res.status(409).json({error:"offer_expired_or_unavailable",message:"Taklif muddati tugagan yoki buyurtma boshqa kuryerga berilgan."});}
+   await client.query("UPDATE courier_dispatch_offers SET status='accepted',responded_at=now() WHERE id=$1",[offer.id]);
+   await client.query("INSERT INTO order_status_history(order_id,old_status,new_status,changed_by_role,note) VALUES($1,'ready','assigned','courier','Kuryer buyurtmani qabul qildi')",[offer.order_id]);
+   await client.query("COMMIT");
+   res.json({ok:true,message:"Buyurtma qabul qilindi."});
+  }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
+ }));
+ router.post("/courier/orders/:id/decline",auth,courier,wrap(async(req,res)=>{
+  const client=await pool.connect();
+  try{
+   await client.query("BEGIN");
+   const {rows:[offer]}=await client.query("SELECT id,order_id,courier_id FROM courier_dispatch_offers WHERE order_id=$1 AND courier_uid=$2 AND status='offered' AND expires_at>now() FOR UPDATE",[req.params.id,req.identity.uid]);
+   if(!offer){await client.query("ROLLBACK");return res.status(409).json({error:"offer_expired_or_unavailable"});}
+   await client.query("UPDATE courier_dispatch_offers SET status='declined',responded_at=now() WHERE id=$1",[offer.id]);
+   await client.query("UPDATE orders SET status='ready',courier_id=NULL,updated_at=now() WHERE id=$1 AND status='assigned' AND courier_id=$2",[offer.order_id,offer.courier_id]);
+   await client.query("COMMIT");
+   res.json({ok:true,message:"Buyurtma navbatdagi kuryerga yuboriladi."});
+  }catch(error){await client.query("ROLLBACK");throw error;}finally{client.release();}
+ }));
  router.get("/courier/orders/mine",auth,courier,wrap(async(req,res)=>{
   const {rows}=await pool.query("SELECT o.id,o.public_code,o.delivery_address,o.status,o.total_uzs,o.created_at FROM orders o JOIN courier_staff_links l ON l.courier_id=o.courier_id WHERE l.firebase_uid=$1 AND o.status=ANY($2::text[]) ORDER BY o.created_at DESC",[req.identity.uid,["assigned","picked_up","on_the_way"]]);
   res.json({orders:rows});
