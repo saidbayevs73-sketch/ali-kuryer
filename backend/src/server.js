@@ -194,6 +194,20 @@ async function requireAdmin(req, res, next) {
   }
 }
 
+app.get("/api/v1/admin/dispatch/queue", requireDb, requireAdmin, asyncRoute(async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT o.id,o.public_code,o.delivery_address,o.created_at,
+           CASE WHEN o.latitude IS NULL OR o.longitude IS NULL THEN 'missing_location'
+                ELSE 'no_available_courier' END AS reason,
+           a.alerted_at
+      FROM orders o
+      JOIN dispatch_queue_alerts a ON a.order_id=o.id AND a.cleared_at IS NULL
+     WHERE o.status='ready'
+     ORDER BY a.alerted_at ASC
+  `);
+  res.json({ queue: rows });
+}));
+
 app.get("/api/v1/admin/orders", requireDb, requireAdmin, asyncRoute(async (req, res) => {
   const status = req.query.status;
   const allowedStatuses = ["new","accepted","preparing","ready","assigned","picked_up","on_the_way","delivered","cancelled"];
