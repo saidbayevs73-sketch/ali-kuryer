@@ -113,7 +113,7 @@ class MainActivity : Activity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val uri = request?.url ?: return false
-                if (uri.scheme == "https" && uri.host == "ali-kuryer-web.onrender.com") return false
+                if (uri.scheme == "https" && uri.host == "ali-kuryer-web-staging.onrender.com") return false
                 return try {
                     startActivity(Intent(Intent.ACTION_VIEW, uri))
                     true
@@ -225,7 +225,7 @@ class MainActivity : Activity() {
 
         setContentView(root)
         ViewCompat.requestApplyInsets(root)
-        webView.loadUrl("https://ali-kuryer-web.onrender.com/?source=android")
+        webView.loadUrl("https://ali-kuryer-web-staging.onrender.com/?source=android")
     }
 
     private inner class AliKuryerBridge {
